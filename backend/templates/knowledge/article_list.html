@@ -1,0 +1,438 @@
+{% extends "knowledge/base_knowledge.html" %}
+{% load static %}
+
+{% block title %}Knowledge Base - {{ app_name|default:"ASN Corpu" }}{% endblock %}
+
+{% block knowledge_content %}
+<!-- Hero Section with Search -->
+<div class="text-center mb-12">
+    <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+        <i class="fas fa-book-open mr-3"></i>
+        Knowledge Base
+    </h1>
+    <p class="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+        Temukan artikel, tutorial, dan dokumentasi yang Anda butuhkan
+    </p>
+    
+    <!-- Search Form -->
+    <div class="search-form max-w-4xl mx-auto">
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Main Search -->
+                <div class="md:col-span-2">
+                    {{ form.search }}
+                </div>
+                
+                <!-- Category Filter -->
+                <div>
+                    {{ form.category }}
+                </div>
+                
+                <!-- Content Type Filter -->
+                <div>
+                    {{ form.content_type }}
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Status Filter (if user is authenticated) -->
+                {% if user.is_authenticated %}
+                <div>
+                    {{ form.status }}
+                </div>
+                {% endif %}
+                
+                <!-- Ordering -->
+                <div>
+                    {{ form.ordering }}
+                </div>
+                
+                <!-- Search Button -->
+                <div>
+                    <button type="submit" class="btn-primary w-full">
+                        <i class="fas fa-search mr-2"></i>
+                        Cari Artikel
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Featured Articles -->
+{% if featured_articles %}
+<div class="mb-12">
+    <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+        <i class="fas fa-star mr-2 text-yellow-400"></i>
+        Artikel Unggulan
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {% for article in featured_articles %}
+        <div class="article-card rounded-xl p-6 group">
+            <!-- Content Type Icon -->
+            <div class="flex items-center justify-between mb-4">
+                <div class="content-type-icon content-type-{{ article.content_type }}">
+                    {% if article.content_type == 'video' %}
+                        <i class="fas fa-play"></i>
+                    {% elif article.content_type == 'document' %}
+                        <i class="fas fa-file-alt"></i>
+                    {% elif article.content_type == 'link' %}
+                        <i class="fas fa-external-link-alt"></i>
+                    {% else %}
+                        <i class="fas fa-file-text"></i>
+                    {% endif %}
+                </div>
+                
+                {% if article.category %}
+                <span class="category-badge">{{ article.category.name }}</span>
+                {% endif %}
+            </div>
+            
+            <!-- Thumbnail -->
+            {% if article.thumbnail %}
+            <div class="mb-4 rounded-lg overflow-hidden">
+                <img src="{{ article.thumbnail.url }}" alt="{{ article.title }}" 
+                     class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
+            </div>
+            {% elif article.content_type == 'video' and article.get_youtube_thumbnail %}
+            <div class="mb-4 rounded-lg overflow-hidden relative">
+                <img src="{{ article.get_youtube_thumbnail }}" alt="{{ article.title }}" 
+                     class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="bg-red-600 text-white rounded-full p-3">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Article Info -->
+            <h3 class="text-lg font-semibold text-white mb-2 line-clamp-2">
+                <a href="{% url 'knowledge:article_detail' article.slug %}" class="hover:text-blue-300 transition-colors">
+                    {{ article.title }}
+                </a>
+            </h3>
+            
+            <p class="text-white/70 text-sm mb-4 line-clamp-3">
+                {{ article.excerpt|default:article.content|truncatewords:20 }}
+            </p>
+            
+            <!-- Author & Stats -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="author-avatar">
+                        {{ article.get_author_initial }}
+                    </div>
+                    <div class="text-sm">
+                        <div class="text-white/90 font-medium">{{ article.get_author_full_name }}</div>
+                        <div class="text-white/60">{{ article.get_time_since_published|default:article.created_at|date:"d M Y" }}</div>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-3">
+                    <div class="stats-item">
+                        <i class="fas fa-eye"></i>
+                        <span>{{ article.view_count }}</span>
+                    </div>
+                    <div class="stats-item">
+                        <i class="fas fa-thumbs-up"></i>
+                        <span>{{ article.like_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Main Articles Grid -->
+<div class="flex flex-col lg:flex-row gap-8">
+    <!-- Articles List -->
+    <div class="flex-1">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-white">
+                {% if form.search.value %}
+                    Hasil Pencarian "{{ form.search.value }}"
+                {% else %}
+                    Semua Artikel
+                {% endif %}
+                <span class="text-white/60 text-lg font-normal ml-2">({{ page_obj.paginator.count }} artikel)</span>
+            </h2>
+            
+            <!-- View Toggle -->
+            <div class="flex space-x-2">
+                <button onclick="toggleView('grid')" id="grid-view-btn" class="btn-secondary active">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button onclick="toggleView('list')" id="list-view-btn" class="btn-secondary">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Articles Grid -->
+        <div id="articles-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for article in articles %}
+            <article class="article-card rounded-xl p-6 group">
+                <!-- Content Type & Category -->
+                <div class="flex items-center justify-between mb-4">
+                    <div class="content-type-icon content-type-{{ article.content_type }}">
+                        {% if article.content_type == 'video' %}
+                            <i class="fas fa-play"></i>
+                        {% elif article.content_type == 'document' %}
+                            <i class="fas fa-file-alt"></i>
+                        {% elif article.content_type == 'link' %}
+                            <i class="fas fa-external-link-alt"></i>
+                        {% else %}
+                            <i class="fas fa-file-text"></i>
+                        {% endif %}
+                    </div>
+                    
+                    {% if article.category %}
+                    <span class="category-badge">{{ article.category.name }}</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Thumbnail -->
+                {% if article.thumbnail %}
+                <div class="mb-4 rounded-lg overflow-hidden">
+                    <img src="{{ article.thumbnail.url }}" alt="{{ article.title }}" 
+                         class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
+                </div>
+                {% elif article.content_type == 'video' and article.get_youtube_thumbnail %}
+                <div class="mb-4 rounded-lg overflow-hidden relative">
+                    <img src="{{ article.get_youtube_thumbnail }}" alt="{{ article.title }}" 
+                         class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="bg-red-600 text-white rounded-full p-4">
+                            <i class="fas fa-play text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Article Content -->
+                <h3 class="text-xl font-semibold text-white mb-3 line-clamp-2">
+                    <a href="{% url 'knowledge:article_detail' article.slug %}" 
+                       class="hover:text-blue-300 transition-colors">
+                        {{ article.title }}
+                    </a>
+                </h3>
+                
+                <p class="text-white/70 mb-4 line-clamp-3">
+                    {{ article.excerpt|default:article.content|truncatewords:25 }}
+                </p>
+                
+                <!-- Tags -->
+                {% if article.article_tags.all %}
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% for article_tag in article.article_tags.all|slice:":3" %}
+                    <a href="{% url 'knowledge:tag_detail' article_tag.tag.slug %}" class="tag-badge">
+                        #{{ article_tag.tag.name }}
+                    </a>
+                    {% endfor %}
+                    {% if article.article_tags.count > 3 %}
+                    <span class="tag-badge">+{{ article.article_tags.count|add:"-3" }} lagi</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Author & Stats -->
+                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                    <div class="flex items-center space-x-3">
+                        <div class="author-avatar">
+                            {{ article.get_author_initial }}
+                        </div>
+                        <div class="text-sm">
+                            <div class="text-white/90 font-medium">{{ article.get_author_full_name }}</div>
+                            <div class="text-white/60">{{ article.get_time_since_published|default:article.created_at|date:"d M Y" }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <div class="stats-item">
+                            <i class="fas fa-eye"></i>
+                            <span>{{ article.view_count }}</span>
+                        </div>
+                        <div class="stats-item">
+                            <i class="fas fa-thumbs-up"></i>
+                            <span>{{ article.like_count }}</span>
+                        </div>
+                        {% if article.rating_count > 0 %}
+                        <div class="stats-item">
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <span>{{ article.rating_avg|floatformat:1 }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% empty %}
+            <!-- No Articles Found -->
+            <div class="col-span-full text-center py-12">
+                <div class="text-white/60 text-6xl mb-4">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-white mb-2">Tidak ada artikel ditemukan</h3>
+                <p class="text-white/70 mb-6">
+                    {% if form.search.value %}
+                        Coba ubah kata kunci pencarian atau filter yang digunakan.
+                    {% else %}
+                        Belum ada artikel yang dipublikasikan.
+                    {% endif %}
+                </p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'knowledge:article_create' %}" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Buat Artikel Pertama
+                </a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination mt-8">
+            {% if page_obj.has_previous %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1" class="pagination-link">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}" class="pagination-link">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}" class="pagination-link">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+                <a href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}" class="pagination-link">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="lg:w-80 space-y-6">
+        <!-- Popular Articles -->
+        {% if popular_articles %}
+        <div class="search-form">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                <i class="fas fa-fire mr-2 text-orange-400"></i>
+                Artikel Populer
+            </h3>
+            <div class="space-y-3">
+                {% for article in popular_articles %}
+                <div class="flex space-x-3 group">
+                    <div class="content-type-icon content-type-{{ article.content_type }} flex-shrink-0">
+                        {% if article.content_type == 'video' %}
+                            <i class="fas fa-play text-xs"></i>
+                        {% elif article.content_type == 'document' %}
+                            <i class="fas fa-file-alt text-xs"></i>
+                        {% elif article.content_type == 'link' %}
+                            <i class="fas fa-external-link-alt text-xs"></i>
+                        {% else %}
+                            <i class="fas fa-file-text text-xs"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium text-white group-hover:text-blue-300 transition-colors line-clamp-2">
+                            <a href="{% url 'knowledge:article_detail' article.slug %}">
+                                {{ article.title }}
+                            </a>
+                        </h4>
+                        <div class="flex items-center space-x-2 mt-1 text-xs text-white/60">
+                            <span><i class="fas fa-eye"></i> {{ article.view_count }}</span>
+                            <span><i class="fas fa-thumbs-up"></i> {{ article.like_count }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Quick Stats -->
+        <div class="search-form">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+                <i class="fas fa-chart-bar mr-2 text-green-400"></i>
+                Statistik
+            </h3>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">Total Artikel</span>
+                    <span class="text-white font-semibold">{{ page_obj.paginator.count }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">Kategori</span>
+                    <span class="text-white font-semibold">{{ form.category.field.queryset.count }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-white/70">Penulis</span>
+                    <span class="text-white font-semibold">{{ articles|length|default:"0" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+// View toggle functionality
+function toggleView(viewType) {
+    const container = document.getElementById('articles-container');
+    const gridBtn = document.getElementById('grid-view-btn');
+    const listBtn = document.getElementById('list-view-btn');
+    
+    if (viewType === 'grid') {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        gridBtn.classList.add('active');
+        listBtn.classList.remove('active');
+    } else {
+        container.className = 'space-y-4';
+        listBtn.classList.add('active');
+        gridBtn.classList.remove('active');
+        
+        // Modify article cards for list view
+        const cards = container.querySelectorAll('.article-card');
+        cards.forEach(card => {
+            card.classList.add('flex', 'space-x-4');
+        });
+    }
+    
+    // Save preference
+    localStorage.setItem('knowledge_view_preference', viewType);
+}
+
+// Load saved view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('knowledge_view_preference') || 'grid';
+    toggleView(savedView);
+});
+
+// Add active class styles
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+.btn-secondary.active {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+</style>
+`);
+</script>
+{% endblock %}

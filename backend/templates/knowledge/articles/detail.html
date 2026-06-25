@@ -1,0 +1,1191 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ article.title }} - Knowledge Base{% endblock %}
+
+{% block sidebar_active %}knowledge{% endblock %}
+
+{% block extra_css %}
+<style>
+.article-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.article-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.article-header {
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.article-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.article-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.article-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.tag-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.tag-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.tag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    margin-right: 0.5rem;
+}
+
+.article-excerpt {
+    background: #f0f9ff;
+    border-left: 4px solid #3b82f6;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: #1e40af;
+}
+
+.article-content {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #374151;
+}
+
+.article-content h1,
+.article-content h2,
+.article-content h3 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.article-content p {
+    margin-bottom: 1rem;
+}
+
+.article-content ul,
+.article-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.article-content code {
+    background: #f3f4f6;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+
+.article-content pre {
+    background: #1f2937;
+    color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.article-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.action-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: none;
+    font-size: 0.875rem;
+}
+
+.btn-like {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.btn-like:hover {
+    background: #bbf7d0;
+}
+
+.btn-like.active {
+    background: #16a34a;
+    color: white;
+}
+
+.btn-dislike {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-dislike:hover {
+    background: #fecaca;
+}
+
+.btn-dislike.active {
+    background: #dc2626;
+    color: white;
+}
+
+.rating-stars {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.rating-star {
+    font-size: 1.5rem;
+    color: #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rating-star:hover,
+.rating-star.active {
+    color: #fbbf24;
+}
+
+.comment-section {
+    margin-top: 2rem;
+}
+
+.comment-form {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.comment-item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1.5rem 0;
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+}
+
+.comment-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.comment-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.comment-author {
+    font-weight: 600;
+    color: #111827;
+}
+
+.comment-date {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.comment-content {
+    color: #374151;
+    line-height: 1.625;
+}
+
+.related-articles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.related-article-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.related-article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.stat-card {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="article-container">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'dashboard:index' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    {% if is_management_view %}
+                    <a href="{% url 'knowledge:article_manage_list' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                        Manajemen Artikel
+                    </a>
+                    {% else %}
+                    <a href="{% url 'knowledge:article_list' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                        Knowledge Base
+                    </a>
+                    {% endif %}
+                </div>
+            </li>
+            {% if article.category %}
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-gray-600">{{ article.category.name }}</span>
+                </div>
+            </li>
+            {% endif %}
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-gray-500">{{ article.title|truncatewords:5 }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Article Header Card -->
+    <div class="article-card">
+        <div class="article-header">
+            <!-- Action Buttons (Top Right) -->
+            {% if can_edit or can_delete %}
+            <div class="flex justify-end gap-2 mb-4">
+                {% if is_management_view %}
+                    <!-- Switch to Public View -->
+                    <a href="{% url 'knowledge:article_detail' article.slug %}" 
+                       class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                       title="Lihat sebagai Public">
+                        <i class="fas fa-eye mr-2"></i>Lihat Public
+                    </a>
+                {% else %}
+                    <!-- Switch to Management View -->
+                    <a href="{% url 'knowledge:article_manage_detail' article.slug %}" 
+                       class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                       title="Lihat sebagai Management">
+                        <i class="fas fa-cog mr-2"></i>Mode Management
+                    </a>
+                {% endif %}
+                
+                {% if can_edit %}
+                <a href="{% url 'knowledge:article_edit' article.slug %}" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-edit mr-2"></i>Edit
+                </a>
+                {% endif %}
+                {% if can_delete %}
+                <a href="{% url 'knowledge:article_delete' article.slug %}" 
+                   class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                   onclick="return confirm('Yakin ingin menghapus artikel ini?')">
+                    <i class="fas fa-trash mr-2"></i>Hapus
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Badges -->
+            <div class="flex items-center gap-2 mb-4">
+                {% if is_management_view %}
+                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-cog mr-1"></i>
+                    Mode Management
+                </span>
+                {% endif %}
+                {% if article.category %}
+                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-folder mr-1"></i>
+                    {{ article.category.name }}
+                </span>
+                {% endif %}
+                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-file-alt mr-1"></i>
+                    {{ article.get_content_type_display }}
+                </span>
+                {% if article.is_featured %}
+                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                    <i class="fas fa-star mr-1"></i>
+                    Featured
+                </span>
+                {% endif %}
+                <span class="px-3 py-1 rounded-full text-sm font-medium
+                    {% if article.status == 'published' %}bg-green-100 text-green-800
+                    {% elif article.status == 'draft' %}bg-gray-100 text-gray-800
+                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {{ article.get_status_display }}
+                </span>
+            </div>
+
+            <!-- Title -->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{{ article.title }}</h1>
+            
+            <!-- Meta Info -->
+            <div class="article-meta">
+                <div class="article-meta-item">
+                    <i class="fas fa-user"></i>
+                    <span>{{ article.author.get_full_name|default:article.author.username }}</span>
+                </div>
+                <div class="article-meta-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>{{ article.published_at|date:"d M Y" }}</span>
+                </div>
+                <div class="article-meta-item">
+                    <i class="fas fa-eye"></i>
+                    <span>{{ article.view_count }} views</span>
+                </div>
+                {% if article.rating_avg %}
+                <div class="article-meta-item">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    <span>{{ article.rating_avg|floatformat:1 }} ({{ article.rating_count }})</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Tags -->
+            {% if tags %}
+            <div class="article-tags">
+                {% for article_tag in tags %}
+                <a href="{% url 'knowledge:tag_detail' article_tag.tag.slug %}" 
+                   class="tag-badge"
+                   style="background-color: {{ article_tag.tag.color|default:'#3B82F6' }};">
+                    <span class="tag-dot"></span>
+                    {{ article_tag.tag.name }}
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Excerpt -->
+            {% if article.excerpt %}
+            <div class="article-excerpt">
+                {{ article.excerpt }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ article.view_count }}</div>
+                <div class="stat-label">Views</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ article.like_count }}</div>
+                <div class="stat-label">Likes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ comments.count }}</div>
+                <div class="stat-label">Comments</div>
+            </div>
+            {% if article.rating_count %}
+            <div class="stat-card">
+                <div class="stat-number">{{ article.rating_avg|floatformat:1 }}</div>
+                <div class="stat-label">Rating ({{ article.rating_count }})</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Article Content Card -->
+    <div class="article-card">
+        <div class="article-content prose prose-lg max-w-none">
+            {{ article.content|safe }}
+        </div>
+    </div>
+
+    <!-- Article Actions Card -->
+    {% if user.is_authenticated %}
+    <div class="article-card">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-heart mr-2"></i>
+            Berikan Feedback
+        </h3>
+        
+        <div class="article-actions">
+            <!-- Like/Dislike -->
+            <div class="action-group">
+                <button onclick="likeArticle('{{ article.slug }}')" 
+                        class="action-btn btn-like {% if user_like_status == 'like' %}active{% endif %}"
+                        id="like-btn">
+                    <i class="fas fa-thumbs-up"></i>
+                    <span id="like-count">{{ article.like_count }}</span>
+                </button>
+                
+                <button onclick="dislikeArticle('{{ article.slug }}')" 
+                        class="action-btn btn-dislike {% if user_like_status == 'dislike' %}active{% endif %}"
+                        id="dislike-btn">
+                    <i class="fas fa-thumbs-down"></i>
+                    <span id="dislike-count">{{ article.dislike_count }}</span>
+                </button>
+            </div>
+
+            <!-- Rating -->
+            <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-600 font-medium">Rating:</span>
+                    <div class="rating-stars" id="rating-stars">
+                        {% for i in "12345" %}
+                        <button type="button" onclick="selectRating({{ i }})" 
+                                class="rating-star {% if user_rating and user_rating.rating >= i|add:0 %}active{% endif %}"
+                                data-rating="{{ i }}">
+                            <i class="fas fa-star"></i>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <span id="rating-value" class="text-sm text-gray-500">
+                        {% if user_rating %}({{ user_rating.rating }}/5){% else %}(Belum dirating){% endif %}
+                    </span>
+                </div>
+                
+                <!-- Feedback Text (Optional) -->
+                <div>
+                    <label for="rating-feedback" class="block text-sm text-gray-600 font-medium mb-1">
+                        Feedback (opsional):
+                    </label>
+                    <textarea id="rating-feedback" 
+                              rows="3" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                              placeholder="Tulis feedback Anda tentang artikel ini...">{% if user_rating %}{{ user_rating.feedback }}{% endif %}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">
+                        <i class="fas fa-info-circle"></i> Feedback akan membantu penulis meningkatkan kualitas artikel
+                    </p>
+                </div>
+                
+                <!-- Submit Button -->
+                <div>
+                    <button type="button" 
+                            onclick="submitRating('{{ article.slug }}')" 
+                            id="submit-rating-btn"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                        <i class="fas fa-paper-plane mr-2"></i>
+                        {% if user_rating %}Update Rating{% else %}Kirim Rating{% endif %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Comments Section Card -->
+    <div class="article-card">
+        <div class="comment-section">
+            <h3 class="text-2xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-comments mr-2"></i>
+                Komentar ({{ comments.count }})
+            </h3>
+
+            <!-- Add Comment Form -->
+            {% if user.is_authenticated and comment_form %}
+            <div class="comment-form">
+                <form id="comment-form" onsubmit="submitComment(event, '{{ article.slug }}')">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tambah Komentar</label>
+                        <textarea name="content" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  rows="4" 
+                                  placeholder="Tulis komentar Anda..."
+                                  required></textarea>
+                    </div>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-paper-plane mr-2"></i>Kirim Komentar
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Comments List -->
+            <div id="comments-list">
+                {% for comment in comments %}
+                <div class="comment-item" id="comment-{{ comment.id }}">
+                    <div class="flex gap-4">
+                        <div class="comment-avatar">
+                            {{ comment.user.get_full_name.0|default:comment.user.username.0|upper }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="comment-header">
+                                <span class="comment-author">
+                                    {{ comment.user.get_full_name|default:comment.user.username }}
+                                </span>
+                                <span class="comment-date">{{ comment.created_at|date:"d M Y H:i" }}</span>
+                                {% if comment.is_edited %}
+                                <span class="text-xs text-gray-400 italic">(edited)</span>
+                                {% endif %}
+                            </div>
+                            <div class="comment-content">
+                                {{ comment.content|linebreaks }}
+                            </div>
+                            
+                            <!-- Comment Actions -->
+                            {% if user.is_authenticated %}
+                            <div class="flex items-center gap-4 mt-3">
+                                <!-- Like Button -->
+                                <button onclick="likeComment({{ comment.id }})" 
+                                        class="flex items-center gap-1 text-sm text-gray-600 hover:text-green-600 transition-colors"
+                                        id="comment-like-btn-{{ comment.id }}">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span id="comment-like-count-{{ comment.id }}">{{ comment.like_count }}</span>
+                                </button>
+                                
+                                <!-- Dislike Button -->
+                                <button onclick="dislikeComment({{ comment.id }})" 
+                                        class="flex items-center gap-1 text-sm text-gray-600 hover:text-red-600 transition-colors"
+                                        id="comment-dislike-btn-{{ comment.id }}">
+                                    <i class="fas fa-thumbs-down"></i>
+                                    <span id="comment-dislike-count-{{ comment.id }}">{{ comment.dislike_count }}</span>
+                                </button>
+                                
+                                <!-- Reply Button -->
+                                <button onclick="toggleReplyForm({{ comment.id }})" 
+                                        class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors">
+                                    <i class="fas fa-reply"></i>
+                                    <span>Balas</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Reply Form (Hidden by default) -->
+                            <div id="reply-form-{{ comment.id }}" class="mt-4 hidden">
+                                <form onsubmit="submitReply(event, {{ comment.id }})" class="bg-gray-50 p-4 rounded-lg">
+                                    {% csrf_token %}
+                                    <textarea name="content" 
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                              rows="3" 
+                                              placeholder="Tulis balasan Anda..."
+                                              required></textarea>
+                                    <div class="flex gap-2 mt-2">
+                                        <button type="submit" 
+                                                class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-paper-plane mr-1"></i>Kirim
+                                        </button>
+                                        <button type="button" 
+                                                onclick="toggleReplyForm({{ comment.id }})"
+                                                class="px-4 py-2 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400 transition-colors">
+                                            Batal
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Nested Replies -->
+                            {% if comment.get_replies %}
+                            <div class="ml-8 mt-4 space-y-4" id="replies-{{ comment.id }}">
+                                {% for reply in comment.get_replies %}
+                                <div class="flex gap-3 border-l-2 border-gray-200 pl-4" id="comment-{{ reply.id }}">
+                                    <div class="comment-avatar" style="width: 32px; height: 32px; font-size: 0.875rem;">
+                                        {{ reply.user.get_full_name.0|default:reply.user.username.0|upper }}
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="comment-header">
+                                            <span class="comment-author text-sm">
+                                                {{ reply.user.get_full_name|default:reply.user.username }}
+                                            </span>
+                                            <span class="comment-date text-xs">{{ reply.created_at|date:"d M Y H:i" }}</span>
+                                            {% if reply.is_edited %}
+                                            <span class="text-xs text-gray-400 italic">(edited)</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="comment-content text-sm">
+                                            {{ reply.content|linebreaks }}
+                                        </div>
+                                        
+                                        <!-- Reply Actions -->
+                                        {% if user.is_authenticated %}
+                                        <div class="flex items-center gap-3 mt-2">
+                                            <button onclick="likeComment({{ reply.id }})" 
+                                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-green-600 transition-colors"
+                                                    id="comment-like-btn-{{ reply.id }}">
+                                                <i class="fas fa-thumbs-up"></i>
+                                                <span id="comment-like-count-{{ reply.id }}">{{ reply.like_count }}</span>
+                                            </button>
+                                            
+                                            <button onclick="dislikeComment({{ reply.id }})" 
+                                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-red-600 transition-colors"
+                                                    id="comment-dislike-btn-{{ reply.id }}">
+                                                <i class="fas fa-thumbs-down"></i>
+                                                <span id="comment-dislike-count-{{ reply.id }}">{{ reply.dislike_count }}</span>
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <!-- Empty replies container for dynamic replies -->
+                            <div class="ml-8 mt-4 space-y-4 hidden" id="replies-{{ comment.id }}"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-comment-slash"></i>
+                    <p>Belum ada komentar. Jadilah yang pertama berkomentar!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Articles Card -->
+    {% if related_articles %}
+    <div class="article-card">
+        <h3 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-newspaper mr-2"></i>
+            Artikel Terkait
+        </h3>
+        <div class="related-articles">
+            {% for related in related_articles %}
+            <a href="{% url 'knowledge:article_detail' related.slug %}" 
+               class="related-article-card">
+                <h4 class="font-semibold text-gray-900 mb-2">{{ related.title }}</h4>
+                <p class="text-gray-600 text-sm mb-2">{{ related.excerpt|truncatewords:15 }}</p>
+                <div class="flex items-center text-xs text-gray-500">
+                    <span>{{ related.published_at|date:"d M Y" }}</span>
+                    <span class="mx-2">•</span>
+                    <span>{{ related.view_count }} views</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// CSRF Token
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Like Article
+function likeArticle(slug) {
+    fetch(`/knowledge/ajax/articles/${slug}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('like-count').textContent = data.like_count;
+            document.getElementById('dislike-count').textContent = data.dislike_count;
+            
+            // Update button states
+            const likeBtn = document.getElementById('like-btn');
+            const dislikeBtn = document.getElementById('dislike-btn');
+            
+            if (data.action === 'like') {
+                likeBtn.classList.add('active');
+                dislikeBtn.classList.remove('active');
+            } else {
+                likeBtn.classList.remove('active');
+                dislikeBtn.classList.remove('active');
+            }
+            
+            // Show success message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success',
+                    title: data.message
+                });
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Dislike Article
+function dislikeArticle(slug) {
+    fetch(`/knowledge/ajax/articles/${slug}/dislike/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('like-count').textContent = data.like_count;
+            document.getElementById('dislike-count').textContent = data.dislike_count;
+            
+            // Update button states
+            const likeBtn = document.getElementById('like-btn');
+            const dislikeBtn = document.getElementById('dislike-btn');
+            
+            if (data.action === 'dislike') {
+                dislikeBtn.classList.add('active');
+                likeBtn.classList.remove('active');
+            } else {
+                dislikeBtn.classList.remove('active');
+                likeBtn.classList.remove('active');
+            }
+            
+            // Show success message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success',
+                    title: data.message
+                });
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Select Rating (update stars visual)
+let selectedRating = {% if user_rating %}{{ user_rating.rating }}{% else %}0{% endif %};
+
+function selectRating(rating) {
+    selectedRating = rating;
+    updateStars(rating);
+    document.getElementById('rating-value').textContent = `(${rating}/5)`;
+}
+
+// Submit Rating with Feedback
+function submitRating(slug) {
+    if (selectedRating === 0) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Perhatian',
+                text: 'Silakan pilih rating terlebih dahulu (1-5 bintang)'
+            });
+        } else {
+            alert('Silakan pilih rating terlebih dahulu');
+        }
+        return;
+    }
+    
+    const feedback = document.getElementById('rating-feedback').value.trim();
+    const formData = new FormData();
+    formData.append('rating', selectedRating);
+    formData.append('feedback', feedback);
+    
+    // Disable button
+    const btn = document.getElementById('submit-rating-btn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Mengirim...';
+    
+    fetch(`/knowledge/ajax/articles/${slug}/rate/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        
+        if (data.success) {
+            // Update star display
+            updateStars(selectedRating);
+            
+            // Update button text
+            btn.innerHTML = '<i class="fas fa-check mr-2"></i>Update Rating';
+            
+            // Show success message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: `Rating ${selectedRating} bintang ${feedback ? 'dengan feedback ' : ''}berhasil disimpan!`,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(`Rating ${selectedRating} bintang berhasil disimpan!`);
+            }
+            
+            // Reload page after 2 seconds to show updated rating stats
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.errors || 'Terjadi kesalahan saat menyimpan rating'
+                });
+            } else {
+                alert('Terjadi kesalahan saat menyimpan rating');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat mengirim rating'
+            });
+        } else {
+            alert('Terjadi kesalahan saat mengirim rating');
+        }
+    });
+}
+
+// Submit Comment
+function submitComment(event, slug) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    fetch(`/knowledge/ajax/articles/${slug}/comment/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Komentar Berhasil!',
+                    text: 'Komentar Anda telah ditambahkan.',
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                alert('Komentar berhasil ditambahkan!');
+                location.reload();
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat menambahkan komentar.'
+            });
+        }
+    });
+}
+
+// Update Stars
+function updateStars(rating) {
+    const stars = document.querySelectorAll('#rating-stars .rating-star');
+    stars.forEach((star, index) => {
+        if (index < rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+// ============================================================================
+// COMMENT INTERACTION FUNCTIONS
+// ============================================================================
+
+// Like Comment
+function likeComment(commentId) {
+    fetch(`/knowledge/ajax/comments/${commentId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update counts
+            document.getElementById(`comment-like-count-${commentId}`).textContent = data.like_count;
+            document.getElementById(`comment-dislike-count-${commentId}`).textContent = data.dislike_count;
+            
+            // Update button states
+            const likeBtn = document.getElementById(`comment-like-btn-${commentId}`);
+            const dislikeBtn = document.getElementById(`comment-dislike-btn-${commentId}`);
+            
+            if (data.action === 'liked') {
+                likeBtn.classList.add('text-green-600');
+                likeBtn.classList.remove('text-gray-600');
+                dislikeBtn.classList.add('text-gray-600');
+                dislikeBtn.classList.remove('text-red-600');
+            } else if (data.action === 'removed') {
+                likeBtn.classList.add('text-gray-600');
+                likeBtn.classList.remove('text-green-600');
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Dislike Comment
+function dislikeComment(commentId) {
+    fetch(`/knowledge/ajax/comments/${commentId}/dislike/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update counts
+            document.getElementById(`comment-like-count-${commentId}`).textContent = data.like_count;
+            document.getElementById(`comment-dislike-count-${commentId}`).textContent = data.dislike_count;
+            
+            // Update button states
+            const likeBtn = document.getElementById(`comment-like-btn-${commentId}`);
+            const dislikeBtn = document.getElementById(`comment-dislike-btn-${commentId}`);
+            
+            if (data.action === 'disliked') {
+                dislikeBtn.classList.add('text-red-600');
+                dislikeBtn.classList.remove('text-gray-600');
+                likeBtn.classList.add('text-gray-600');
+                likeBtn.classList.remove('text-green-600');
+            } else if (data.action === 'removed') {
+                dislikeBtn.classList.add('text-gray-600');
+                dislikeBtn.classList.remove('text-red-600');
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Toggle Reply Form
+function toggleReplyForm(commentId) {
+    const replyForm = document.getElementById(`reply-form-${commentId}`);
+    if (replyForm.classList.contains('hidden')) {
+        replyForm.classList.remove('hidden');
+        // Focus on textarea
+        replyForm.querySelector('textarea').focus();
+    } else {
+        replyForm.classList.add('hidden');
+        // Clear textarea
+        replyForm.querySelector('textarea').value = '';
+    }
+}
+
+// Submit Reply
+function submitReply(event, parentCommentId) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    fetch(`/knowledge/ajax/comments/${parentCommentId}/reply/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Get or create replies container
+            let repliesContainer = document.getElementById(`replies-${parentCommentId}`);
+            if (repliesContainer.classList.contains('hidden')) {
+                repliesContainer.classList.remove('hidden');
+            }
+            
+            // Create reply HTML
+            const replyHTML = `
+                <div class="flex gap-3 border-l-2 border-gray-200 pl-4" id="comment-${data.reply.id}">
+                    <div class="comment-avatar" style="width: 32px; height: 32px; font-size: 0.875rem;">
+                        ${data.reply.user_initial}
+                    </div>
+                    <div class="flex-1">
+                        <div class="comment-header">
+                            <span class="comment-author text-sm">${data.reply.user_name}</span>
+                            <span class="comment-date text-xs">${data.reply.created_at}</span>
+                        </div>
+                        <div class="comment-content text-sm">
+                            <p>${data.reply.content}</p>
+                        </div>
+                        <div class="flex items-center gap-3 mt-2">
+                            <button onclick="likeComment(${data.reply.id})" 
+                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-green-600 transition-colors"
+                                    id="comment-like-btn-${data.reply.id}">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span id="comment-like-count-${data.reply.id}">${data.reply.like_count}</span>
+                            </button>
+                            <button onclick="dislikeComment(${data.reply.id})" 
+                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-red-600 transition-colors"
+                                    id="comment-dislike-btn-${data.reply.id}">
+                                <i class="fas fa-thumbs-down"></i>
+                                <span id="comment-dislike-count-${data.reply.id}">${data.reply.dislike_count}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add reply to container
+            repliesContainer.insertAdjacentHTML('beforeend', replyHTML);
+            
+            // Hide reply form and clear textarea
+            toggleReplyForm(parentCommentId);
+            
+            // Show success message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success',
+                    title: 'Balasan berhasil ditambahkan!'
+                });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat menambahkan balasan.'
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

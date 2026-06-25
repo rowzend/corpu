@@ -1,0 +1,518 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Knowledge Base{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stats-icon.green { background: #d1fae5; color: #065f46; }
+.stats-icon.red { background: #fee2e2; color: #991b1b; }
+.stats-icon.blue { background: #dbeafe; color: #1e40af; }
+.stats-icon.purple { background: #e9d5ff; color: #6b21a8; }
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.filter-form {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.likes-table {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.table-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.table-row {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.table-row:hover {
+    background: #f8fafc;
+}
+
+.action-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-view { background: #dbeafe; color: #1e40af; }
+.btn-view:hover { background: #bfdbfe; color: #1d4ed8; }
+
+.btn-delete { background: #fee2e2; color: #991b1b; }
+.btn-delete:hover { background: #fecaca; color: #7f1d1d; }
+
+.badge-like { background: #d1fae5; color: #065f46; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+.badge-dislike { background: #fee2e2; color: #991b1b; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">👍 {{ title }}</h1>
+            <p class="text-gray-600">Kelola suka dan tidak suka artikel dengan statistik lengkap</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stats-card">
+            <div class="stats-icon green">
+                <i class="fas fa-thumbs-up"></i>
+            </div>
+            <div class="stats-number">{{ total_likes|default:0 }}</div>
+            <div class="stats-label">Total Suka</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon red">
+                <i class="fas fa-thumbs-down"></i>
+            </div>
+            <div class="stats-number">{{ total_dislikes|default:0 }}</div>
+            <div class="stats-label">Total Tidak Suka</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon blue">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stats-number">{{ total_engagement|default:0 }}</div>
+            <div class="stats-label">Total Engagement</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon purple">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stats-number">{{ like_percentage|default:0 }}%</div>
+            <div class="stats-label">Persentase Suka</div>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="filter-form">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Cari</label>
+                <input type="text" name="search" value="{{ search }}" 
+                       placeholder="Judul artikel atau username..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Artikel</label>
+                <select name="article" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Semua Artikel</option>
+                    {% for article in articles %}
+                    <option value="{{ article.id }}" {% if article_id == article.id|stringformat:"s" %}selected{% endif %}>
+                        {{ article.title|truncatewords:8 }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Aksi</label>
+                <select name="action" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="all" {% if action_filter == 'all' %}selected{% endif %}>Semua</option>
+                    <option value="like" {% if action_filter == 'like' %}selected{% endif %}>Suka</option>
+                    <option value="dislike" {% if action_filter == 'dislike' %}selected{% endif %}>Tidak Suka</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Dari</label>
+                <input type="date" name="date_from" value="{{ date_from }}" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Sampai</label>
+                <input type="date" name="date_to" value="{{ date_to }}" 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="md:col-span-6 flex justify-end space-x-2">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-filter mr-2"></i>
+                    Filter
+                </button>
+                <a href="{% url 'knowledge:article_like_manage_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-times mr-2"></i>
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulkActionsCard" class="bg-white rounded-lg p-4 shadow mb-4" style="display: none;">
+        <div class="flex items-center justify-between">
+            <div class="text-gray-700">
+                <span id="selectedCount" class="font-semibold">0</span> item dipilih
+            </div>
+            <button type="button" onclick="bulkDelete()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                <i class="fas fa-trash mr-2"></i>
+                Hapus Terpilih
+            </button>
+        </div>
+    </div>
+
+    <!-- Likes Table -->
+    <div class="likes-table">
+        {% if likes %}
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="table-header">
+                    <tr>
+                        <th class="px-6 py-4 text-left">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="rounded">
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Artikel
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Pengguna
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Aksi
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Tanggal
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Aksi
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for like in likes %}
+                    <tr class="table-row">
+                        <td class="px-6 py-4">
+                            <input type="checkbox" class="like-checkbox rounded" value="{{ like.id }}" onchange="updateBulkActions()">
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <a href="{% url 'knowledge:article_detail' like.article.slug %}" target="_blank" 
+                                   class="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                                    {{ like.article.title|truncatewords:10 }}
+                                </a>
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i class="fas fa-thumbs-up"></i> {{ like.article.like_count }}
+                                    <span class="mx-1">•</span>
+                                    <i class="fas fa-thumbs-down"></i> {{ like.article.dislike_count }}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="user-avatar">
+                                    {{ like.user.name.0|default:like.user.username.0|upper }}
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">{{ like.user.name|default:like.user.username }}</div>
+                                    <div class="text-xs text-gray-500">@{{ like.user.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if like.is_like %}
+                            <span class="badge-like">
+                                <i class="fas fa-thumbs-up"></i> Suka
+                            </span>
+                            {% else %}
+                            <span class="badge-dislike">
+                                <i class="fas fa-thumbs-down"></i> Tidak Suka
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm text-gray-900">{{ like.created_at|date:"d M Y" }}</div>
+                            <div class="text-xs text-gray-500">{{ like.created_at|date:"H:i" }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex space-x-2">
+                                <a href="{% url 'knowledge:article_detail' like.article.slug %}" 
+                                   class="action-btn btn-view" target="_blank" title="Lihat Artikel">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'knowledge:article_like_delete' like.id %}" 
+                                   class="action-btn btn-delete" title="Hapus"
+                                   onclick="return confirm('Hapus {% if like.is_like %}suka{% else %}tidak suka{% endif %} ini?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if likes.has_other_pages %}
+        <div class="flex justify-center items-center space-x-2 py-4">
+            {% if likes.has_previous %}
+            <a href="?page={{ likes.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if article_id %}&article={{ article_id }}{% endif %}{% if action_filter != 'all' %}&action={{ action_filter }}{% endif %}" 
+               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+
+            {% for num in likes.paginator.page_range %}
+            {% if likes.number == num %}
+            <span class="px-3 py-2 bg-blue-600 text-white rounded-lg">{{ num }}</span>
+            {% elif num > likes.number|add:'-3' and num < likes.number|add:'3' %}
+            <a href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if article_id %}&article={{ article_id }}{% endif %}{% if action_filter != 'all' %}&action={{ action_filter }}{% endif %}" 
+               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                {{ num }}
+            </a>
+            {% endif %}
+            {% endfor %}
+
+            {% if likes.has_next %}
+            <a href="?page={{ likes.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if article_id %}&article={{ article_id }}{% endif %}{% if action_filter != 'all' %}&action={{ action_filter }}{% endif %}" 
+               class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-thumbs-up"></i>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Tidak ada data suka/tidak suka artikel</h3>
+            <p class="text-gray-500">
+                {% if search %}
+                    Tidak ada hasil yang sesuai dengan pencarian Anda.
+                {% else %}
+                    Belum ada aktivitas suka/tidak suka pada artikel.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <!-- Most Active Users -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">👥 Pengguna Paling Aktif</h3>
+            </div>
+            <div class="p-6">
+                {% if most_active_users %}
+                <div class="space-y-4">
+                    {% for user in most_active_users %}
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-sm font-semibold text-gray-900">{{ user.user__name|default:user.user__username }}</div>
+                            <div class="text-xs text-gray-500">@{{ user.user__username }}</div>
+                        </div>
+                        <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                            {{ user.total_actions }} aksi
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-gray-500 py-4">Tidak ada data</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Most Liked Articles -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">⭐ Artikel Paling Disukai</h3>
+            </div>
+            <div class="p-6">
+                {% if most_liked_articles %}
+                <div class="space-y-4">
+                    {% for article in most_liked_articles %}
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 min-w-0">
+                            <a href="{% url 'knowledge:article_detail' article.slug %}" target="_blank"
+                               class="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
+                                {{ article.title|truncatewords:10 }}
+                            </a>
+                        </div>
+                        <span class="ml-3 px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium flex-shrink-0">
+                            {{ article.like_count_calc }} suka
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-gray-500 py-4">Tidak ada data</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSelectAll(checkbox) {
+    const checkboxes = document.querySelectorAll('.like-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateBulkActions();
+}
+
+function updateBulkActions() {
+    const checkboxes = document.querySelectorAll('.like-checkbox:checked');
+    const count = checkboxes.length;
+    const bulkCard = document.getElementById('bulkActionsCard');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (count > 0) {
+        bulkCard.style.display = 'block';
+        selectedCount.textContent = count;
+    } else {
+        bulkCard.style.display = 'none';
+    }
+}
+
+function bulkDelete() {
+    const checkboxes = document.querySelectorAll('.like-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (ids.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Perhatian',
+            text: 'Silakan pilih item untuk dihapus'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Hapus Item Terpilih',
+        text: `Hapus ${ids.length} item?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            ids.forEach(id => formData.append('like_ids[]', id));
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            
+            fetch('{% url "knowledge:article_like_bulk_delete" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.error || 'Terjadi kesalahan'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Terjadi kesalahan'
+                });
+            });
+        }
+    });
+}
+</script>
+{% endblock %}

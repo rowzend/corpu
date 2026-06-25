@@ -1,0 +1,497 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ app_name }}{% endblock %}
+{% block page_title %}Dashboard Utama{% endblock %}
+
+{% block content %}
+<div class="w-full">
+    <!-- Welcome Section -->
+    <div class="grid grid-cols-1 gap-5 mb-6">
+        <div class="col-span-1">
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <h3 class="mb-2">Selamat Datang, {{ request.user.username|title }}! 👋</h3>
+                            <p class="text-gray-500 mb-0">Berikut adalah ringkasan data kepegawaian hari ini</p>
+                        </div>
+                        <div class="text-right">
+                            <small class="text-gray-500">{{ today|date:"l, d F Y" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-5 mb-6">
+        <div class="card">
+            <div class="p-5 border-b border-gray-200 flex items-center justify-between">
+                <h5 class="mb-0">
+                    <i class="fas fa-map-marked-alt text-primary mr-2"></i>
+                    Peta Wilayah (Contoh)
+                </h5>
+                <div class="text-xs text-gray-500">amCharts Map (local static)</div>
+            </div>
+            <div class="p-5">
+                <div id="pesselMap" style="height: 420px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+        <div class="card stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-number">{{ stats.total_pegawai }}</div>
+            <div class="stat-label">Total Pegawai</div>
+        </div>
+        
+        <div class="card stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-number">{{ stats.pegawai_aktif }}</div>
+            <div class="stat-label">Pegawai Aktif</div>
+        </div>
+        
+        <div class="card stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-number">{{ stats.menuju_pensiun }}</div>
+            <div class="stat-label">Menuju Pensiun (2 Tahun)</div>
+        </div>
+        
+        <div class="card stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-sync-alt"></i>
+            </div>
+            <div class="stat-number">{{ stats.last_sync_hours }}h</div>
+            <div class="stat-label">Sync Terakhir</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+        <div class="lg:col-span-2">
+            <div class="card h-full">
+                <div class="p-5 border-b border-gray-200 flex items-center justify-between">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-area text-primary mr-2"></i>
+                        Distribusi Pegawai per Golongan
+                    </h5>
+                    <div class="relative inline-block text-left">
+                        <button class="text-sm border-2 border-primary text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg transition-colors" type="button">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div id="golonganChart" style="height: 300px;">
+                        <!-- Chart akan diisi dengan JavaScript -->
+                        <div class="flex items-center justify-center h-full">
+                            <div class="text-center">
+                                <i class="fas fa-chart-bar text-5xl text-gray-400 mb-3"></i>
+                                <p class="text-gray-500">Chart sedang dimuat...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="">
+            <div class="card h-full">
+                <div class="p-5 border-b border-gray-200">
+                    <h5 class="mb-0">
+                        <i class="fas fa-pie-chart text-success mr-2"></i>
+                        Status Pegawai
+                    </h5>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span>PNS</span>
+                            <span class="inline-block bg-primary text-white text-xs px-2 py-1 rounded font-medium">{{ stats.pns_count }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-primary h-2 rounded-full" style="width: {{ stats.pns_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span>PPPK</span>
+                            <span class="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded font-medium">{{ stats.pppk_count }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: {{ stats.pppk_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span>Honorer</span>
+                            <span class="inline-block bg-amber-500 text-white text-xs px-2 py-1 rounded font-medium">{{ stats.honorer_count }}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-amber-500 h-2 rounded-full" style="width: {{ stats.honorer_percentage }}%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity & Quick Actions -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2">
+            <div class="card">
+                <div class="p-5 border-b border-gray-200">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history text-info mr-2"></i>
+                        Aktivitas Terbaru
+                    </h5>
+                </div>
+                <div class="p-5">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="flex items-start mb-3 pb-3 border-b border-gray-200">
+                            <div class="w-10 h-10 mr-3">
+                                <div class="flex items-center justify-center w-10 h-10 bg-{{ activity.type }}-100 text-{{ activity.type }}-600 rounded-full">
+                                    <i class="{{ activity.icon }}"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h6 class="mb-1">{{ activity.title }}</h6>
+                                <p class="text-gray-500 mb-1">{{ activity.description }}</p>
+                                <small class="text-gray-500">
+                                    <i class="fas fa-clock mr-1"></i>
+                                    {{ activity.created_at|timesince }} yang lalu
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-8">
+                            <i class="fas fa-inbox text-5xl text-gray-400 mb-3"></i>
+                            <p class="text-gray-500">Belum ada aktivitas terbaru</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="">
+            <div class="card">
+                <div class="p-5 border-b border-gray-200">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt text-warning mr-2"></i>
+                        Aksi Cepat
+                    </h5>
+                </div>
+                <div class="p-5">
+                    <div class="flex flex-col gap-3">
+                        <a href="#" class="border-2 border-primary text-primary hover:bg-primary hover:text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Tambah Pegawai Baru
+                        </a>
+                        <a href="#" class="border-2 border-blue-500 text-blue-600 hover:bg-blue-500 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-file-excel mr-2"></i>
+                            Export Data Excel
+                        </a>
+                        <a href="/admin/" class="border-2 border-gray-500 text-gray-600 hover:bg-gray-500 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-cogs mr-2"></i>
+                            Pengaturan Sistem
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Status -->
+            <div class="card mt-4">
+                <div class="p-5 border-b border-gray-200">
+                    <h5 class="mb-0">
+                        <i class="fas fa-server text-success mr-2"></i>
+                        Status Sistem
+                    </h5>
+                </div>
+                <div class="p-5">
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <span>Database</span>
+                            <span class="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded font-medium">
+                                <i class="fas fa-check-circle mr-1"></i>Online
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center">
+                            <span>SIASN API</span>
+                            <span class="inline-block bg-{{ siasn_status.class }} text-white text-xs px-2 py-1 rounded font-medium">
+                                <i class="fas fa-{{ siasn_status.icon }} mr-1"></i>{{ siasn_status.text }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <div class="flex justify-between items-center">
+                            <span>Cache</span>
+                            <span class="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded font-medium">
+                                <i class="fas fa-check-circle mr-1"></i>Active
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/amcharts5/index.js' %}"></script>
+<script src="{% static 'vendor/amcharts5/map.js' %}"></script>
+<script src="{% static 'vendor/amcharts5/themes/Animated.js' %}"></script>
+<script src="{% static 'vendor/amcharts5/geodata/indonesiaLow.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Simulate chart loading
+        setTimeout(function() {
+            document.getElementById('golonganChart').innerHTML = `
+                <div class="text-center">
+                    <h6 class="text-gray-600 font-medium mb-2">Data Distribusi Golongan</h6>
+                    <p class="text-gray-500 text-sm">Chart akan diimplementasi dengan Chart.js atau Plotly</p>
+                    <div class="grid grid-cols-4 gap-3 mt-4">
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <h6 class="text-sm font-medium mb-1">Gol I</h6>
+                            <span class="text-primary text-xl font-bold">15</span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <h6 class="text-sm font-medium mb-1">Gol II</h6>
+                            <span class="text-green-500 text-xl font-bold">45</span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <h6 class="text-sm font-medium mb-1">Gol III</h6>
+                            <span class="text-amber-500 text-xl font-bold">85</span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg p-3">
+                            <h6 class="text-sm font-medium mb-1">Gol IV</h6>
+                            <span class="text-blue-500 text-xl font-bold">25</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }, 1500);
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var el = document.getElementById('pesselMap');
+  if (!el) return;
+  if (el.__am5_inited__) return;
+  el.__am5_inited__ = true;
+
+  // Prevent page scroll when interacting with map so wheel zoom works as expected
+  try {
+    el.addEventListener('wheel', function(e){
+      e.preventDefault();
+    }, { passive: false });
+  } catch (_) {}
+
+  function showFallback(msg){
+    try {
+      el.innerHTML = '<div class="h-full w-full flex items-center justify-center text-sm text-gray-500">'+ msg +'</div>';
+    } catch(_) {}
+  }
+
+  if (!window.am5 || !window.am5map || !window.am5themes_Animated) {
+    showFallback('Map belum bisa dimuat (amCharts belum terbaca). Pastikan collectstatic sudah dijalankan.');
+    return;
+  }
+  if (!window.am5geodata_indonesiaLow) {
+    showFallback('Geodata Indonesia belum terbaca. Pastikan file static vendor/amcharts5/geodata/indonesiaLow.js ter-load.');
+    return;
+  }
+
+  am5.ready(function(){
+    try {
+      var root = am5.Root.new('pesselMap');
+      root.setThemes([am5themes_Animated.new(root)]);
+
+      var didAutoZoom = false;
+
+      var chart = root.container.children.push(
+        am5map.MapChart.new(root, {
+          panX: 'translateX',
+          panY: 'translateY',
+          wheelX: 'none',
+          wheelY: 'zoom',
+          pinchZoom: true,
+          minZoomLevel: 2,
+          maxZoomLevel: 64,
+          projection: am5map.geoMercator()
+        })
+      );
+
+      // Make zoom transitions smoother
+      try {
+        chart.set('wheelDuration', 600);
+        chart.set('animationDuration', 900);
+        chart.set('zoomStep', 1.15);
+      } catch (_) {}
+
+      // Zoom controls (+/-) + home button
+      try {
+        var zoomControl = am5map.ZoomControl.new(root, {});
+        chart.set('zoomControl', zoomControl);
+        if (zoomControl && zoomControl.homeButton && zoomControl.homeButton.set) {
+          zoomControl.homeButton.set('visible', true);
+        }
+      } catch (_) {
+        chart.set('zoomControl', am5map.ZoomControl.new(root, {}));
+      }
+
+      // Click on background to reset to home (Pessel)
+      try {
+        var bg = chart.chartContainer.get('background');
+        if (bg && bg.events && chart.goHome) {
+          bg.events.on('click', function(){
+            try { chart.goHome(); } catch(_) {}
+          });
+        }
+      } catch (_) {}
+
+      var indonesiaSeries = chart.series.push(
+        am5map.MapPolygonSeries.new(root, {
+          geoJSON: am5geodata_indonesiaLow,
+          fill: am5.color(0xE5E7EB)
+        })
+      );
+      indonesiaSeries.mapPolygons.template.setAll({
+        tooltipText: '{name}',
+        interactive: true,
+        stroke: am5.color(0xFFFFFF),
+        strokeWidth: 1
+      });
+      indonesiaSeries.mapPolygons.template.states.create('hover', {
+        fill: am5.color(0x93C5FD)
+      });
+
+      fetch('{% static "geojson/pesisir_selatan.geojson" %}', { cache: 'no-store' })
+        .then(function(r){
+          if (!r.ok) throw new Error('GeoJSON not found');
+          return r.json();
+        })
+        .then(function(geo){
+          function computeGeoBoundsFromGeoJSON(gj){
+            var minLon = Infinity, minLat = Infinity, maxLon = -Infinity, maxLat = -Infinity;
+            function visitCoords(coords){
+              if (!coords) return;
+              if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+                var lon = coords[0];
+                var lat = coords[1];
+                if (lon < minLon) minLon = lon;
+                if (lon > maxLon) maxLon = lon;
+                if (lat < minLat) minLat = lat;
+                if (lat > maxLat) maxLat = lat;
+                return;
+              }
+              for (var i = 0; i < coords.length; i++) visitCoords(coords[i]);
+            }
+
+            try {
+              if (gj && gj.type === 'FeatureCollection' && Array.isArray(gj.features)) {
+                for (var f = 0; f < gj.features.length; f++) {
+                  var geom = gj.features[f] && gj.features[f].geometry;
+                  if (geom && geom.coordinates) visitCoords(geom.coordinates);
+                }
+              } else if (gj && gj.type === 'Feature' && gj.geometry && gj.geometry.coordinates) {
+                visitCoords(gj.geometry.coordinates);
+              } else if (gj && gj.coordinates) {
+                visitCoords(gj.coordinates);
+              }
+            } catch (_) {}
+
+            if (!isFinite(minLon) || !isFinite(minLat) || !isFinite(maxLon) || !isFinite(maxLat)) return null;
+            return { left: minLon, right: maxLon, top: maxLat, bottom: minLat };
+          }
+
+          var pesselSeries = chart.series.push(
+            am5map.MapPolygonSeries.new(root, {
+              geoJSON: geo
+            })
+          );
+          pesselSeries.mapPolygons.template.setAll({
+            tooltipText: '{nm_kecamatan}',
+            interactive: true,
+            fill: am5.color(0x2563EB),
+            fillOpacity: 0.55,
+            stroke: am5.color(0x1E40AF),
+            strokeWidth: 1.5
+          });
+          pesselSeries.mapPolygons.template.states.create('hover', {
+            fill: am5.color(0x60A5FA),
+            fillOpacity: 0.75
+          });
+
+          // Default zoom: wait until series is validated so bounds are available
+          var autoZoomDisposer = pesselSeries.events.on('datavalidated', function(){
+            try {
+              if (didAutoZoom) return;
+              didAutoZoom = true;
+
+              setTimeout(function(){
+                try {
+                  var b = computeGeoBoundsFromGeoJSON(geo);
+                  if (b && chart.zoomToGeoPoint) {
+                    var center = { longitude: (b.left + b.right) / 2, latitude: (b.top + b.bottom) / 2 };
+
+                    // Pick a "kabupaten" level zoom. Can be tweaked if needed.
+                    var targetZoom = 7.5;
+                    try {
+                      chart.set('homeGeoPoint', center);
+                      chart.set('homeZoomLevel', targetZoom);
+                    } catch (_) {}
+
+                    // Respect home settings on first load
+                    try {
+                      if (chart.goHome) {
+                        chart.goHome();
+                      } else {
+                        chart.zoomToGeoPoint(center, targetZoom);
+                      }
+                    } catch (_) {
+                      try { chart.zoomToGeoPoint(center, targetZoom); } catch(__) {}
+                    }
+
+                    try { if (autoZoomDisposer && autoZoomDisposer.dispose) autoZoomDisposer.dispose(); } catch (_) {}
+                    return;
+                  }
+
+                  var first = pesselSeries.mapPolygons.getIndex(0);
+                  if (first && first.dataItem && chart.zoomToDataItem) {
+                    chart.zoomToDataItem(first.dataItem);
+                  }
+
+                  try { if (autoZoomDisposer && autoZoomDisposer.dispose) autoZoomDisposer.dispose(); } catch (_) {}
+                } catch (_) {}
+              }, 50);
+            } catch (_) {}
+          });
+        })
+        .catch(function(){
+          showFallback('GeoJSON wilayah belum ada. Upload/buat file di static/geojson/ (bisa level kabupaten atau kecamatan).');
+        });
+    } catch (e) {
+      showFallback('Map error. Cek console untuk detail.');
+      try { console.error(e); } catch(_) {}
+    }
+  });
+});
+</script>
+{% endblock %}
