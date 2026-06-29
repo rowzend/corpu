@@ -139,9 +139,13 @@ class CourseViewSet(viewsets.ModelViewSet):
                 if quiz:
                     lesson_dict['quiz_max_attempts'] = quiz.max_attempts
                     lesson_dict['quiz_cooldown_remaining'] = quiz.get_cooldown_remaining_seconds(request.user)
+                    lesson_dict['quiz_attempts_count'] = QuizAttempt.objects.filter(
+                        quiz=quiz, user=request.user, status='completed'
+                    ).count()
                 else:
                     lesson_dict['quiz_max_attempts'] = None
                     lesson_dict['quiz_cooldown_remaining'] = 0
+                    lesson_dict['quiz_attempts_count'] = 0
 
                 lessons_data.append(lesson_dict)
                 if not is_completed:
@@ -421,8 +425,11 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_attempts(self, request):
-        attempts = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
-        serializer = QuizAttemptSerializer(attempts, many=True, context={'request': request})
+        qs = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
+        quiz_id = request.query_params.get('quiz_id')
+        if quiz_id:
+            qs = qs.filter(quiz_id=quiz_id)
+        serializer = QuizAttemptSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
@@ -548,6 +555,7 @@ class QuizViewSet(viewsets.ModelViewSet):
             if int(time_spent) > limit_seconds:
                 return Response({'detail': 'Waktu pengerjaan telah habis'}, status=status.HTTP_403_FORBIDDEN)
 
+        attempt.status = 'completed'
         attempt.score = score_percentage
         attempt.correct_answers = correct_count
         attempt.passed = passed
