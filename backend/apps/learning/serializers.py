@@ -384,16 +384,13 @@ class QuizSerializer(serializers.ModelSerializer):
 class QuizDetailSerializer(serializers.ModelSerializer):
     questions = QuizQuestionSerializer(many=True, read_only=True)
     lesson_title = serializers.CharField(source='lesson.title', read_only=True)
-    course_slug = serializers.CharField(source='lesson.module.course.slug', read_only=True)
-    module_id = serializers.IntegerField(source='lesson.module.id', read_only=True)
 
     class Meta:
         model = Quiz
         fields = [
             'id', 'lesson', 'lesson_title', 'title', 'description',
             'passing_score_percentage', 'max_attempts', 'is_randomized',
-            'time_limit_minutes', 'retry_cooldown_minutes', 'total_questions', 'questions', 'created_at', 'updated_at',
-            'course_slug', 'module_id'
+            'time_limit_minutes', 'retry_cooldown_minutes', 'total_questions', 'questions', 'created_at', 'updated_at'
         ]
         read_only_fields = ['total_questions']
 

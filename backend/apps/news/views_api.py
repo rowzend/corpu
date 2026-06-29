@@ -1,13 +1,11 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
 
 from .models import News
 from .serializers import NewsListSerializer, NewsDetailSerializer, NewsWriteSerializer
-from apps.manajemen.helpers import check_permission
 
 
 class NewsViewSet(viewsets.ModelViewSet):
@@ -17,22 +15,6 @@ class NewsViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'excerpt', 'content']
     ordering_fields = ['published_at', 'created_at', 'views']
     ordering = ['-published_at', '-created_at']
-
-    def check_permissions(self, request):
-        super().check_permissions(request)
-        if request.user.is_authenticated:
-            action_map = {
-                'list': ('berita', 'news_article', 'view'),
-                'retrieve': ('berita', 'news_article', 'view'),
-                'create': ('berita', 'news_article', 'create'),
-                'update': ('berita', 'news_article', 'edit'),
-                'partial_update': ('berita', 'news_article', 'edit'),
-                'destroy': ('berita', 'news_article', 'delete'),
-            }
-            if self.action in action_map:
-                module, control, func = action_map[self.action]
-                if not check_permission(request.user, module, control, func):
-                    raise PermissionDenied('Anda tidak memiliki izin untuk tindakan ini')
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:

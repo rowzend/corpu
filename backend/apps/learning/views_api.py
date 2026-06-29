@@ -135,18 +135,6 @@ class CourseViewSet(viewsets.ModelViewSet):
                 lesson_dict['quiz_passed'] = quiz_attempt.passed if quiz_attempt else None
                 lesson_dict['quiz_attempt_id'] = quiz_attempt.id if quiz_attempt else None
 
-                quiz = lesson.quizzes.first()
-                if quiz:
-                    lesson_dict['quiz_max_attempts'] = quiz.max_attempts
-                    lesson_dict['quiz_cooldown_remaining'] = quiz.get_cooldown_remaining_seconds(request.user)
-                    lesson_dict['quiz_attempts_count'] = QuizAttempt.objects.filter(
-                        quiz=quiz, user=request.user, status='completed'
-                    ).count()
-                else:
-                    lesson_dict['quiz_max_attempts'] = None
-                    lesson_dict['quiz_cooldown_remaining'] = 0
-                    lesson_dict['quiz_attempts_count'] = 0
-
                 lessons_data.append(lesson_dict)
                 if not is_completed:
                     all_prev_completed = False
@@ -220,9 +208,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         course_slug = self.request.query_params.get('course_slug')
         if course_slug:
             qs = qs.filter(module__course__slug=course_slug)
-        content_type = self.request.query_params.get('content_type')
-        if content_type:
-            qs = qs.filter(content_type=content_type)
         return qs
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
@@ -289,10 +274,9 @@ class LessonViewSet(viewsets.ModelViewSet):
             LessonProgress.objects.update_or_create(
                 enrollment=enrollment,
                 lesson=lesson,
-                defaults={'time_spent_minutes': time_spent, 'is_completed': True, 'completed_at': timezone.now()}
+                defaults={'time_spent_minutes': time_spent}
             )
-            enrollment.update_progress()
-            return Response({'time_spent_minutes': time_spent, 'bypassed': True, 'is_completed': True, 'progress': enrollment.progress_percentage})
+            return Response({'time_spent_minutes': time_spent, 'bypassed': True})
         except Enrollment.DoesNotExist:
             return Response({'detail': 'Anda belum mendaftar kursus ini'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -312,14 +296,13 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        user = self.request.user
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
         course_slug = self.request.query_params.get('course_slug')
         if course_slug:
             qs = qs.filter(course__slug=course_slug)
-        return qs.filter(user=user)
+        return qs.distinct()
 
     def perform_create(self, serializer):
         enrollment = serializer.save()
@@ -425,11 +408,8 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_attempts(self, request):
-        qs = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
-        quiz_id = request.query_params.get('quiz_id')
-        if quiz_id:
-            qs = qs.filter(quiz_id=quiz_id)
-        serializer = QuizAttemptSerializer(qs, many=True, context={'request': request})
+        attempts = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
+        serializer = QuizAttemptSerializer(attempts, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
@@ -555,7 +535,6 @@ class QuizViewSet(viewsets.ModelViewSet):
             if int(time_spent) > limit_seconds:
                 return Response({'detail': 'Waktu pengerjaan telah habis'}, status=status.HTTP_403_FORBIDDEN)
 
-        attempt.status = 'completed'
         attempt.score = score_percentage
         attempt.correct_answers = correct_count
         attempt.passed = passed
