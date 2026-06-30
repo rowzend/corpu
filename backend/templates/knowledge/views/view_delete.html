@@ -1,0 +1,73 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}Hapus View Record - Knowledge Base{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Hapus View Record</h1>
+            <p class="text-gray-600 mt-1">Konfirmasi penghapusan view record</p>
+        </div>
+
+        <!-- Delete Confirmation Card -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-start mb-6">
+                <div class="flex-shrink-0">
+                    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Konfirmasi Penghapusan</h3>
+                    <p class="mt-1 text-sm text-gray-600">
+                        Apakah Anda yakin ingin menghapus view record ini? Tindakan ini tidak dapat dibatalkan.
+                    </p>
+                </div>
+            </div>
+
+            <!-- View Details -->
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h4 class="font-semibold text-gray-800 mb-3">Detail View Record:</h4>
+                <dl class="space-y-2">
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-600">Artikel:</dt>
+                        <dd class="text-sm font-medium text-gray-900">{{ view.article.title }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-600">User:</dt>
+                        <dd class="text-sm font-medium text-gray-900">
+                            {% if view.user %}
+                                {{ view.user.name }}
+                            {% else %}
+                                <span class="text-gray-400 italic">Anonymous</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-600">IP Address:</dt>
+                        <dd class="text-sm font-mono font-medium text-gray-900">{{ view.ip_address }}</dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-600">Waktu:</dt>
+                        <dd class="text-sm font-medium text-gray-900">{{ view.viewed_at|date:"d M Y H:i:s" }}</dd>
+                    </div>
+                </dl>
+            </div>
+
+            <!-- Actions -->
+            <form method="post" class="flex gap-3">
+                {% csrf_token %}
+                <button type="submit" class="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                    <i class="fas fa-trash mr-2"></i>Ya, Hapus View Record
+                </button>
+                <a href="{% url 'knowledge:view_manage_list' %}" 
+                   class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium text-center">
+                    <i class="fas fa-times mr-2"></i>Batal
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,530 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Knowledge Base{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    margin-top: 0.25rem;
+}
+
+.content-type-fields {
+    display: none;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+.content-type-fields.active {
+    display: block;
+}
+
+.tag-input-container {
+    position: relative;
+}
+
+.tag-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    display: none;
+}
+
+.tag-suggestion {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.tag-suggestion:hover {
+    background: #f3f4f6;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-cancel {
+    background: #6b7280;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ title }}</h1>
+            <p class="text-gray-600">
+                {% if article %}
+                    Edit artikel yang sudah ada dengan informasi terbaru.
+                {% else %}
+                    Buat artikel baru untuk dibagikan di Knowledge Base.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
+                {% csrf_token %}
+            
+            <!-- Title -->
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}" class="form-label">
+                    {{ form.title.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.help_text %}
+                    <div class="help-text">{{ form.title.help_text }}</div>
+                {% endif %}
+                {% if form.title.errors %}
+                    {% for error in form.title.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Slug -->
+            <div class="form-group">
+                <label for="{{ form.slug.id_for_label }}" class="form-label">
+                    {{ form.slug.label }}
+                </label>
+                {{ form.slug }}
+                {% if form.slug.help_text %}
+                    <div class="help-text">{{ form.slug.help_text }}</div>
+                {% endif %}
+                {% if form.slug.errors %}
+                    {% for error in form.slug.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Category -->
+            <div class="form-group">
+                <label for="{{ form.category.id_for_label }}" class="form-label">
+                    {{ form.category.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.category }}
+                {% if form.category.help_text %}
+                    <div class="help-text">{{ form.category.help_text }}</div>
+                {% endif %}
+                {% if form.category.errors %}
+                    {% for error in form.category.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Content Type -->
+            <div class="form-group">
+                <label for="{{ form.content_type.id_for_label }}" class="form-label">
+                    {{ form.content_type.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.content_type }}
+                {% if form.content_type.help_text %}
+                    <div class="help-text">{{ form.content_type.help_text }}</div>
+                {% endif %}
+                {% if form.content_type.errors %}
+                    {% for error in form.content_type.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Content -->
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}" class="form-label">
+                    {{ form.content.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.content }}
+                {% if form.content.help_text %}
+                    <div class="help-text">{{ form.content.help_text }}</div>
+                {% endif %}
+                {% if form.content.errors %}
+                    {% for error in form.content.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Excerpt -->
+            <div class="form-group">
+                <label for="{{ form.excerpt.id_for_label }}" class="form-label">
+                    {{ form.excerpt.label }}
+                </label>
+                {{ form.excerpt }}
+                {% if form.excerpt.help_text %}
+                    <div class="help-text">{{ form.excerpt.help_text }}</div>
+                {% endif %}
+                {% if form.excerpt.errors %}
+                    {% for error in form.excerpt.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Thumbnail -->
+            <div class="form-group">
+                <label for="{{ form.thumbnail.id_for_label }}" class="form-label">
+                    {{ form.thumbnail.label }}
+                </label>
+                {{ form.thumbnail }}
+                {% if form.thumbnail.help_text %}
+                    <div class="help-text">{{ form.thumbnail.help_text }}</div>
+                {% endif %}
+                {% if form.thumbnail.errors %}
+                    {% for error in form.thumbnail.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Video URL (conditional) -->
+            <div class="content-type-fields" id="video-fields">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-video mr-2 text-red-500"></i>
+                    Pengaturan Video
+                </h3>
+                <div class="form-group">
+                    <label for="{{ form.youtube_url.id_for_label }}" class="form-label">
+                        {{ form.youtube_url.label }}
+                    </label>
+                    {{ form.youtube_url }}
+                    {% if form.youtube_url.help_text %}
+                        <div class="help-text">{{ form.youtube_url.help_text }}</div>
+                    {% endif %}
+                    {% if form.youtube_url.errors %}
+                        {% for error in form.youtube_url.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Document Fields (conditional) -->
+            <div class="content-type-fields" id="document-fields">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-file-alt mr-2 text-green-500"></i>
+                    Pengaturan Dokumen
+                </h3>
+                <div class="form-group">
+                    <label for="{{ form.file_upload.id_for_label }}" class="form-label">
+                        {{ form.file_upload.label }}
+                    </label>
+                    {{ form.file_upload }}
+                    {% if form.file_upload.help_text %}
+                        <div class="help-text">{{ form.file_upload.help_text }}</div>
+                    {% endif %}
+                    {% if form.file_upload.errors %}
+                        {% for error in form.file_upload.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.file_url.id_for_label }}" class="form-label">
+                        {{ form.file_url.label }}
+                    </label>
+                    {{ form.file_url }}
+                    {% if form.file_url.help_text %}
+                        <div class="help-text">{{ form.file_url.help_text }}</div>
+                    {% endif %}
+                    {% if form.file_url.errors %}
+                        {% for error in form.file_url.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Link Fields (conditional) -->
+            <div class="content-type-fields" id="link-fields">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-external-link-alt mr-2 text-purple-500"></i>
+                    Pengaturan Link Eksternal
+                </h3>
+                <div class="form-group">
+                    <label for="{{ form.external_url.id_for_label }}" class="form-label">
+                        {{ form.external_url.label }}
+                    </label>
+                    {{ form.external_url }}
+                    {% if form.external_url.help_text %}
+                        <div class="help-text">{{ form.external_url.help_text }}</div>
+                    {% endif %}
+                    {% if form.external_url.errors %}
+                        {% for error in form.external_url.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tags -->
+            <div class="form-group">
+                <label for="{{ form.tags.id_for_label }}" class="form-label">
+                    {{ form.tags.label }}
+                </label>
+                <div class="tag-input-container">
+                    {{ form.tags }}
+                    <div class="tag-suggestions" id="tag-suggestions"></div>
+                </div>
+                {% if form.tags.help_text %}
+                    <div class="help-text">{{ form.tags.help_text }}</div>
+                {% endif %}
+                {% if form.tags.errors %}
+                    {% for error in form.tags.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Status -->
+            <div class="form-group">
+                <label for="{{ form.status.id_for_label }}" class="form-label">
+                    {{ form.status.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ form.status }}
+                {% if form.status.help_text %}
+                    <div class="help-text">{{ form.status.help_text }}</div>
+                {% endif %}
+                {% if form.status.errors %}
+                    {% for error in form.status.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Featured -->
+            <div class="form-group">
+                <div class="flex items-center">
+                    {{ form.is_featured }}
+                    <label for="{{ form.is_featured.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                        {{ form.is_featured.label }}
+                    </label>
+                </div>
+                {% if form.is_featured.help_text %}
+                    <div class="help-text">{{ form.is_featured.help_text }}</div>
+                {% endif %}
+                {% if form.is_featured.errors %}
+                    {% for error in form.is_featured.errors %}
+                        <div class="error-text">{{ error }}</div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div>
+                    <a href="{% url 'knowledge:article_manage_list' %}" class="btn-cancel">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Batal
+                    </a>
+                </div>
+                <div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-save mr-2"></i>
+                        {{ submit_text|default:"Simpan Artikel" }}
+                    </button>
+                </div>
+            </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Content type toggle functionality
+    const contentTypeSelect = document.querySelector('[data-toggle="content-type"]');
+    const videoFields = document.getElementById('video-fields');
+    const documentFields = document.getElementById('document-fields');
+    const linkFields = document.getElementById('link-fields');
+    
+    function toggleContentTypeFields() {
+        const contentType = contentTypeSelect.value;
+        
+        // Hide all fields
+        videoFields.classList.remove('active');
+        documentFields.classList.remove('active');
+        linkFields.classList.remove('active');
+        
+        // Show relevant fields
+        if (contentType === 'video') {
+            videoFields.classList.add('active');
+        } else if (contentType === 'document') {
+            documentFields.classList.add('active');
+        } else if (contentType === 'link') {
+            linkFields.classList.add('active');
+        }
+    }
+    
+    if (contentTypeSelect) {
+        contentTypeSelect.addEventListener('change', toggleContentTypeFields);
+        toggleContentTypeFields(); // Initial call
+    }
+    
+    // Auto-generate slug from title
+    const titleInput = document.querySelector('#id_title');
+    const slugInput = document.querySelector('#id_slug');
+    
+    if (titleInput && slugInput) {
+        titleInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugInput.value = slug;
+                slugInput.dataset.autoGenerated = 'true';
+            }
+        });
+        
+        slugInput.addEventListener('input', function() {
+            this.dataset.autoGenerated = 'false';
+        });
+    }
+    
+    // Tag suggestions (basic implementation)
+    const tagInput = document.querySelector('[data-toggle="tags"]');
+    const tagSuggestions = document.getElementById('tag-suggestions');
+    
+    if (tagInput && tagSuggestions) {
+        const commonTags = [
+            'tutorial', 'panduan', 'tips', 'dokumentasi', 'FAQ',
+            'python', 'django', 'javascript', 'html', 'css',
+            'database', 'api', 'security', 'performance', 'testing'
+        ];
+        
+        tagInput.addEventListener('input', function() {
+            const value = this.value.toLowerCase();
+            const lastTag = value.split(',').pop().trim();
+            
+            if (lastTag.length > 1) {
+                const matches = commonTags.filter(tag => 
+                    tag.includes(lastTag) && !value.includes(tag)
+                );
+                
+                if (matches.length > 0) {
+                    tagSuggestions.innerHTML = matches.map(tag => 
+                        `<div class="tag-suggestion" data-tag="${tag}">${tag}</div>`
+                    ).join('');
+                    tagSuggestions.style.display = 'block';
+                } else {
+                    tagSuggestions.style.display = 'none';
+                }
+            } else {
+                tagSuggestions.style.display = 'none';
+            }
+        });
+        
+        tagSuggestions.addEventListener('click', function(e) {
+            if (e.target.classList.contains('tag-suggestion')) {
+                const tag = e.target.dataset.tag;
+                const currentValue = tagInput.value;
+                const tags = currentValue.split(',').map(t => t.trim());
+                tags[tags.length - 1] = tag;
+                tagInput.value = tags.join(', ') + ', ';
+                tagSuggestions.style.display = 'none';
+                tagInput.focus();
+            }
+        });
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!tagInput.contains(e.target) && !tagSuggestions.contains(e.target)) {
+                tagSuggestions.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Public API Documentation - Knowledge Base{% endblock %}
+
+{% block extra_css %}
+<style>
+    .api-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid #3B82F6;
+        transition: all 0.2s ease;
+    }
+    .api-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    .method-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+    .method-get { background: #10B981; color: white; }
+    .method-post { background: #3B82F6; color: white; }
+    .method-put { background: #F59E0B; color: white; }
+    .method-patch { background: #8B5CF6; color: white; }
+    .method-delete { background: #EF4444; color: white; }
+    .category-section {
+        margin-bottom: 3rem;
+    }
+    .category-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #3B82F6;
+    }
+    .url-code {
+        background: #F3F4F6;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        color: #1F2937;
+        margin: 0.5rem 0;
+        word-break: break-all;
+    }
+    .params-section {
+        background: #F9FAFB;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+    }
+    .param-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #E5E7EB;
+    }
+    .param-item:last-child {
+        border-bottom: none;
+    }
+    .public-badge {
+        background: #10B981;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg p-8 mb-8 text-white">
+        <h1 class="text-4xl font-bold mb-2">📡 Public API Documentation</h1>
+        <p class="text-blue-100 text-lg">Knowledge Base REST API for Frontend Developers</p>
+        <div class="mt-4 flex items-center gap-4">
+            <span class="public-badge">
+                <i class="fas fa-globe mr-2"></i>{{ total_count }} Public Endpoints
+            </span>
+            <span class="text-blue-100 text-sm">
+                <i class="fas fa-info-circle mr-2"></i>No authentication required for these endpoints
+            </span>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <form method="get" class="flex gap-4">
+            <div class="flex-1">
+                <input type="text" 
+                       name="search" 
+                       value="{{ search_query }}" 
+                       placeholder="Search endpoints by URL, method, or description..."
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-search mr-2"></i>Search
+            </button>
+            {% if search_query %}
+            <a href="{% url 'manajemen_aplikasi:public_api_documentation_list' %}" 
+               class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                <i class="fas fa-times mr-2"></i>Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Quick Info -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8 rounded-lg">
+        <h3 class="text-lg font-semibold text-blue-900 mb-2">
+            <i class="fas fa-lightbulb mr-2"></i>Quick Start
+        </h3>
+        <div class="text-blue-800 space-y-2">
+            <p><strong>Base URL:</strong> <code class="bg-white px-2 py-1 rounded">http://localhost:8008/apicorpu/public/1.0/knowledge/</code></p>
+            <p><strong>Format:</strong> JSON</p>
+            <p><strong>Authentication:</strong> Not required for public endpoints (marked with [PUBLIC])</p>
+            <p><strong>Special Feature:</strong> Article detail endpoint automatically tracks views by IP address!</p>
+        </div>
+    </div>
+
+    <!-- API Endpoints by Category -->
+    {% for category, apis in categorized_apis.items %}
+    <div class="category-section">
+        <h2 class="category-title">
+            {% if category == 'Articles' %}
+                <i class="fas fa-newspaper mr-2"></i>
+            {% elif category == 'Categories' %}
+                <i class="fas fa-folder mr-2"></i>
+            {% elif category == 'Tags' %}
+                <i class="fas fa-tags mr-2"></i>
+            {% elif category == 'Comments' %}
+                <i class="fas fa-comments mr-2"></i>
+            {% elif category == 'Ratings' %}
+                <i class="fas fa-star mr-2"></i>
+            {% elif category == 'Analytics' %}
+                <i class="fas fa-chart-line mr-2"></i>
+            {% else %}
+                <i class="fas fa-code mr-2"></i>
+            {% endif %}
+            {{ category }}
+        </h2>
+
+        {% for api in apis %}
+        <div class="api-card">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <span class="method-badge method-{{ api.method_type|lower }}">
+                        {{ api.method_type }}
+                    </span>
+                    <span class="public-badge">
+                        <i class="fas fa-unlock mr-1"></i>PUBLIC
+                    </span>
+                </div>
+            </div>
+
+            <div class="url-code">
+                {{ api.url }}
+            </div>
+
+            <p class="text-gray-700 mt-3">
+                {{ api.description }}
+            </p>
+
+            {% if api.parameters %}
+            <div class="params-section">
+                <h4 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-cog mr-2"></i>Parameters
+                </h4>
+                <div class="text-sm text-gray-700">
+                    {% if api.parameters.path %}
+                    <div class="param-item">
+                        <strong class="text-blue-600">Path Parameters:</strong>
+                        <ul class="ml-4 mt-1 space-y-1">
+                            {% for key, value in api.parameters.path.items %}
+                            <li><code class="bg-white px-2 py-1 rounded">{{ key }}</code>: {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if api.parameters.query %}
+                    <div class="param-item">
+                        <strong class="text-green-600">Query Parameters:</strong>
+                        <ul class="ml-4 mt-1 space-y-1">
+                            {% for key, value in api.parameters.query.items %}
+                            <li><code class="bg-white px-2 py-1 rounded">{{ key }}</code>: {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    {% if api.parameters.body %}
+                    <div class="param-item">
+                        <strong class="text-purple-600">Body Parameters:</strong>
+                        <ul class="ml-4 mt-1 space-y-1">
+                            {% for key, value in api.parameters.body.items %}
+                            <li><code class="bg-white px-2 py-1 rounded">{{ key }}</code>: {{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Example Usage -->
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <button onclick="toggleExample(this)" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                    <i class="fas fa-code mr-2"></i>Show Example
+                </button>
+                <div class="example-code hidden mt-3 bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto">
+                    <pre class="text-sm"><code>// JavaScript Example
+fetch('{{ api.url }}')
+  .then(response => response.json())
+  .then(data => console.log(data))
+  .catch(error => console.error('Error:', error));</code></pre>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% empty %}
+    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+        <p class="text-yellow-800">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            {% if search_query %}
+                No public API endpoints found matching "{{ search_query }}".
+            {% else %}
+                No public API endpoints available. Run the seeder command to populate the documentation.
+            {% endif %}
+        </p>
+        {% if not search_query %}
+        <div class="mt-4">
+            <code class="bg-white px-3 py-2 rounded text-sm">
+                python manage.py seed_knowledge_api_documentation
+            </code>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Footer Info -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-book mr-2"></i>Additional Resources
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+            <div>
+                <h4 class="font-semibold mb-2">📚 Documentation</h4>
+                <ul class="space-y-1">
+                    <li><a href="#" class="text-blue-600 hover:text-blue-800">Full API Documentation (PDF)</a></li>
+                    <li><a href="#" class="text-blue-600 hover:text-blue-800">Postman Collection</a></li>
+                    <li><a href="#" class="text-blue-600 hover:text-blue-800">Code Examples (GitHub)</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-semibold mb-2">🔗 Related Links</h4>
+                <ul class="space-y-1">
+                    <li><a href="{% url 'manajemen_aplikasi:api_documentation_list' %}" class="text-blue-600 hover:text-blue-800">All API Documentation (Admin)</a></li>
+                    <li><a href="#" class="text-blue-600 hover:text-blue-800">API Status Page</a></li>
+                    <li><a href="#" class="text-blue-600 hover:text-blue-800">Report an Issue</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleExample(button) {
+    const exampleDiv = button.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (exampleDiv.classList.contains('hidden')) {
+        exampleDiv.classList.remove('hidden');
+        button.innerHTML = '<i class="fas fa-code mr-2"></i>Hide Example';
+    } else {
+        exampleDiv.classList.add('hidden');
+        button.innerHTML = '<i class="fas fa-code mr-2"></i>Show Example';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,33 @@
+<!-- Preloader Component - Reusable -->
+<!-- Usage: include 'includes/preloader.html' with duration=3000 -->
+<!-- Default duration: 3000ms (3 seconds) -->
+
+{% load static %}
+
+<div id="preloader">
+    <div class="preloader-content">
+        <div class="preloader-icon">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="spinner"></div>
+        <p class="text-xl font-semibold">Memuat {{ app_name|default:"ASN CORPU" }}...</p>
+    </div>
+</div>
+
+<script>
+// Hide preloader after icons are positioned and animations started
+document.addEventListener('DOMContentLoaded', function() {
+    // Get duration from template variable or use default
+    const preloaderDuration = parseInt('{{ duration|default:3000 }}', 10);
+    
+    setTimeout(function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.add('fade-out');
+            setTimeout(function() {
+                preloader.style.display = 'none';
+            }, 500);
+        }
+    }, preloaderDuration);
+});
+</script>

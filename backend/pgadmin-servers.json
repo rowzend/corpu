@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "ASN Corpu Backend",
+      "Group": "Servers",
+      "Host": "asncorpu-backend-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "asncorpu_backend_db",
+      "Username": "asncorpu_user",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}

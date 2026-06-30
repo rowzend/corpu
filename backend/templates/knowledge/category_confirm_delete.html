@@ -1,0 +1,403 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Hapus Kategori: {{ category.name }} - Knowledge Base{% endblock %}
+
+{% block extra_css %}
+<style>
+.delete-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.delete-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 2px solid #fee2e2;
+}
+
+.warning-icon {
+    width: 4rem;
+    height: 4rem;
+    background: #fee2e2;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+}
+
+.warning-icon i {
+    font-size: 2rem;
+    color: #dc2626;
+}
+
+.category-info {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1.5rem 0;
+}
+
+.info-item {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #374151;
+    flex: 1;
+}
+
+.info-value {
+    color: #6b7280;
+}
+
+.warning-list {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1.5rem 0;
+}
+
+.warning-list h4 {
+    color: #dc2626;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.warning-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.warning-list li {
+    color: #991b1b;
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.warning-list li i {
+    margin-right: 0.5rem;
+    width: 1rem;
+}
+
+.btn-delete {
+    background: #dc2626;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3);
+}
+
+.btn-delete:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-cancel {
+    background: #6b7280;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+}
+
+.cannot-delete {
+    background: #fef2f2;
+    border: 2px solid #fecaca;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.cannot-delete h3 {
+    color: #dc2626;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.cannot-delete p {
+    color: #991b1b;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="delete-container">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Hapus Kategori</h1>
+            <p class="text-gray-600">Konfirmasi penghapusan kategori dari Knowledge Base</p>
+        </div>
+
+        <!-- Delete Card -->
+        <div class="delete-card">
+            <!-- Warning Icon -->
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <!-- Title -->
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">
+                    Apakah Anda yakin ingin menghapus kategori ini?
+                </h2>
+                <p class="text-gray-600">
+                    Tindakan ini tidak dapat dibatalkan setelah dikonfirmasi.
+                </p>
+            </div>
+
+            <!-- Category Information -->
+            <div class="category-info">
+                <h3 class="font-semibold text-gray-900 mb-3">
+                    <i class="fas fa-folder mr-2 text-blue-500"></i>
+                    Informasi Kategori
+                </h3>
+                
+                <div class="info-item">
+                    <div class="info-label">Nama Kategori:</div>
+                    <div class="info-value font-semibold">{{ category.name }}</div>
+                </div>
+                
+                {% if category.description %}
+                <div class="info-item">
+                    <div class="info-label">Deskripsi:</div>
+                    <div class="info-value">{{ category.description }}</div>
+                </div>
+                {% endif %}
+                
+                {% if category.parent %}
+                <div class="info-item">
+                    <div class="info-label">Parent Kategori:</div>
+                    <div class="info-value">{{ category.parent.name }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="info-item">
+                    <div class="info-label">Status:</div>
+                    <div class="info-value">
+                        {% if category.is_active %}
+                            <span class="text-green-600 font-semibold">Aktif</span>
+                        {% else %}
+                            <span class="text-red-600 font-semibold">Nonaktif</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Dibuat:</div>
+                    <div class="info-value">{{ category.created_at|date:"d M Y H:i" }}</div>
+                </div>
+                
+                <div class="info-item">
+                    <div class="info-label">Total Artikel:</div>
+                    <div class="info-value font-semibold">{{ category.get_article_count }} artikel</div>
+                </div>
+                
+                {% if category.children.exists %}
+                <div class="info-item">
+                    <div class="info-label">Sub-kategori:</div>
+                    <div class="info-value font-semibold">{{ category.children.count }} sub-kategori</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Check if category can be deleted -->
+            {% if has_children or has_articles %}
+                <!-- Cannot Delete -->
+                <div class="cannot-delete">
+                    <h3><i class="fas fa-ban mr-2"></i>Kategori Tidak Dapat Dihapus</h3>
+                    <p>Kategori ini tidak dapat dihapus karena masih memiliki dependensi.</p>
+                </div>
+
+                <!-- Warning List -->
+                <div class="warning-list">
+                    <h4><i class="fas fa-exclamation-circle mr-2"></i>Alasan Tidak Dapat Dihapus:</h4>
+                    <ul>
+                        {% if has_children %}
+                        <li>
+                            <i class="fas fa-folder text-orange-500"></i>
+                            Kategori ini memiliki {{ category.children.count }} sub-kategori
+                        </li>
+                        {% endif %}
+                        {% if has_articles %}
+                        <li>
+                            <i class="fas fa-file-alt text-blue-500"></i>
+                            Kategori ini memiliki {{ category.get_article_count }} artikel
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <!-- Instructions -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h4 class="font-semibold text-blue-900 mb-2">
+                        <i class="fas fa-lightbulb mr-2"></i>
+                        Langkah-langkah untuk menghapus kategori:
+                    </h4>
+                    <ol class="text-sm text-blue-800 space-y-1 ml-4">
+                        {% if has_articles %}
+                        <li>1. Pindahkan atau hapus semua artikel dalam kategori ini</li>
+                        {% endif %}
+                        {% if has_children %}
+                        <li>{% if has_articles %}2{% else %}1{% endif %}. Pindahkan atau hapus semua sub-kategori</li>
+                        {% endif %}
+                        <li>{% if has_articles and has_children %}3{% elif has_articles or has_children %}2{% else %}1{% endif %}. Kembali ke halaman ini untuk menghapus kategori</li>
+                    </ol>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-center">
+                    <a href="{% url 'knowledge:category_list' %}" class="btn-cancel">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Kembali ke Daftar Kategori
+                    </a>
+                </div>
+
+            {% else %}
+                <!-- Can Delete -->
+                <div class="warning-list">
+                    <h4><i class="fas fa-exclamation-triangle mr-2"></i>Peringatan:</h4>
+                    <ul>
+                        <li>
+                            <i class="fas fa-trash text-red-500"></i>
+                            Kategori akan dihapus secara permanen
+                        </li>
+                        <li>
+                            <i class="fas fa-history text-orange-500"></i>
+                            Tindakan ini tidak dapat dibatalkan
+                        </li>
+                        <li>
+                            <i class="fas fa-database text-blue-500"></i>
+                            Semua data terkait kategori akan hilang
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Confirmation Form -->
+                <form method="post" class="text-center">
+                    {% csrf_token %}
+                    
+                    <!-- Confirmation Checkbox -->
+                    <div class="mb-6">
+                        <label class="flex items-center justify-center space-x-2 text-sm text-gray-700">
+                            <input type="checkbox" id="confirm-delete" class="rounded border-gray-300" required>
+                            <span>Saya memahami bahwa tindakan ini tidak dapat dibatalkan</span>
+                        </label>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex items-center justify-center">
+                        <a href="{% url 'knowledge:category_list' %}" class="btn-cancel">
+                            <i class="fas fa-times mr-2"></i>
+                            Batal
+                        </a>
+                        <button type="submit" class="btn-delete" id="delete-btn" disabled>
+                            <i class="fas fa-trash mr-2"></i>
+                            Ya, Hapus Kategori
+                        </button>
+                    </div>
+                </form>
+            {% endif %}
+        </div>
+
+        <!-- Additional Info -->
+        <div class="mt-8 text-center text-sm text-gray-500">
+            <p>
+                <i class="fas fa-info-circle mr-1"></i>
+                Jika Anda tidak yakin, sebaiknya nonaktifkan kategori terlebih dahulu daripada menghapusnya.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirm-delete');
+    const deleteBtn = document.getElementById('delete-btn');
+    
+    if (confirmCheckbox && deleteBtn) {
+        confirmCheckbox.addEventListener('change', function() {
+            deleteBtn.disabled = !this.checked;
+        });
+    }
+    
+    // Form submission confirmation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            Swal.fire({
+                title: 'Konfirmasi Terakhir',
+                text: 'Apakah Anda benar-benar yakin ingin menghapus kategori "{{ category.name }}"?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'Menghapus Kategori...',
+                        text: 'Mohon tunggu sebentar',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Submit form
+                    this.submit();
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

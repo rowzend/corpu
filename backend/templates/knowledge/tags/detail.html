@@ -1,0 +1,219 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Tag: {{ tag.name }} - {{ block.super }}{% endblock %}
+
+{% block page_title %}Tag: {{ tag.name }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-6" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'knowledge:article_list' %}" class="text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-home mr-2"></i>Knowledge Base
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a href="{% url 'knowledge:tag_list' %}" class="text-gray-700 hover:text-blue-600">
+                        Daftar Tag
+                    </a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-gray-500">{{ tag.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Tag Header -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                        <i class="fas fa-tag text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ tag.name }}</h1>
+                        <p class="text-gray-600">
+                            <i class="fas fa-newspaper mr-1"></i>
+                            {{ articles.count }} artikel dengan tag ini
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="text-right">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <i class="fas fa-hashtag mr-1"></i>
+                        {{ tag.name }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if tag.description %}
+            <div class="border-t border-gray-200 pt-4">
+                <p class="text-gray-700">{{ tag.description }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Articles List -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                Artikel dengan Tag "{{ tag.name }}"
+            </h2>
+            
+            {% if articles %}
+                <div class="space-y-6">
+                    {% for article in articles %}
+                    <article class="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <!-- Thumbnail -->
+                            {% if article.thumbnail %}
+                            <div class="lg:w-48 flex-shrink-0">
+                                <img src="{{ article.thumbnail.url }}" 
+                                     alt="{{ article.title }}"
+                                     class="w-full h-32 lg:h-24 object-cover rounded-lg">
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Content -->
+                            <div class="flex-1">
+                                <div class="flex items-start justify-between mb-2">
+                                    <h3 class="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+                                        <a href="{% url 'knowledge:article_detail' article.slug %}">
+                                            {{ article.title }}
+                                        </a>
+                                    </h3>
+                                    
+                                    <!-- Content Type Badge -->
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                                 {% if article.content_type == 'video' %}bg-red-100 text-red-800
+                                                 {% elif article.content_type == 'document' %}bg-green-100 text-green-800
+                                                 {% elif article.content_type == 'link' %}bg-purple-100 text-purple-800
+                                                 {% else %}bg-blue-100 text-blue-800{% endif %}">
+                                        {% if article.content_type == 'video' %}
+                                            <i class="fas fa-video mr-1"></i>Video
+                                        {% elif article.content_type == 'document' %}
+                                            <i class="fas fa-file-alt mr-1"></i>Dokumen
+                                        {% elif article.content_type == 'link' %}
+                                            <i class="fas fa-link mr-1"></i>Link
+                                        {% else %}
+                                            <i class="fas fa-newspaper mr-1"></i>Artikel
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                <!-- Excerpt -->
+                                {% if article.excerpt %}
+                                <p class="text-gray-600 mb-3 line-clamp-2">{{ article.excerpt }}</p>
+                                {% endif %}
+                                
+                                <!-- Meta Information -->
+                                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                                    <!-- Author -->
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold mr-2">
+                                            {{ article.get_author_initial }}
+                                        </div>
+                                        <span>{{ article.get_author_full_name }}</span>
+                                    </div>
+                                    
+                                    <!-- Category -->
+                                    {% if article.category %}
+                                    <div class="flex items-center">
+                                        <i class="fas fa-folder mr-1"></i>
+                                        <span>{{ article.category.name }}</span>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <!-- Published Date -->
+                                    <div class="flex items-center">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        <span>{{ article.published_at|date:"d M Y" }}</span>
+                                    </div>
+                                    
+                                    <!-- View Count -->
+                                    <div class="flex items-center">
+                                        <i class="fas fa-eye mr-1"></i>
+                                        <span>{{ article.view_count }} views</span>
+                                    </div>
+                                    
+                                    <!-- Rating -->
+                                    {% if article.rating_count > 0 %}
+                                    <div class="flex items-center">
+                                        <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                        <span>{{ article.rating_avg|floatformat:1 }} ({{ article.rating_count }})</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="mt-6 flex justify-center">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        {% endif %}
+
+                        <span class="px-3 py-2 text-sm text-gray-700">
+                            Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-newspaper text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Belum ada artikel</h3>
+                    <p class="text-gray-600 mb-6">Belum ada artikel yang menggunakan tag "{{ tag.name }}"</p>
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <a href="{% url 'knowledge:tag_list' %}" 
+                           class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Kembali ke Daftar Tag
+                        </a>
+                        <a href="{% url 'knowledge:article_list' %}" 
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-newspaper mr-2"></i>
+                            Lihat Semua Artikel
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,432 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Manajemen Tags - Knowledge Base{% endblock %}
+
+{% block page_title %}Manajemen Tags{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.stats-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stats-icon.blue {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.stats-icon.green {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.stats-icon.yellow {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.stats-icon.purple {
+    background: #e9d5ff;
+    color: #6b21a8;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.filter-form {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.tag-grid {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tag-item {
+    transition: all 0.2s ease;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.tag-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.tag-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.action-btn {
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-edit { 
+    background: #dbeafe; 
+    color: #1e40af; 
+}
+.btn-edit:hover { 
+    background: #bfdbfe; 
+    color: #1d4ed8; 
+}
+
+.btn-delete { 
+    background: #fee2e2; 
+    color: #991b1b; 
+}
+.btn-delete:hover { 
+    background: #fecaca; 
+    color: #7f1d1d; 
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-active { 
+    background: #d1fae5; 
+    color: #065f46; 
+}
+
+.status-inactive { 
+    background: #fee2e2; 
+    color: #991b1b; 
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.pagination a, .pagination span {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.pagination a:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+}
+
+.pagination .current {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Manajemen Tags</h1>
+            <p class="text-gray-600">Kelola tags untuk mengorganisir artikel Knowledge Base</p>
+        </div>
+        
+        {% has_permission 'knowledge' 'tags' 'create' as can_create_tag %}
+        {% if can_create_tag %}
+        <a href="{% url 'knowledge:tag_create' %}" 
+           class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+            <i class="fas fa-plus mr-2"></i>
+            Tambah Tag Baru
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stats-card">
+            <div class="stats-icon blue">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div class="stats-number">{{ total_tags }}</div>
+            <div class="stats-label">Total Tags</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stats-number">{{ active_tags }}</div>
+            <div class="stats-label">Tags Aktif</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon yellow">
+                <i class="fas fa-newspaper"></i>
+            </div>
+            <div class="stats-number">{{ total_articles }}</div>
+            <div class="stats-label">Total Artikel</div>
+        </div>
+        <div class="stats-card">
+            <div class="stats-icon purple">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stats-number">{{ avg_articles_per_tag|floatformat:1 }}</div>
+            <div class="stats-label">Rata-rata per Tag</div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="filter-form">
+        <form method="GET" class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+                <input type="text" 
+                       name="search" 
+                       value="{{ request.GET.search }}"
+                       placeholder="Cari tags..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-search mr-2"></i>Cari
+                </button>
+                {% if request.GET.search %}
+                <a href="{% url 'knowledge:tag_manage_list' %}" 
+                   class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-times mr-2"></i>Reset
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Tags Grid -->
+    <div class="tag-grid">
+        <div class="p-6">
+            {% if tags %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for tag in tags %}
+                    <div class="tag-item">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center">
+                                <span class="tag-color" style="background-color: {{ tag.color|default:'#3B82F6' }};"></span>
+                                <h3 class="font-semibold text-gray-900">{{ tag.name }}</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                {% has_permission 'knowledge' 'tags' 'edit' as can_edit_tag %}
+                                {% if can_edit_tag %}
+                                <a href="{% url 'knowledge:tag_edit' tag.pk %}" 
+                                   class="action-btn btn-edit"
+                                   title="Edit Tag">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% has_permission 'knowledge' 'tags' 'delete' as can_delete_tag %}
+                                {% if can_delete_tag %}
+                                <a href="{% url 'knowledge:tag_delete' tag.pk %}" 
+                                   class="action-btn btn-delete"
+                                   title="Hapus Tag"
+                                   onclick="return confirm('Yakin ingin menghapus tag ini?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if tag.description %}
+                        <p class="text-gray-600 text-sm mb-3">{{ tag.description|truncatewords:15 }}</p>
+                        {% endif %}
+                        
+                        <div class="flex items-center justify-between text-sm text-gray-500 mb-3">
+                            <span class="flex items-center">
+                                <i class="fas fa-newspaper mr-1"></i>
+                                {{ tag.article_count }} artikel
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-calendar mr-1"></i>
+                                {{ tag.created_at|date:"d M Y" }}
+                            </span>
+                        </div>
+                        
+                        <div class="pt-3 border-t border-gray-200">
+                            <span class="status-badge {% if tag.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                {% if tag.is_active %}
+                                    <i class="fas fa-check-circle mr-1"></i>Aktif
+                                {% else %}
+                                    <i class="fas fa-times-circle mr-1"></i>Nonaktif
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    {% endif %}
+
+                    <span class="current">
+                        Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                        <a href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-tags text-gray-400"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Belum ada tags</h3>
+                    <p class="text-gray-600 mb-6">
+                        {% if request.GET.search %}
+                            Tidak ada tags yang sesuai dengan pencarian Anda.
+                        {% else %}
+                            Mulai dengan membuat tag pertama untuk mengorganisir artikel
+                        {% endif %}
+                    </p>
+                    {% if can_create_tag and not request.GET.search %}
+                    <a href="{% url 'knowledge:tag_create' %}" 
+                       class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>
+                        Buat Tag Pertama
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit search form on Enter
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                this.form.submit();
+            }
+        });
+    }
+    
+    // Search input with debounce
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Optional: auto-submit after typing stops
+                // this.form.submit();
+            }, 500);
+        });
+    }
+});
+
+// Utility functions for SweetAlert confirmations
+function confirmDelete(message = 'Apakah Anda yakin ingin menghapus tag ini?') {
+    return new Promise((resolve) => {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: 'Konfirmasi Hapus',
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                resolve(result.isConfirmed);
+            });
+        } else {
+            resolve(confirm(message));
+        }
+    });
+}
+</script>
+{% endblock %}

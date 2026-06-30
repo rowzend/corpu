@@ -1,0 +1,492 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Edit Tag{% else %}Tambah Tag Baru{% endif %} - Knowledge Base
+{% endblock %}
+
+{% block page_title %}
+    {% if form.instance.pk %}Edit Tag{% else %}Tambah Tag Baru{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-container {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.form-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+}
+
+.form-body {
+    padding: 2rem;
+}
+
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    resize: vertical;
+    min-height: 100px;
+    transition: all 0.2s ease;
+}
+
+.form-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.color-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.color-option {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: #374151;
+}
+
+.color-option.selected {
+    border-color: #1F2937;
+    transform: scale(1.2);
+}
+
+.preview-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #F3F4F6;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-top: 8px;
+}
+
+.preview-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.breadcrumb {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.required {
+    color: #dc2626;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{% url 'dashboard:index' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <a href="{% url 'knowledge:tag_manage_list' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                            Manajemen Tags
+                        </a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-gray-500">
+                            {% if form.instance.pk %}Edit Tag{% else %}Tambah Tag{% endif %}
+                        </span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+        <!-- Form Container -->
+        <div class="form-container">
+            <!-- Header -->
+            <div class="form-header">
+                <h1 class="text-2xl font-bold mb-2">
+                    {% if form.instance.pk %}
+                        <i class="fas fa-edit mr-2"></i>Edit Tag
+                    {% else %}
+                        <i class="fas fa-plus mr-2"></i>Tambah Tag Baru
+                    {% endif %}
+                </h1>
+                <p class="text-blue-100">
+                    {% if form.instance.pk %}
+                        Ubah informasi tag yang sudah ada
+                    {% else %}
+                        Buat tag baru untuk mengorganisir artikel Knowledge Base
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Form Body -->
+            <div class="form-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Error Messages -->
+                    {% if form.non_field_errors %}
+                    <div class="error-message">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle mr-2 mt-0.5"></i>
+                            <div>{{ form.non_field_errors }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Nama Tag -->
+                    <div class="form-field">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                            Nama Tag <span class="required">*</span>
+                        </label>
+                        <input type="text" 
+                               id="{{ form.name.id_for_label }}" 
+                               name="{{ form.name.name }}" 
+                               value="{{ form.name.value|default:'' }}"
+                               class="form-input"
+                               placeholder="Masukkan nama tag"
+                               required>
+                        {% if form.name.errors %}
+                            <p class="help-text text-red-600">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                        <p class="help-text">Nama tag yang akan ditampilkan di artikel</p>
+                    </div>
+
+                    <!-- Slug -->
+                    <div class="form-field">
+                        <label for="{{ form.slug.id_for_label }}" class="form-label">
+                            Slug
+                        </label>
+                        <input type="text" 
+                               id="{{ form.slug.id_for_label }}" 
+                               name="{{ form.slug.name }}" 
+                               value="{{ form.slug.value|default:'' }}"
+                               class="form-input"
+                               placeholder="url-friendly-slug">
+                        {% if form.slug.errors %}
+                            <p class="help-text text-red-600">{{ form.slug.errors.0 }}</p>
+                        {% endif %}
+                        <p class="help-text">URL-friendly version. Kosongkan untuk auto-generate dari nama</p>
+                    </div>
+
+                    <!-- Deskripsi -->
+                    <div class="form-field">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            Deskripsi
+                        </label>
+                        <textarea id="{{ form.description.id_for_label }}" 
+                                  name="{{ form.description.name }}" 
+                                  class="form-textarea"
+                                  placeholder="Deskripsi singkat tentang tag ini">{{ form.description.value|default:'' }}</textarea>
+                        {% if form.description.errors %}
+                            <p class="help-text text-red-600">{{ form.description.errors.0 }}</p>
+                        {% endif %}
+                        <p class="help-text">Deskripsi opsional untuk memberikan konteks tentang tag</p>
+                    </div>
+
+                    <!-- Warna Tag -->
+                    <div class="form-field">
+                        <label class="form-label">
+                            Warna Tag
+                        </label>
+                        <input type="text" 
+                               id="{{ form.color.id_for_label }}" 
+                               name="{{ form.color.name }}" 
+                               value="{{ form.color.value|default:'#3B82F6' }}"
+                               class="form-input"
+                               placeholder="#3B82F6"
+                               pattern="^#[0-9A-Fa-f]{6}$">
+                        {% if form.color.errors %}
+                            <p class="help-text text-red-600">{{ form.color.errors.0 }}</p>
+                        {% endif %}
+                        
+                        <!-- Color Picker -->
+                        <div class="color-picker-grid">
+                            <div class="color-option" data-color="#3B82F6" style="background-color: #3B82F6;" title="Biru"></div>
+                            <div class="color-option" data-color="#10B981" style="background-color: #10B981;" title="Hijau"></div>
+                            <div class="color-option" data-color="#F59E0B" style="background-color: #F59E0B;" title="Kuning"></div>
+                            <div class="color-option" data-color="#EF4444" style="background-color: #EF4444;" title="Merah"></div>
+                            <div class="color-option" data-color="#8B5CF6" style="background-color: #8B5CF6;" title="Ungu"></div>
+                            <div class="color-option" data-color="#F97316" style="background-color: #F97316;" title="Orange"></div>
+                            <div class="color-option" data-color="#06B6D4" style="background-color: #06B6D4;" title="Cyan"></div>
+                            <div class="color-option" data-color="#84CC16" style="background-color: #84CC16;" title="Lime"></div>
+                            <div class="color-option" data-color="#EC4899" style="background-color: #EC4899;" title="Pink"></div>
+                            <div class="color-option" data-color="#6366F1" style="background-color: #6366F1;" title="Indigo"></div>
+                            <div class="color-option" data-color="#14B8A6" style="background-color: #14B8A6;" title="Teal"></div>
+                            <div class="color-option" data-color="#64748B" style="background-color: #64748B;" title="Slate"></div>
+                            <div class="color-option" data-color="#DC2626" style="background-color: #DC2626;" title="Merah Tua"></div>
+                            <div class="color-option" data-color="#059669" style="background-color: #059669;" title="Hijau Tua"></div>
+                            <div class="color-option" data-color="#7C3AED" style="background-color: #7C3AED;" title="Violet"></div>
+                            <div class="color-option" data-color="#374151" style="background-color: #374151;" title="Abu-abu"></div>
+                        </div>
+                        
+                        <!-- Preview -->
+                        <div id="tag-preview" class="preview-tag" style="display: none;">
+                            <span class="preview-color"></span>
+                            <span class="preview-text">Preview Tag</span>
+                        </div>
+                        
+                        <p class="help-text">Pilih warna untuk tag atau masukkan kode hex manual</p>
+                    </div>
+
+                    <!-- Status Aktif -->
+                    <div class="form-field">
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   id="{{ form.is_active.id_for_label }}" 
+                                   name="{{ form.is_active.name }}" 
+                                   {% if form.is_active.value %}checked{% endif %}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="{{ form.is_active.id_for_label }}" class="ml-2 form-label mb-0">
+                                Tag Aktif
+                            </label>
+                        </div>
+                        {% if form.is_active.errors %}
+                            <p class="help-text text-red-600">{{ form.is_active.errors.0 }}</p>
+                        {% endif %}
+                        <p class="help-text">Tag yang tidak aktif tidak akan ditampilkan di form artikel</p>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex items-center justify-between pt-6 mt-6 border-t border-gray-200">
+                        <a href="{% url 'knowledge:tag_manage_list' %}" class="btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Kembali
+                        </a>
+                        
+                        <button type="submit" class="btn-primary">
+                            {% if form.instance.pk %}
+                                <i class="fas fa-save"></i>
+                                Update Tag
+                            {% else %}
+                                <i class="fas fa-plus"></i>
+                                Buat Tag
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const slugInput = document.getElementById('{{ form.slug.id_for_label }}');
+    const colorInput = document.getElementById('{{ form.color.id_for_label }}');
+    const colorOptions = document.querySelectorAll('.color-option');
+    const tagPreview = document.getElementById('tag-preview');
+    const previewColor = tagPreview.querySelector('.preview-color');
+    const previewText = tagPreview.querySelector('.preview-text');
+
+    // Auto-generate slug from name
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugInput.value = slug;
+                slugInput.dataset.autoGenerated = 'true';
+            }
+        });
+
+        slugInput.addEventListener('input', function() {
+            this.dataset.autoGenerated = 'false';
+        });
+    }
+
+    // Color picker functionality
+    function updateColorSelection(color) {
+        colorInput.value = color;
+        
+        // Update visual selection
+        colorOptions.forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        const selectedOption = document.querySelector(`[data-color="${color}"]`);
+        if (selectedOption) {
+            selectedOption.classList.add('selected');
+        }
+        
+        updatePreview();
+    }
+
+    // Color option click handlers
+    colorOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            updateColorSelection(this.dataset.color);
+        });
+    });
+
+    // Manual color input
+    colorInput.addEventListener('input', function() {
+        updatePreview();
+        
+        // Remove selection from color options if manual input
+        colorOptions.forEach(option => {
+            option.classList.remove('selected');
+        });
+        
+        // Select matching color option if exists
+        const matchingOption = document.querySelector(`[data-color="${this.value.toUpperCase()}"]`);
+        if (matchingOption) {
+            matchingOption.classList.add('selected');
+        }
+    });
+
+    // Update preview
+    function updatePreview() {
+        const name = nameInput.value || 'Preview Tag';
+        const color = colorInput.value || '#3B82F6';
+        
+        previewText.textContent = name;
+        previewColor.style.backgroundColor = color;
+        tagPreview.style.display = 'inline-flex';
+    }
+
+    // Initialize
+    if (colorInput.value) {
+        const currentColor = colorInput.value.toUpperCase();
+        const currentOption = document.querySelector(`[data-color="${currentColor}"]`);
+        if (currentOption) {
+            currentOption.classList.add('selected');
+        }
+    } else {
+        // Set default color
+        updateColorSelection('#3B82F6');
+    }
+    
+    updatePreview();
+
+    // Update preview on name change
+    nameInput.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

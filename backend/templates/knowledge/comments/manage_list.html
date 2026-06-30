@@ -1,0 +1,419 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Manajemen Komentar - Knowledge Base{% endblock %}
+
+{% block page_title %}Manajemen Komentar{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comment-item {
+        transition: all 0.2s ease;
+    }
+    .comment-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .comment-content {
+        max-height: 100px;
+        overflow: hidden;
+        position: relative;
+    }
+    .comment-content.expanded {
+        max-height: none;
+    }
+    .comment-fade {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        background: linear-gradient(transparent, white);
+        pointer-events: none;
+    }
+    .comment-content.expanded .comment-fade {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Manajemen Komentar</h1>
+            <p class="text-gray-600">Kelola dan moderasi komentar dari pengguna</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-comments text-blue-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Komentar</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ stats.total }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-calendar-day text-green-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Hari Ini</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ stats.today }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-calendar-week text-yellow-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Minggu Ini</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ stats.this_week }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <i class="fas fa-comment text-purple-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Komentar Utama</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ stats.top_level }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-indigo-100 rounded-lg">
+                    <i class="fas fa-reply text-indigo-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Balasan</p>
+                    <p class="text-2xl font-semibold text-gray-900">{{ stats.replies }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-6">
+            <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cari Komentar</label>
+                    <input type="text" 
+                           name="search" 
+                           value="{{ search }}"
+                           placeholder="Cari konten, user, atau artikel..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Artikel</label>
+                    <select name="article" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">-- Semua Artikel --</option>
+                        {% for article in recent_articles %}
+                        <option value="{{ article.slug }}" {% if article_filter == article.slug %}selected{% endif %}>
+                            {{ article.title|truncatechars:50 }} ({{ article.comment_count }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Semua Status</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Aktif</option>
+                        <option value="reported" {% if status_filter == 'reported' %}selected{% endif %}>Dilaporkan</option>
+                    </select>
+                </div>
+                
+                <div class="flex items-end">
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-search mr-2"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Comments List -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            {% if comments %}
+                <div class="space-y-6">
+                    {% for comment in comments %}
+                    <!-- Parent Comment -->
+                    <div class="comment-item bg-white rounded-lg p-5 border-2 border-gray-200 shadow-sm">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center">
+                                <!-- User Avatar -->
+                                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-3 shadow">
+                                    {{ comment.user.username.0|upper }}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-900 text-lg">{{ comment.user.get_full_name|default:comment.user.username }}</h4>
+                                    <p class="text-sm text-gray-500">
+                                        <i class="fas fa-calendar mr-1"></i>
+                                        {{ comment.created_at|date:"d M Y H:i" }}
+                                        {% if comment.is_edited %}
+                                        <span class="ml-2 text-yellow-600">
+                                            <i class="fas fa-edit"></i> Diedit
+                                        </span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-2">
+                                {% has_permission 'knowledge' 'comments' 'edit' as can_edit_comment %}
+                                {% if can_edit_comment %}
+                                <a href="{% url 'knowledge:comment_edit' comment.pk %}" 
+                                   class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                                   title="Edit Komentar">
+                                    <i class="fas fa-edit mr-1"></i>Edit
+                                </a>
+                                {% endif %}
+                                
+                                {% has_permission 'knowledge' 'comments' 'delete' as can_delete_comment %}
+                                {% if can_delete_comment %}
+                                <a href="{% url 'knowledge:comment_delete' comment.pk %}" 
+                                   class="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                   title="Hapus Komentar"
+                                   onclick="return confirm('Yakin ingin menghapus komentar ini beserta {{ comment.replies.count }} balasan?')">
+                                    <i class="fas fa-trash mr-1"></i>Hapus
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Article Info -->
+                        <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <p class="text-sm text-gray-700">
+                                <i class="fas fa-newspaper mr-1 text-blue-600"></i>
+                                Komentar pada: 
+                                <a href="{% url 'knowledge:article_manage_detail' comment.article.slug %}" 
+                                   class="text-blue-600 hover:text-blue-800 font-semibold hover:underline">
+                                    {{ comment.article.title }}
+                                </a>
+                            </p>
+                        </div>
+                        
+                        <!-- Comment Content -->
+                        <div class="comment-content bg-gray-50 p-4 rounded-lg border border-gray-200" id="content-{{ comment.id }}">
+                            <p class="text-gray-800 leading-relaxed">{{ comment.content|linebreaks }}</p>
+                            {% if comment.content|length > 200 %}
+                            <div class="comment-fade"></div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if comment.content|length > 200 %}
+                        <button onclick="toggleComment({{ comment.id }})" 
+                                class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
+                                id="toggle-{{ comment.id }}">
+                            <i class="fas fa-chevron-down mr-1"></i>Lihat Selengkapnya
+                        </button>
+                        {% endif %}
+                        
+                        <!-- Comment Stats -->
+                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+                            <div class="flex items-center gap-6 text-sm">
+                                <span class="flex items-center text-green-600 font-medium">
+                                    <i class="fas fa-thumbs-up mr-1.5"></i>
+                                    {{ comment.like_count }} suka
+                                </span>
+                                <span class="flex items-center text-red-600 font-medium">
+                                    <i class="fas fa-thumbs-down mr-1.5"></i>
+                                    {{ comment.dislike_count }} tidak suka
+                                </span>
+                                {% if comment.replies.exists %}
+                                <span class="flex items-center text-blue-600 font-medium">
+                                    <i class="fas fa-reply mr-1.5"></i>
+                                    {{ comment.replies.count }} balasan
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                                <i class="fas fa-check-circle mr-1"></i>Aktif
+                            </span>
+                        </div>
+                        
+                        <!-- Nested Replies -->
+                        {% if comment.replies.exists %}
+                        <div class="mt-5 ml-8 space-y-4 border-l-4 border-blue-200 pl-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i class="fas fa-reply text-blue-600"></i>
+                                <h5 class="font-semibold text-gray-700">{{ comment.replies.count }} Balasan:</h5>
+                            </div>
+                            
+                            {% for reply in comment.replies.all %}
+                            <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold mr-3 shadow-sm">
+                                            {{ reply.user.username.0|upper }}
+                                        </div>
+                                        <div>
+                                            <h5 class="font-semibold text-gray-900">{{ reply.user.get_full_name|default:reply.user.username }}</h5>
+                                            <p class="text-xs text-gray-500">
+                                                <i class="fas fa-clock mr-1"></i>
+                                                {{ reply.created_at|date:"d M Y H:i" }}
+                                                {% if reply.is_edited %}
+                                                <span class="ml-2 text-yellow-600">
+                                                    <i class="fas fa-edit"></i> Diedit
+                                                </span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-2">
+                                        {% if can_edit_comment %}
+                                        <a href="{% url 'knowledge:comment_edit' reply.pk %}" 
+                                           class="text-blue-600 hover:text-blue-800 text-sm"
+                                           title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if can_delete_comment %}
+                                        <a href="{% url 'knowledge:comment_delete' reply.pk %}" 
+                                           class="text-red-600 hover:text-red-800 text-sm"
+                                           title="Hapus"
+                                           onclick="return confirm('Yakin ingin menghapus balasan ini?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white p-3 rounded border border-blue-200 mt-2">
+                                    <p class="text-gray-700 text-sm leading-relaxed">{{ reply.content|linebreaks }}</p>
+                                </div>
+                                
+                                <div class="flex items-center gap-4 mt-2 text-xs text-gray-600">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-thumbs-up mr-1 text-green-600"></i>
+                                        {{ reply.like_count }}
+                                    </span>
+                                    <span class="flex items-center">
+                                        <i class="fas fa-thumbs-down mr-1 text-red-600"></i>
+                                        {{ reply.dislike_count }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                <div class="mt-6 flex justify-center">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if search %}&search={{ search }}{% endif %}{% if article_filter %}&article={{ article_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if article_filter %}&article={{ article_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        {% endif %}
+
+                        <span class="px-3 py-2 text-sm text-gray-700">
+                            Halaman {{ page_obj.number }} dari {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if article_filter %}&article={{ article_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if article_filter %}&article={{ article_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" 
+                               class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-comments text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">
+                        {% if search or article_filter %}
+                            Tidak ada komentar yang ditemukan
+                        {% else %}
+                            Belum ada komentar
+                        {% endif %}
+                    </h3>
+                    <p class="text-gray-600 mb-6">
+                        {% if search or article_filter %}
+                            Coba ubah filter pencarian Anda
+                        {% else %}
+                            Komentar akan muncul setelah pengguna memberikan komentar pada artikel
+                        {% endif %}
+                    </p>
+                    {% if search or article_filter %}
+                    <a href="{% url 'knowledge:comment_manage_list' %}" 
+                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Lihat Semua Komentar
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleComment(commentId) {
+    const content = document.getElementById(`content-${commentId}`);
+    const toggle = document.getElementById(`toggle-${commentId}`);
+    
+    if (content.classList.contains('expanded')) {
+        content.classList.remove('expanded');
+        toggle.innerHTML = '<i class="fas fa-chevron-down mr-1"></i>Lihat Selengkapnya';
+    } else {
+        content.classList.add('expanded');
+        toggle.innerHTML = '<i class="fas fa-chevron-up mr-1"></i>Lihat Lebih Sedikit';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('select[name="article"], select[name="status"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}
