@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode colors */
+    --background: 0 0% 100%; /* white #ffffff */
+    --foreground: 220 13% 13%; /* gray-900 #111827 */
+    --card: 0 0% 100%; /* white */
+    --card-foreground: 220 13% 13%; /* gray-900 */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 13%;
+    --primary: 217 91% 60%; /* blue-600 #2563eb */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 173 64% 41%; /* teal-600 #0d9488 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 98%; /* gray-50 #f9fafb */
+    --muted-foreground: 215 16% 47%; /* gray-500 #6b7280 */
+    --accent: 173 80% 40%; /* teal-500 #14b8a6 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%; /* red-600 #dc2626 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%; /* gray-200 #e5e7eb */
+    --input: 214 32% 91%; /* gray-200 */
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode colors - X Organizations style */
+    --background: 225 15% 8%;
+    --foreground: 210 40% 98%; /* gray-50 #f9fafb */
+    --card: 225 15% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 225 15% 12%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%; /* blue-600 stays bright */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 173 64% 41%; /* teal-600 */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 225 15% 16%;
+    --muted-foreground: 215 14% 64%; /* gray-400 */
+    --accent: 173 80% 40%; /* teal-500 */
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%; /* red-700 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 225 15% 18%;
+    --input: 225 15% 16%;
+    --ring: 217 91% 60%;
+    --radius: 0.5rem;
+  }
+}
+
+/* Custom utility classes for animation delays */
+@layer utilities {
+  .animation-delay-200 {
+    animation-delay: 0.2s;
+  }
+  
+  .animation-delay-400 {
+    animation-delay: 0.4s;
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+}
+
+/* Custom Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-gradient {
+  animation: gradient 3s ease infinite;
+}
+
+.animate-wave {
+  animation: wave 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* SweetAlert2 z-index - MUST be higher than Radix UI Dialog (z-50 = 50) */
+/* Using very high z-index to ensure it appears above all modals */
+.swal2-container {
+  z-index: 99999 !important;
+}
+
+.swal2-popup {
+  z-index: 99999 !important;
+}
+
+.swal2-backdrop-show {
+  z-index: 99998 !important;
+}
+
+/* Custom class for high priority alerts */
+.swal-high-z-index {
+  z-index: 99999 !important;
+}
+
+div.swal2-container.swal-high-z-index {
+  z-index: 99999 !important;
+}
+
+/* Input text color - inherits from parent in light mode, overridden in dark mode */
+input,
+textarea,
+select {
+  color: hsl(var(--foreground));
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: hsl(var(--muted-foreground));
+}
