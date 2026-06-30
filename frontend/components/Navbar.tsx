@@ -7,6 +7,7 @@ import { getPublicSettings } from '@/lib/api/profilePublic';
 import { authService } from '@/lib/services';
 import { LogOut, ChevronDown } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const profileSubMenus = [
   { label: 'Sambutan & Visi Misi', href: '/profil/sambutan-visi-misi' },
@@ -66,7 +67,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-card shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -78,7 +79,7 @@ export default function Navbar() {
                 <span className="text-white font-bold text-xl">{appName.charAt(0)}</span>
               </div>
             )}
-            <span className="text-xl font-bold text-gray-800">{appName}</span>
+            <span className="text-xl font-bold text-foreground">{appName}</span>
           </Link>
 
           {/* Desktop Menu */}
@@ -90,19 +91,19 @@ export default function Navbar() {
                     onClick={() => {
                       setIsProfileDropdownOpen(item.label === 'Profile' ? !isProfileDropdownOpen : false);
                     }}
-                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200 cursor-pointer flex items-center gap-1"
+                    className="text-foreground hover:text-blue-600 font-medium transition-colors duration-200 cursor-pointer flex items-center gap-1"
                   >
                     {item.label}
                     <ChevronDown className="w-4 h-4" />
                   </button>
                   {item.label === 'Profile' && isProfileDropdownOpen && (
-                    <div ref={profileDropdownRef} className="absolute top-full left-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                    <div ref={profileDropdownRef} className="absolute top-full left-0 mt-1 w-56 bg-card rounded-lg shadow-lg border border-border py-2">
                       {item.subMenus.map((sub) => (
                         <Link
                           key={sub.href}
                           href={sub.href}
                           onClick={() => setIsProfileDropdownOpen(false)}
-                          className="block px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                          className="block px-4 py-2 text-foreground hover:bg-blue-50 hover:text-blue-600 transition-colors"
                         >
                           {sub.label}
                         </Link>
@@ -114,12 +115,15 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href!}
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200"
+                  className="text-foreground hover:text-blue-600 font-medium transition-colors duration-200"
                 >
                   {item.label}
                 </Link>
               )
             )}
+
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             {/* Auth section */}
             {isLoggedIn ? (
@@ -128,7 +132,7 @@ export default function Navbar() {
                 <div className="relative" ref={userDropdownRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-2 text-foreground hover:text-blue-600 font-medium transition-colors cursor-pointer"
                 >
                   <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                     <span className="text-white text-sm font-medium">
@@ -139,10 +143,10 @@ export default function Navbar() {
                   <ChevronDown className="w-4 h-4" />
                 </button>
                 {isUserDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
+                  <div className="absolute top-full right-0 mt-1 w-48 bg-card rounded-lg shadow-lg border border-border py-2">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-foreground hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       Logout
@@ -164,7 +168,7 @@ export default function Navbar() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden text-gray-700 hover:text-blue-600 focus:outline-none"
+            className="md:hidden text-foreground hover:text-blue-600 focus:outline-none"
           >
             <svg
               className="w-6 h-6"
@@ -183,18 +187,18 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col space-y-4">
               {menuItems.map((item) =>
                 item.subMenus ? (
                   <div key={item.label} className="space-y-2">
-                    <span className="text-gray-700 font-medium block">{item.label}</span>
+                    <span className="text-foreground font-medium block">{item.label}</span>
                     <div className="pl-4 flex flex-col space-y-2">
                       {item.subMenus.map((sub) => (
                         <Link
                           key={sub.href}
                           href={sub.href}
-                          className="text-gray-600 hover:text-blue-600 transition-colors"
+                          className="text-muted-foreground hover:text-blue-600 transition-colors"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {sub.label}
@@ -206,7 +210,7 @@ export default function Navbar() {
                   <Link
                     key={item.href}
                     href={item.href!}
-                    className="text-gray-700 hover:text-blue-600 font-medium transition-colors duration-200"
+                  className="text-foreground hover:text-blue-600 font-medium transition-colors duration-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.label}
@@ -215,8 +219,8 @@ export default function Navbar() {
               )}
 
               {isLoggedIn ? (
-                <div className="pt-4 border-t border-gray-200 space-y-2">
-                  <div className="flex items-center gap-2 text-gray-700 font-medium px-1">
+                <div className="pt-4 border-t border-border space-y-2">
+                  <div className="flex items-center gap-2 text-foreground font-medium px-1">
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">
                         {userName ? userName.charAt(0).toUpperCase() : 'U'}
@@ -229,7 +233,7 @@ export default function Navbar() {
                       setIsMenuOpen(false);
                       handleLogout();
                     }}
-                    className="text-gray-600 hover:text-red-600 transition-colors flex items-center gap-2 px-1 cursor-pointer"
+                    className="text-muted-foreground hover:text-red-600 transition-colors flex items-center gap-2 px-1 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" /> Logout
                   </button>

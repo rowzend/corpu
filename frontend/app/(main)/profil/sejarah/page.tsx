@@ -19,19 +19,19 @@ export default function SejarahPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Sejarah Corpu</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Sejarah Corpu</h1>
 
       {section ? (
         <Card>
           <CardContent className="p-6">
             <div
-              className="text-gray-700 leading-relaxed prose max-w-none"
+              className="text-foreground leading-relaxed prose max-w-none"
               dangerouslySetInnerHTML={{ __html: section.content }}
             />
           </CardContent>
         </Card>
       ) : (
-        <p className="text-gray-500">Belum ada data sejarah.</p>
+        <p className="text-muted-foreground">Belum ada data sejarah.</p>
       )}
     </main>
   );

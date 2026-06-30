@@ -22,15 +22,15 @@ const statusIcons = {
 export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
     if (isLoading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
                     System Status
                 </h3>
                 <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
                         <div key={i} className="flex items-center justify-between animate-pulse">
-                            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                            <div className="h-6 bg-gray-200 rounded w-16"></div>
+                            <div className="h-4 bg-muted rounded w-1/3"></div>
+                            <div className="h-6 bg-muted rounded w-16"></div>
                         </div>
                     ))}
                 </div>
@@ -40,12 +40,12 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
 
     if (!status) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
                     System Status
                 </h3>
                 <div className="text-center py-4">
-                    <p className="text-gray-500">Unable to load system status</p>
+                    <p className="text-muted-foreground">Unable to load system status</p>
                 </div>
             </div>
         );
@@ -56,14 +56,14 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
             case 'healthy': return 'text-green-600';
             case 'degraded': return 'text-yellow-600';
             case 'unhealthy': return 'text-red-600';
-            default: return 'text-gray-600';
+            default: return 'text-muted-foreground';
         }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-card-foreground">
                     System Status
                 </h3>
                 <span className={`text-sm font-medium ${getOverallColor()}`}>
@@ -76,7 +76,7 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <span className="text-lg">🗄️</span>
-                        <span className="text-sm font-medium text-gray-700">Database</span>
+                        <span className="text-sm font-medium text-foreground">Database</span>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[status.database.status as keyof typeof statusColors] || statusColors.offline
                         }`}>
@@ -91,7 +91,7 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <span className="text-lg">⚡</span>
-                        <span className="text-sm font-medium text-gray-700">Cache</span>
+                        <span className="text-sm font-medium text-foreground">Cache</span>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[status.cache.status as keyof typeof statusColors] || statusColors.offline
                         }`}>
@@ -106,7 +106,7 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <span className="text-lg">🌐</span>
-                        <span className="text-sm font-medium text-gray-700">SIASN API</span>
+                        <span className="text-sm font-medium text-foreground">SIASN API</span>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[status.siasn.status as keyof typeof statusColors] || statusColors.disconnected
                         }`}>
@@ -119,8 +119,8 @@ export default function SystemStatus({ status, isLoading }: SystemStatusProps) {
             </div>
 
             {/* Last Updated */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="text-xs text-gray-500 text-center">
+            <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-xs text-muted-foreground text-center">
                     Last updated: {new Date().toLocaleTimeString()}
                 </p>
             </div>

@@ -32,7 +32,7 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-muted">
                 <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
             </div>
         );
@@ -40,12 +40,12 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
 
     if (!news) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-muted">
                 <div className="text-center">
-                    <Newspaper className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Berita Tidak Ditemukan</h3>
-                    <p className="text-gray-500 mb-6">Berita yang Anda cari tidak tersedia.</p>
-                    <Link href={basePath} className="text-blue-600 hover:text-blue-700 font-medium">
+                    <Newspaper className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold text-card-foreground mb-2">Berita Tidak Ditemukan</h3>
+                    <p className="text-muted-foreground mb-6">Berita yang Anda cari tidak tersedia.</p>
+                    <Link href={basePath} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 font-medium">
                         ← Kembali ke Berita
                     </Link>
                 </div>
@@ -54,12 +54,12 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
     }
 
     return (
-        <article className="min-h-screen bg-gray-50">
-            <div className="bg-white border-b border-gray-200">
+        <article className="min-h-screen bg-muted">
+            <div className="bg-card border-b border-border">
                 <div className="container mx-auto px-4 py-4">
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" /> Kembali
                     </button>
@@ -69,13 +69,13 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
             <div className="container mx-auto px-4 py-12">
                 <div className="max-w-4xl mx-auto">
                     <div className="mb-8">
-                        <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-700 mb-4">
+                        <span className="inline-block text-xs font-semibold px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 mb-4">
                             {news.category}
                         </span>
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
+                        <h1 className="text-3xl md:text-4xl font-bold text-card-foreground mb-4 leading-tight">
                             {news.title}
                         </h1>
-                        <div className="flex items-center gap-6 text-sm text-gray-500">
+                        <div className="flex items-center gap-6 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1.5">
                                 <Calendar className="w-4 h-4" />
                                 {news.published_at
@@ -86,8 +86,8 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
                                 <Eye className="w-4 h-4" />
                                 {news.views || 0} dilihat
                             </span>
-                            <span className="text-gray-300">|</span>
-                            <span className="text-gray-600">Oleh: {news.author || 'Admin'}</span>
+                            <span className="text-muted-foreground">|</span>
+                            <span className="text-muted-foreground">Oleh: {news.author || 'Admin'}</span>
                         </div>
                     </div>
 
@@ -97,15 +97,15 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
                         </div>
                     )}
 
-                    <div className="bg-white rounded-2xl shadow-sm p-8 md:p-12">
-                        <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    <div className="bg-card rounded-2xl shadow-sm p-8 md:p-12">
+                        <div className="prose prose-lg max-w-none text-foreground leading-relaxed whitespace-pre-wrap">
                             {news.content}
                         </div>
 
-                        <div className="mt-10 pt-8 border-t border-gray-200 flex items-center justify-between">
+                        <div className="mt-10 pt-8 border-t border-border flex items-center justify-between">
                             <button
                                 onClick={() => router.back()}
-                                className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors"
+                                className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                                 <ArrowLeft className="w-4 h-4" /> Kembali
                             </button>
@@ -115,7 +115,7 @@ export default function BeritaDetailPage({ basePath = '/berita' }: { basePath?: 
                                         navigator.share({ title: news.title, url: window.location.href });
                                     }
                                 }}
-                                className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors"
+                                className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                                 <Share2 className="w-4 h-4" /> Bagikan
                             </button>

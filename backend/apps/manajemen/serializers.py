@@ -18,40 +18,33 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
     role = serializers.SerializerMethodField()
-    roles = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = [
             'id', 'username', 'name', 'email', 'image',
             'is_active', 'date_joined', 'updated_at',
-            'id_pegawai', 'user_id_opd', 'role', 'roles'
+            'id_pegawai', 'user_id_opd', 'role'
         ]
         read_only_fields = ['id', 'date_joined', 'updated_at']
     
     def get_role(self, obj):
-        """Get user's primary role (first group) - backward compat"""
+        """Get user's primary role (first group)"""
         group = obj.groups.first()
         return group.name if group else None
-    
-    def get_roles(self, obj):
-        """Get all user's roles"""
-        return list(obj.groups.values_list('name', flat=True))
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating new user"""
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password_confirm = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    role_ids = serializers.ListField(
-        child=serializers.IntegerField(), write_only=True, required=False
-    )
+    role_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
         model = User
         fields = [
             'username', 'name', 'email', 'password', 'password_confirm',
-            'image', 'is_active', 'id_pegawai', 'user_id_opd', 'role_ids'
+            'image', 'is_active', 'id_pegawai', 'user_id_opd', 'role_id'
         ]
     
     def validate(self, data):
@@ -61,14 +54,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('password_confirm')
-        role_ids = validated_data.pop('role_ids', None)
+        role_id = validated_data.pop('role_id', None)
         
         user = User.objects.create_user(**validated_data)
         
-        # Assign roles if provided
-        if role_ids:
-            groups = Group.objects.filter(id__in=role_ids)
-            user.groups.set(groups)
+        # Assign role if provided
+        if role_id:
+            try:
+                group = Group.objects.get(id=role_id)
+                user.groups.add(group)
+            except Group.DoesNotExist:
+                pass
         
         return user
 
@@ -76,20 +72,18 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     """Serializer for updating user"""
     password = serializers.CharField(write_only=True, required=False, style={'input_type': 'password'})
-    role_ids = serializers.ListField(
-        child=serializers.IntegerField(), write_only=True, required=False
-    )
+    role_id = serializers.IntegerField(write_only=True, required=False)
     
     class Meta:
         model = User
         fields = [
             'username', 'name', 'email', 'image', 'is_active',
-            'id_pegawai', 'user_id_opd', 'password', 'role_ids'
+            'id_pegawai', 'user_id_opd', 'password', 'role_id'
         ]
     
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
-        role_ids = validated_data.pop('role_ids', None)
+        role_id = validated_data.pop('role_id', None)
         
         # Update user fields
         for attr, value in validated_data.items():
@@ -101,10 +95,14 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         
         instance.save()
         
-        # Update roles if provided
-        if role_ids is not None:
-            groups = Group.objects.filter(id__in=role_ids)
-            instance.groups.set(groups)
+        # Update role if provided
+        if role_id is not None:
+            instance.groups.clear()
+            try:
+                group = Group.objects.get(id=role_id)
+                instance.groups.add(group)
+            except Group.DoesNotExist:
+                pass
         
         return instance
 

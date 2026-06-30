@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import DynamicFavicon from '@/components/DynamicFavicon';
+import I18nProvider from '@/components/I18nProvider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,16 +43,51 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const serverLocale = cookieStore.get('NEXT_LOCALE')?.value || 'id';
+
   return (
-    <html lang="id" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang={serverLocale} dir={serverLocale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="antialiased" suppressHydrationWarning>
-        <DynamicFavicon />
-        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'auto') {
+                    localStorage.setItem('theme', 'system');
+                    theme = 'system';
+                  }
+                  
+                  var isDark = false;
+                  if (theme === 'dark') {
+                    isDark = true;
+                  } else if (theme === 'system' || !theme) {
+                    isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  }
+                  
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+        <ThemeProvider>
+          <I18nProvider serverLocale={serverLocale}>
+            <DynamicFavicon />
+            {children}
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

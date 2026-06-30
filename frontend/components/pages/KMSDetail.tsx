@@ -148,15 +148,15 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 if (article.file_url) {
                     return (
                         <div className="mb-8">
-                            <Card className="border-blue-200 bg-blue-50">
+                            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30">
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-4">
                                         <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
                                             <Download className="w-6 h-6 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900">Dokumen Terlampir</h3>
-                                            <p className="text-sm text-gray-600">
+                                            <h3 className="font-semibold text-card-foreground">Dokumen Terlampir</h3>
+                                            <p className="text-sm text-muted-foreground">
                                                 {article.file_type && `Format: ${article.file_type}`}
                                                 {article.file_size && ` • Ukuran: ${Math.round(article.file_size / 1024)} KB`}
                                             </p>
@@ -184,8 +184,8 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                             <ExternalLink className="w-6 h-6 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-gray-900">Link Eksternal</h3>
-                                            <p className="text-sm text-gray-600 break-all">{article.external_url}</p>
+                                            <h3 className="font-semibold text-card-foreground">Link Eksternal</h3>
+                                            <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
                                         </div>
                                         <Button asChild>
                                             <a href={article.external_url} target="_blank" rel="noopener noreferrer">
@@ -205,16 +205,16 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 py-12">
+            <div className="min-h-screen bg-muted py-12">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="animate-pulse space-y-6">
-                        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-                        <div className="h-12 bg-gray-200 rounded"></div>
-                        <div className="h-64 bg-gray-200 rounded"></div>
+                        <div className="h-8 bg-muted rounded w-1/4"></div>
+                        <div className="h-12 bg-muted rounded"></div>
+                        <div className="h-64 bg-muted rounded"></div>
                         <div className="space-y-4">
-                            <div className="h-4 bg-gray-200 rounded"></div>
-                            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                            <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+                            <div className="h-4 bg-muted rounded"></div>
+                            <div className="h-4 bg-muted rounded w-5/6"></div>
+                            <div className="h-4 bg-muted rounded w-4/6"></div>
                         </div>
                     </div>
                 </div>
@@ -224,13 +224,13 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
     if (error || !article) {
         return (
-            <div className="min-h-screen bg-gray-50 py-12">
+            <div className="min-h-screen bg-muted py-12">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <Card className="border-red-200 bg-red-50">
                         <CardContent className="p-12 text-center">
                             <div className="text-6xl mb-4">😞</div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-2">Artikel Tidak Ditemukan</h2>
-                            <p className="text-gray-600 mb-6">{error || 'Artikel yang Anda cari tidak tersedia atau telah dihapus.'}</p>
+                            <h2 className="text-2xl font-bold text-card-foreground mb-2">Artikel Tidak Ditemukan</h2>
+                            <p className="text-muted-foreground mb-6">{error || 'Artikel yang Anda cari tidak tersedia atau telah dihapus.'}</p>
                             <div className="flex gap-4 justify-center">
                                 <Button onClick={() => router.back()}>
                                     <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
@@ -247,7 +247,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12">
+        <div className="min-h-screen bg-muted py-12">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="mb-6">
                     <Button variant="outline" onClick={() => router.back()}>
@@ -271,14 +271,14 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                             )}
                         </div>
 
-                        <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{article.title}</h1>
+                        <h1 className="text-4xl font-bold text-card-foreground mb-4 leading-tight">{article.title}</h1>
 
                         {article.excerpt && (
-                            <p className="text-xl text-gray-600 mb-6 leading-relaxed">{article.excerpt}</p>
+                            <p className="text-xl text-muted-foreground mb-6 leading-relaxed">{article.excerpt}</p>
                         )}
 
                         <div className="flex items-center justify-between border-t pt-6">
-                            <div className="flex items-center gap-6 text-sm text-gray-600">
+                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <User className="w-4 h-4" />
                                     <span>{article.author?.name || article.author?.username}</span>
@@ -295,7 +295,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-1">
                                         <Eye className="w-4 h-4" /> <span>{article.view_count}</span>
                                     </div>
@@ -312,7 +312,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                         size="sm"
                                         onClick={handleLike}
                                         disabled={liking}
-                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                                     >
                                         <Heart className="w-4 h-4 mr-1" /> Like
                                     </Button>
@@ -343,7 +343,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 {article.tags && article.tags.length > 0 && (
                     <Card className="mb-8">
                         <CardContent className="p-6">
-                            <h3 className="font-semibold text-gray-900 mb-4">Tags</h3>
+                            <h3 className="font-semibold text-card-foreground mb-4">Tags</h3>
                             <div className="flex flex-wrap gap-2">
                                 {article.tags.map((tag) => (
                                     <Badge

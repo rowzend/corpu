@@ -16,14 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.urls import path, include, re_path
+from django.urls import path, include
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 from apps.manajemen.admin_site import permission_admin_site
 from apps.manajemen.views_api import PublicSettingsListAPIView
-from apps.manajemen.proxy_views import minio_proxy
 
 # Admin customization (applies to both default and custom admin site)
 admin_brand = getattr(settings, 'APP_NAME', 'ASN CORPU')
@@ -65,6 +64,7 @@ urlpatterns = [
     # ========================================
     path('apicorpu/public/1.0/knowledge/', include('apps.knowledge.urls_api')),
     path('apicorpu/public/1.0/profile/', include('apps.profile.urls_api_public')),
+    path('apicorpu/public/1.0/hero/', include('apps.hero.urls_api')),
     path('apicorpu/public/1.0/settings/', PublicSettingsListAPIView.as_view(), name='public_settings'),
     
     # Authenticated API v1.0 (JWT Required)
@@ -84,6 +84,18 @@ urlpatterns = [
     # Profile Instansi API
     path('apicorpu/1.0/profile/', include('apps.profile.urls_api')),
     
+    # Hero API (Admin CRUD)
+    path('apicorpu/1.0/hero/', include('apps.hero.urls_api_admin')),
+
+    # SIMPeG API (Sinkronisasi Data Pegawai)
+    path('apicorpu/1.0/simpeg/', include('apps.api_simpeg.urls')),
+
+    # Referensi API (Perguruan Tinggi & Program Studi)
+    path('apicorpu/1.0/referensi/', include('apps.referensi.urls')),
+
+    # Login redirect for permission_required decorator
+    path('login/', RedirectView.as_view(url='/admin/login/', permanent=False), name='login'),
+
     # Learning API
     path('apicorpu/1.0/learning/', include('apps.learning.urls_api')),
     
@@ -136,9 +148,6 @@ urlpatterns = [
     path('apicorpu/5.0/webhooks/unregister/<str:app_name>', views.webhook_unregister_v5, name='webhook_unregister_v5_legacy'),
     path('apicorpu/5.0/webhooks/sync-password-manual', views.webhook_sync_password_manual_v5, name='webhook_sync_password_manual_v5_legacy'),
     
-    # MinIO proxy (serve files from MinIO bucket via Django)
-    re_path(r'^media/minio/(?P<key>.+)$', minio_proxy, name='minio_proxy'),
-
     # Redirect all other requests to Next.js frontend
     # This is handled by nginx, but adding fallback for direct Django access
     path('', RedirectView.as_view(url='http://localhost:3000/', permanent=False), name='redirect_to_frontend'),

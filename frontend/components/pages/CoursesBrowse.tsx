@@ -81,12 +81,12 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
             <div className="space-y-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Jelajahi Kursus</h1>
-                        <p className="text-gray-600 mt-1">{filtered.length} kursus tersedia</p>
+                        <h1 className="text-2xl font-bold text-card-foreground">Jelajahi Kursus</h1>
+                        <p className="text-muted-foreground mt-1">{filtered.length} kursus tersedia</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
-                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                            <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                             <Input
                                 placeholder="Cari kursus..."
                                 value={search}
@@ -103,7 +103,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                             level === 'all'
                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                         }`}
                     >
                         Semua Level
@@ -115,7 +115,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                                 level === l
                                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                    : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                             }`}
                         >
                             {levelLabels[l]}
@@ -128,7 +128,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                         {filtered.map((course) => {
                             const enrolled = myCourseSlugs.has(course.slug);
                             return (
-                                <Card key={course.id} className="hover:shadow-lg transition-all overflow-hidden border border-gray-200 hover:border-blue-200">
+                                <Card key={course.id} className="hover:shadow-lg transition-all overflow-hidden border border-border hover:border-blue-200 dark:hover:border-blue-800">
                                     <div
                                         className="h-40 bg-gradient-to-br from-blue-500 to-indigo-600 relative cursor-pointer"
                                         onClick={() => router.push(`${basePath}/${course.slug}`)}
@@ -141,7 +141,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                                        <Badge className={`absolute top-3 left-3 border-0 shadow-lg ${levelColors[course.level] || 'bg-gray-100 text-gray-800'}`}>
+                                        <Badge className={`absolute top-3 left-3 border-0 shadow-lg ${levelColors[course.level] || 'bg-muted text-foreground'}`}>
                                             {levelLabels[course.level] || course.level}
                                         </Badge>
                                         {enrolled && (
@@ -152,15 +152,15 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                     </div>
                                     <CardContent className="p-5">
                                         <h3
-                                            className="font-semibold text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors"
+                                            className="font-semibold text-card-foreground mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                             onClick={() => router.push(`${basePath}/${course.slug}`)}
                                         >
                                             {course.title}
                                         </h3>
-                                        <p className="text-sm text-gray-500 mb-4 line-clamp-2"
+                                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2"
                                             dangerouslySetInnerHTML={{ __html: course.short_description || course.description || '' }}>
                                         </p>
-                                        <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                             <div className="flex items-center gap-1.5">
                                                 <BookOpen className="w-4 h-4 text-blue-500" />
                                                 <span>{course.lesson_count || 0} pelajaran</span>
@@ -170,15 +170,15 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                                 <span>{course.duration_minutes || 0} menit</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                        <div className="flex items-center justify-between pt-4 border-t border-border">
                                             <div className="flex items-center gap-1">
                                                 <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                                <span className="text-sm font-medium text-gray-700">
+                                                <span className="text-sm font-medium text-foreground">
                                                     {course.rating_avg ? course.rating_avg.toFixed(1) : '0.0'}
                                                 </span>
-                                                <span className="text-xs text-gray-400">({course.rating_count || 0})</span>
+                                                <span className="text-xs text-muted-foreground">({course.rating_count || 0})</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-sm text-gray-500">
+                                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                                 <Users className="w-4 h-4" />
                                                 {course.enrolled_count || 0}
                                             </div>
@@ -208,9 +208,9 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                 ) : (
                     <Card>
                         <CardContent className="p-12 text-center">
-                            <Search className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                            <h3 className="text-xl font-semibold text-gray-900 mb-2">Kursus Tidak Ditemukan</h3>
-                            <p className="text-gray-500 mb-6">Coba gunakan kata kunci pencarian yang berbeda</p>
+                            <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                            <h3 className="text-xl font-semibold text-card-foreground mb-2">Kursus Tidak Ditemukan</h3>
+                            <p className="text-muted-foreground mb-6">Coba gunakan kata kunci pencarian yang berbeda</p>
                             <Button variant="outline" onClick={() => { setSearch(''); setLevel('all'); }}>
                                 Reset Filter
                             </Button>

@@ -88,7 +88,6 @@ class ApiClient {
   private getHeaders(includeAuth = true): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
     };
 
     if (includeAuth) {
@@ -222,9 +221,7 @@ class ApiClient {
 
     // If data is FormData, send without JSON headers
     const isFormData = data instanceof FormData;
-    const headers: HeadersInit = {
-      'Accept': 'application/json',
-    };
+    const headers: HeadersInit = {};
     if (!isFormData) {
       headers['Content-Type'] = 'application/json';
     }
@@ -417,34 +414,52 @@ export const api = new ApiClient();
 // Helper function for error handling
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
-    // Try error.errors.detail (server sends {detail: "..."})
-    if (error.errors?.detail) {
-      return error.errors.detail;
-    }
-    if (error.errors?.message) {
-      return error.errors.message;
-    }
-    if (error.errors && typeof error.errors === 'object') {
-      const fieldErrors: string[] = [];
-      for (const [field, messages] of Object.entries(error.errors)) {
-        if (Array.isArray(messages)) {
-          fieldErrors.push(`${field}: ${messages.join(', ')}`);
-        } else if (typeof messages === 'string') {
-          fieldErrors.push(`${field}: ${messages}`);
+    // Try to extract detailed error message from response
+    if (error.data) {
+      // Handle validation errors (422)
+      if (error.status === 422 || error.status === 400) {
+        if (typeof error.data === 'object') {
+          // Extract field-specific errors
+          const fieldErrors: string[] = [];
+          for (const [field, messages] of Object.entries(error.data)) {
+            if (Array.isArray(messages)) {
+              fieldErrors.push(`${field}: ${messages.join(', ')}`);
+            } else if (typeof messages === 'string') {
+              fieldErrors.push(`${field}: ${messages}`);
+            }
+          }
+          if (fieldErrors.length > 0) {
+            return fieldErrors.join('\n');
+          }
         }
       }
-      if (fieldErrors.length > 0) {
-        return fieldErrors.join('\n');
+      
+      // Handle error with detail field
+      if (error.data.detail) {
+        return error.data.detail;
+      }
+      
+      // Handle error with message field
+      if (error.data.message) {
+        return error.data.message;
       }
     }
-    const statusMessages: Record<number, string> = {
-      401: 'Sesi Anda telah berakhir. Silakan login kembali.',
-      403: 'Anda tidak memiliki izin untuk melakukan tindakan ini.',
-      404: 'Data yang Anda cari tidak ditemukan.',
-      422: 'Data yang Anda kirim tidak valid. Silakan periksa kembali.',
-      500: 'Terjadi kesalahan pada server. Silakan coba lagi nanti.',
-    };
-    return statusMessages[error.status] || error.message || 'Terjadi kesalahan yang tidak terduga.';
+    
+    // Handle specific HTTP status codes
+    switch (error.status) {
+      case 401:
+        return 'Sesi Anda telah berakhir. Silakan login kembali.';
+      case 403:
+        return 'Anda tidak memiliki izin untuk melakukan tindakan ini.';
+      case 404:
+        return 'Data yang Anda cari tidak ditemukan.';
+      case 422:
+        return 'Data yang Anda kirim tidak valid. Silakan periksa kembali.';
+      case 500:
+        return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
+      default:
+        return error.message || 'Terjadi kesalahan yang tidak terduga.';
+    }
   }
 
   if (error instanceof Error) {

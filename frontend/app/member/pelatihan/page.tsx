@@ -30,42 +30,31 @@ export default function PelatihanPage() {
         } catch {} finally { setLoading(false); }
     };
 
-    // Deduplikasi: jika ada enrollment ganda untuk course yg sama, ambil yang progress tertinggi
-    const enrollmentsDedupe = Object.values(
-        enrollments.reduce((acc: any, e: any) => {
-            const slug = e.course_slug;
-            if (!acc[slug] || (acc[slug].progress_percentage || 0) < (e.progress_percentage || 0)) {
-                acc[slug] = e;
-            }
-            return acc;
-        }, {})
-    );
-
-    const filtered = enrollmentsDedupe.filter(e => {
+    const filtered = enrollments.filter(e => {
         if (filter !== 'all' && e.status !== filter) return false;
         if (search && !e.course_title?.toLowerCase().includes(search.toLowerCase())) return false;
         return true;
     });
 
     const tabs = [
-        { key: 'all', label: 'Semua', count: enrollmentsDedupe.length },
-        { key: 'active', label: 'Aktif', count: enrollmentsDedupe.filter((e: any) => e.status === 'active').length },
-        { key: 'completed', label: 'Selesai', count: enrollmentsDedupe.filter((e: any) => e.status === 'completed').length },
-        { key: 'dropped', label: 'Gagal', count: enrollmentsDedupe.filter((e: any) => e.status === 'dropped').length },
+        { key: 'all', label: 'Semua', count: enrollments.length },
+        { key: 'active', label: 'Aktif', count: enrollments.filter(e => e.status === 'active').length },
+        { key: 'completed', label: 'Selesai', count: enrollments.filter(e => e.status === 'completed').length },
+        { key: 'dropped', label: 'Gagal', count: enrollments.filter(e => e.status === 'dropped').length },
     ] as const;
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-900">Pelatihan</h1>
+                <h1 className="text-2xl font-bold text-card-foreground">Pelatihan</h1>
                 <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <input
                         type="text"
                         placeholder="Cari pelatihan..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        className="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-48 lg:w-64"
+                        className="pl-9 pr-4 py-2 bg-card border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-48 lg:w-64"
                     />
                 </div>
             </div>
@@ -78,7 +67,7 @@ export default function PelatihanPage() {
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                             filter === tab.key
                                 ? 'bg-blue-600 text-white shadow-sm'
-                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                         }`}
                     >
                         {tab.label} ({tab.count})
@@ -88,13 +77,13 @@ export default function PelatihanPage() {
 
             {loading ? (
                 <div className="animate-pulse space-y-3">
-                    {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-gray-100 rounded-xl" />)}
+                    {[1, 2, 3, 4].map(i => <div key={i} className="h-24 bg-muted rounded-xl" />)}
                 </div>
             ) : filtered.length === 0 ? (
                 <Card className="border-0 shadow-sm">
                     <CardContent className="p-12 text-center">
-                        <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500">Tidak ada pelatihan ditemukan</p>
+                        <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-muted-foreground">Tidak ada pelatihan ditemukan</p>
                         <Button className="mt-4" onClick={() => router.push('/courses')}>Jelajahi Kursus</Button>
                     </CardContent>
                 </Card>
@@ -111,15 +100,15 @@ export default function PelatihanPage() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
                                             <Badge className={
-                                                enrollment.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                                                enrollment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                'bg-red-100 text-red-700'
+                                                enrollment.status === 'active' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                                                enrollment.status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' :
+                                                'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                                             }>
                                                 {enrollment.status === 'active' ? 'Aktif' : enrollment.status === 'completed' ? 'Selesai' : 'Gagal'}
                                             </Badge>
                                         </div>
-                                        <h3 className="font-semibold text-gray-900 truncate">{enrollment.course_title}</h3>
-                                        <p className="text-xs text-gray-500 mt-1">
+                                        <h3 className="font-semibold text-card-foreground truncate">{enrollment.course_title}</h3>
+                                        <p className="text-xs text-muted-foreground mt-1">
                                             {enrollment.status === 'active' ? `Progress: ${enrollment.progress_percentage || 0}%` : ''}
                                             {enrollment.completed_at && ` • Selesai: ${new Date(enrollment.completed_at).toLocaleDateString('id-ID')}`}
                                         </p>
@@ -127,12 +116,12 @@ export default function PelatihanPage() {
                                     <div className="flex-shrink-0 w-20 text-right">
                                         {enrollment.status === 'active' && (
                                             <>
-                                                <div className="text-xs text-gray-500 mb-1">{enrollment.progress_percentage || 0}%</div>
+                                                <div className="text-xs text-muted-foreground mb-1">{enrollment.progress_percentage || 0}%</div>
                                                 <ProgressBar progress={enrollment.progress_percentage || 0} size="sm" />
                                             </>
                                         )}
                                         {enrollment.status === 'completed' && (
-                                            <div className="text-green-600">
+                                            <div className="text-green-600 dark:text-green-400">
                                                 <Award className="w-6 h-6 mx-auto" />
                                             </div>
                                         )}

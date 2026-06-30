@@ -330,21 +330,19 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
         doneRef.current = true;
         submittingRef.current = true;
         setSubmitting(true);
-        const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
         try {
-            localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}`);
-            localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_marked`);
-            localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_time`);
-            localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_violations`);
-        } catch {}
-        try {
+            const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            try {
+                localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}`);
+                localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_marked`);
+                localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_time`);
+                localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_violations`);
+            } catch {}
             await onSubmit(Object.values(answersRef.current), timeSpent);
-        } catch {
-            // Error handled by parent, just prevent further submissions
-            submittingRef.current = true;
-            doneRef.current = true;
+        } finally {
+            submittingRef.current = false;
+            setSubmitting(false);
         }
-        setSubmitting(false);
     };
 
     const doSubmitRef = useRef(doSubmit);
@@ -384,10 +382,10 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
         const choiceClass = (isSelected: boolean) =>
             `p-3 border rounded-lg transition ${readOnly ? 'cursor-default' : 'cursor-pointer'} ${
                 isSelected
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                     : readOnly
-                        ? 'border-gray-200 opacity-70'
-                        : 'border-gray-200 hover:border-blue-300'
+                        ? 'border-border opacity-70'
+                        : 'border-border hover:border-blue-300'
             }`;
 
         switch (currentQuestion.question_type) {
@@ -402,10 +400,10 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                             >
                                 <div className="flex items-center gap-3">
                                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                        currentAnswer?.choice_id === choice.id ? 'border-blue-500' : 'border-gray-300'
+                                        currentAnswer?.choice_id === choice.id ? 'border-blue-500' : 'border-border'
                                     }`}>
                                         {currentAnswer?.choice_id === choice.id && (
-                                            <div className="w-3 h-3 rounded-full bg-blue-500" />
+                                            <div className="w-3 h-3 rounded-full bg-blue-50 dark:bg-blue-900/300" />
                                         )}
                                     </div>
                                     <span>{choice.choice_text}</span>
@@ -431,11 +429,11 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                                     } ${
                                         isActive
                                             ? option.value
-                                                ? 'border-green-500 bg-green-50 text-green-700'
-                                                : 'border-red-500 bg-red-50 text-red-700'
+                                                ? 'border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700'
+                                                : 'border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                                             : readOnly
-                                                ? 'border-gray-200 opacity-70'
-                                                : 'border-gray-200 hover:border-gray-400'
+                                                ? 'border-border opacity-70'
+                                                : 'border-border hover:border-gray-400'
                                     }`}
                                     onClick={() => !readOnly && handleTrueFalse(option.value)}
                                 >
@@ -450,7 +448,7 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                 return (
                     <textarea
                         className={`w-full p-4 border rounded-lg transition ${
-                            readOnly ? 'bg-gray-100 cursor-default' : 'focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                            readOnly ? 'bg-muted cursor-default' : 'focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                         }`}
                         rows={6}
                         placeholder="Tulis jawaban Anda di sini..."
@@ -481,14 +479,14 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
             {/* Tab Hidden Overlay */}
             {tabHidden && (
                 <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-                    <div className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
-                        <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h2 className="text-xl font-bold text-gray-900 mb-2">Peringatan!</h2>
-                        <p className="text-gray-600 mb-4">
+                    <div className="bg-card rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
+                        <AlertTriangle className="w-16 h-16 text-red-500 dark:text-red-400 mx-auto mb-4" />
+                        <h2 className="text-xl font-bold text-card-foreground mb-2">Peringatan!</h2>
+                        <p className="text-muted-foreground mb-4">
                             Anda meninggalkan halaman kuis. Kuis akan dikirim otomatis jika anda terus meninggalkan halaman ini.
                         </p>
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                            <p className="text-sm text-red-700 font-medium">
+                        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 rounded-lg p-3 mb-4">
+                            <p className="text-sm text-red-700 dark:text-red-400 font-medium">
                                 Pelanggaran: {violations} / {MAX_VIOLATIONS}
                             </p>
                         </div>
@@ -509,22 +507,22 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
             <div className="max-w-4xl mx-auto flex gap-6">
                 {/* Question Navigator Sidebar */}
                 <div className="w-24 flex-shrink-0">
-                    <div className="bg-white rounded-lg border p-3 sticky top-6 space-y-2">
-                        <p className="text-xs font-semibold text-gray-500 text-center mb-3">Soal</p>
+                    <div className="bg-card rounded-lg border border-border p-3 sticky top-6 space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground text-center mb-3">Soal</p>
                         {quiz.questions.map((q, i) => {
                             const status = getQuestionStatus(q.id);
                             const isCurrent = i === currentIndex;
                             const colorMap: Record<string, string> = {
-                                marked: 'border-green-500 bg-green-500 text-white',
+                                marked: 'border-green-500 bg-green-50 dark:bg-green-900/300 text-white',
                                 answered: 'border-yellow-400 bg-yellow-50 text-yellow-700',
-                                empty: 'border-red-300 bg-red-50 text-red-500',
+                                empty: 'border-red-300 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400',
                             };
                             return (
                                 <button
                                     key={q.id}
                                     onClick={() => setCurrentIndex(i)}
                                     className={`w-full aspect-square rounded-lg text-sm font-bold border-2 transition flex items-center justify-center ${
-                                        isCurrent ? 'border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-300' : colorMap[status]
+                                        isCurrent ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ring-2 ring-blue-300' : colorMap[status]
                                     }`}
                                 >
                                     {i + 1}
@@ -532,20 +530,20 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                             );
                         })}
                         <div className="pt-2 border-t space-y-1.5">
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                                <div className="w-3 h-3 rounded bg-green-500" />
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                <div className="w-3 h-3 rounded bg-green-50 dark:bg-green-900/300" />
                                 <span>Tandai</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 <div className="w-3 h-3 rounded bg-yellow-400" />
                                 <span>Isi</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 <div className="w-3 h-3 rounded bg-red-300" />
                                 <span>Kosong</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                                <div className="w-3 h-3 rounded border-2 border-blue-500 bg-blue-50" />
+                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                <div className="w-3 h-3 rounded border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/30" />
                                 <span>Skrg</span>
                             </div>
                         </div>
@@ -559,11 +557,11 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                             <div className="flex items-center justify-between">
                                 <div>
                                     <CardTitle className="text-xl">{quiz.title}</CardTitle>
-                                    {quiz.description && <p className="text-sm text-gray-600 mt-1">{quiz.description}</p>}
+                                    {quiz.description && <p className="text-sm text-muted-foreground mt-1">{quiz.description}</p>}
                                 </div>
                                 <div className="flex items-center gap-3">
                                     {lastSaved && (
-                                        <span className="text-xs text-gray-400 flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Save className="w-3 h-3" />
                                             Tersimpan
                                         </span>
@@ -576,21 +574,21 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center justify-between mb-6">
-                                <span className="text-sm text-gray-600">
+                                <span className="text-sm text-muted-foreground">
                                     Soal {currentIndex + 1} dari {totalQuestions}
                                 </span>
                                 {timeLimit > 0 && timeLeft !== null && (
-                                    <span className={`text-sm font-bold ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : timeLeft <= 300 ? 'text-orange-500' : 'text-gray-600'}`}>
+                                    <span className={`text-sm font-bold ${timeLeft <= 60 ? 'text-red-600 dark:text-red-400 animate-pulse' : timeLeft <= 300 ? 'text-orange-500' : 'text-muted-foreground'}`}>
                                         ⏱ {formatTime(timeLeft)}
                                     </span>
                                 )}
-                                <span className="text-sm text-gray-600">
-                                    <span className="text-green-600 font-medium">{markedCount}</span>
-                                    <span className="text-gray-400"> ditandai </span>
+                                <span className="text-sm text-muted-foreground">
+                                    <span className="text-green-600 dark:text-green-400 font-medium">{markedCount}</span>
+                                    <span className="text-muted-foreground"> ditandai </span>
                                     <span className="text-yellow-600 font-medium">{Object.keys(answers).length - markedCount}</span>
-                                    <span className="text-gray-400"> diisi </span>
-                                    <span className="text-red-500 font-medium">{totalQuestions - Object.keys(answers).length}</span>
-                                    <span className="text-gray-400"> kosong</span>
+                                    <span className="text-muted-foreground"> diisi </span>
+                                    <span className="text-red-500 dark:text-red-400 font-medium">{totalQuestions - Object.keys(answers).length}</span>
+                                    <span className="text-muted-foreground"> kosong</span>
                                 </span>
                             </div>
 
@@ -598,7 +596,7 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                                 <div className="flex items-start gap-3">
                                     <span className={`rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm flex-shrink-0 ${
                                         isCurrentMarked
-                                            ? 'bg-green-500 text-white'
+                                            ? 'bg-green-50 dark:bg-green-900/300 text-white'
                                             : currentAnswer
                                                 ? 'bg-yellow-400 text-yellow-900'
                                                 : 'bg-red-300 text-white'
@@ -613,7 +611,7 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                                                 variant={isCurrentMarked ? 'default' : 'outline'}
                                                 size="sm"
                                                 onClick={handleToggleMark}
-                                                className={isCurrentMarked ? 'bg-green-600 hover:bg-green-700' : ''}
+                                                className={isCurrentMarked ? 'bg-green-600 dark:bg-green-700 hover:bg-green-700 dark:hover:bg-green-800' : ''}
                                             >
                                                 {isCurrentMarked ? '✓ Sudah Ditandai' : 'Tandai Jawaban'}
                                             </Button>

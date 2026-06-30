@@ -19,7 +19,7 @@ export default function StrukturPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Struktur Organisasi</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Struktur Organisasi</h1>
 
       {section ? (
         <Card>
@@ -34,13 +34,13 @@ export default function StrukturPage() {
               </div>
             )}
             <div
-              className="text-gray-700 leading-relaxed prose max-w-none"
+              className="text-foreground leading-relaxed prose max-w-none"
               dangerouslySetInnerHTML={{ __html: section.content }}
             />
           </CardContent>
         </Card>
       ) : (
-        <p className="text-gray-500">Belum ada data struktur organisasi.</p>
+        <p className="text-muted-foreground">Belum ada data struktur organisasi.</p>
       )}
     </main>
   );

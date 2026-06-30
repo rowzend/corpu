@@ -29,13 +29,13 @@ export default function StatsCard({
     const [bgColor, textColor, lightBg] = colorClasses[color].split(' ');
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between">
                 <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-600 mb-1">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">
                         {title}
                     </p>
-                    <p className="text-3xl font-bold text-gray-900">
+                    <p className="text-3xl font-bold text-card-foreground">
                         {typeof value === 'number' ? value.toLocaleString() : value}
                     </p>
                     {trend && (
@@ -44,7 +44,7 @@ export default function StatsCard({
                                 }`}>
                                 {trend.isPositive ? '↗' : '↘'} {Math.abs(trend.value)}%
                             </span>
-                            <span className="text-xs text-gray-500 ml-2">
+                            <span className="text-xs text-muted-foreground ml-2">
                                 vs last month
                             </span>
                         </div>

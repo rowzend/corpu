@@ -37,7 +37,7 @@ export default function Brand() {
   const isFilePath = logoUrl && !isBase64;
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-card">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center text-center">
           {logoUrl ? (
@@ -53,13 +53,13 @@ export default function Brand() {
           ) : null}
 
           {brand.app_name && (
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-3xl font-bold text-card-foreground mb-2">
               {brand.app_name}
             </h2>
           )}
 
           {brand.app_description && (
-            <p className="text-gray-600 max-w-2xl">
+            <p className="text-muted-foreground max-w-2xl">
               {brand.app_description}
             </p>
           )}

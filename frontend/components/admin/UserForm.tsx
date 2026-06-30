@@ -22,36 +22,25 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         password: '',
         password_confirm: '',
         is_active: true,
-        role_ids: [] as number[],
+        role_id: '',
     });
     const [roles, setRoles] = useState<Role[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         loadRoles();
-    }, []);
-
-    useEffect(() => {
-        if (!user) return;
-        setFormData(prev => ({
-            username: user.username,
-            name: user.name,
-            email: user.email || '',
-            password: '',
-            password_confirm: '',
-            is_active: user.is_active,
-            role_ids: prev.role_ids,
-        }));
+        if (user) {
+            setFormData({
+                username: user.username,
+                name: user.name,
+                email: user.email || '',
+                password: '',
+                password_confirm: '',
+                is_active: user.is_active,
+                role_id: '',
+            });
+        }
     }, [user]);
-
-    // Map user's role names to role IDs setelah roles siap
-    useEffect(() => {
-        if (!user || roles.length === 0) return;
-        const ids = user.roles
-            .map(name => roles.find(r => r.name === name)?.id)
-            .filter((id): id is number => id !== undefined);
-        setFormData(prev => ({ ...prev, role_ids: ids }));
-    }, [user?.id, roles]);
 
     const loadRoles = async () => {
         try {
@@ -71,15 +60,6 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
-    };
-
-    const handleRoleToggle = (roleId: number) => {
-        setFormData(prev => ({
-            ...prev,
-            role_ids: prev.role_ids.includes(roleId)
-                ? prev.role_ids.filter(id => id !== roleId)
-                : [...prev.role_ids, roleId]
-        }));
     };
 
     const validateForm = () => {
@@ -131,7 +111,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 name: formData.name,
                 email: formData.email || undefined,
                 is_active: formData.is_active,
-                role_ids: formData.role_ids.length > 0 ? formData.role_ids : undefined,
+                role_id: formData.role_id ? parseInt(formData.role_id) : undefined,
             };
 
             if (!user) {
@@ -148,13 +128,13 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
     };
 
     const inputClass = (field: string) =>
-        `w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors text-sm ${
-            errors[field] ? 'border-red-300 bg-red-50' : 'border-gray-200'
+        `w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-muted focus:bg-card transition-colors text-sm ${
+            errors[field] ? 'border-red-300 bg-red-50' : 'border-border'
         }`;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            <div className="bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
                 {/* Header */}
                 <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
                     <div className="flex items-center justify-between">
@@ -176,7 +156,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-100 px-6 pt-4 gap-1">
+                <div className="flex border-b border-border px-6 pt-4 gap-1">
                     {[
                         { id: 'account' as const, label: 'Akun', icon: User },
                         { id: 'password' as const, label: 'Kata Sandi', icon: Lock },
@@ -187,7 +167,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-all border-b-2 -mb-px ${
                                 activeTab === tab.id
                                     ? 'text-blue-600 border-blue-600 bg-blue-50/50'
-                                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                                    : 'text-muted-foreground border-transparent hover:text-foreground hover:border-border'
                             }`}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -202,11 +182,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                         <div className="space-y-4">
                             {/* Username */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Username <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type="text"
                                         name="username"
@@ -225,11 +205,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
 
                             {/* Nama Lengkap */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Nama Lengkap <span className="text-red-500">*</span>
                                 </label>
                                 <div className="relative">
-                                    <User className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type="text"
                                         name="name"
@@ -248,11 +228,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
 
                             {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Email
                                 </label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type="email"
                                         name="email"
@@ -271,33 +251,24 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
 
                             {/* Role */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                    Role / Peran <span className="text-gray-400 text-xs">(bisa pilih lebih dari satu)</span>
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
+                                    Role / Peran
                                 </label>
-                                <div className="space-y-2 border border-gray-200 rounded-xl p-3 bg-gray-50">
-                                    {roles.length === 0 ? (
-                                        <p className="text-sm text-gray-400">Memuat role...</p>
-                                    ) : (
-                                        roles.map((role) => (
-                                            <label
-                                                key={role.id}
-                                                className="flex items-center gap-3 p-2 rounded-lg hover:bg-white cursor-pointer transition-colors"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.role_ids.includes(role.id)}
-                                                    onChange={() => handleRoleToggle(role.id)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                                />
-                                                <div className="flex-1 flex items-center justify-between">
-                                                    <span className="text-sm font-medium text-gray-700">{role.name}</span>
-                                                    {role.user_count !== undefined && (
-                                                        <span className="text-xs text-gray-400">{role.user_count} pengguna</span>
-                                                    )}
-                                                </div>
-                                            </label>
-                                        ))
-                                    )}
+                                <div className="relative">
+                                    <ShieldCheck className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                                    <select
+                                        name="role_id"
+                                        value={formData.role_id}
+                                        onChange={handleChange}
+                                        className={`pl-9 ${inputClass('role_id')} appearance-none`}
+                                    >
+                                        <option value="">Pilih role</option>
+                                        {roles.map((role) => (
+                                            <option key={role.id} value={role.id}>
+                                                {role.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
 
@@ -311,8 +282,8 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                                         onChange={handleChange}
                                         className="sr-only peer"
                                     />
-                                    <div className="w-10 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
-                                    <span className="ml-3 text-sm font-medium text-gray-700">Akun Aktif</span>
+                                    <div className="w-10 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600" />
+                                    <span className="ml-3 text-sm font-medium text-foreground">Akun Aktif</span>
                                 </label>
                             </div>
                         </div>
@@ -331,11 +302,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
 
                             {/* Password */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Password {!user && <span className="text-red-500">*</span>}
                                 </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         name="password"
@@ -347,7 +318,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                        className="absolute right-3 top-3 text-muted-foreground hover:text-muted-foreground"
                                     >
                                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
@@ -362,11 +333,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                             {/* Confirm Password */}
                             {(formData.password || !user) && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                    <label className="block text-sm font-medium text-foreground mb-1.5">
                                         Konfirmasi Password {!user && <span className="text-red-500">*</span>}
                                     </label>
                                     <div className="relative">
-                                        <Lock className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                                        <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                         <input
                                             type={showConfirm ? 'text' : 'password'}
                                             name="password_confirm"
@@ -378,7 +349,7 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirm(!showConfirm)}
-                                            className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                            className="absolute right-3 top-3 text-muted-foreground hover:text-muted-foreground"
                                         >
                                             {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                         </button>
@@ -394,11 +365,11 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                     )}
 
                     {/* Form Actions */}
-                    <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100">
+                    <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-border">
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            className="px-5 py-2.5 text-sm font-medium text-foreground bg-muted hover:bg-muted rounded-xl transition-colors"
                         >
                             Batal
                         </button>

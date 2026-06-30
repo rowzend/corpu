@@ -88,6 +88,9 @@ INSTALLED_APPS = [
     'apps.profile',  # Profile Instansi
     'apps.learning',  # Learning Management System (LMS)
     'apps.news',  # News/Berita
+    'apps.hero',  # Hero Images for Landing Page
+    'apps.referensi',  # Referensi data pendidikan (PT, Prodi)
+    'apps.api_simpeg',  # SIMPeG - Sinkronisasi Data Pegawai ESIMPEG
 ]
 
 # Custom User Model - match Laravel users table structure
@@ -245,31 +248,11 @@ STATICFILES_DIRS = [
 ]
 
 # Whitenoise configuration for serving static files
-# Note: staticfiles storage is now defined in STORAGES dict below
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-# MinIO / S3-compatible Storage
-MINIO_ENDPOINT = config('MINIO_ENDPOINT', default='')
-MINIO_ACCESS_KEY = config('MINIO_ACCESS_KEY', default='')
-MINIO_SECRET_KEY = config('MINIO_SECRET_KEY', default='')
-MINIO_BUCKET = config('MINIO_BUCKET', default='asncorpu')
-MINIO_REGION = config('MINIO_REGION', default='us-east-1')
-MINIO_USE_PROXY = config('MINIO_USE_PROXY', default=True, cast=bool)
-MINIO_PROXY_URL = config('MINIO_PROXY_URL', default='/media/minio/')
-
-# Storage backends (Django 5.2+ uses STORAGES, not DEFAULT_FILE_STORAGE)
-_has_minio = bool(config('MINIO_ENDPOINT', default=''))
-STORAGES = {
-    'default': {
-        'BACKEND': 'apps.manajemen.s3_storage.MinioStorage' if _has_minio else 'django.core.files.storage.FileSystemStorage',
-    },
-    'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
-    },
-}
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -502,7 +485,7 @@ SINGLE_SESSION_ENFORCE_WEB_NIP_NIK = config('SINGLE_SESSION_ENFORCE_WEB_NIP_NIK'
 SINGLE_SESSION_ENFORCE_API_NIP_NIK = config('SINGLE_SESSION_ENFORCE_API_NIP_NIK', default=False, cast=bool)
 
 # Permission system override flag (disable superadmin/staff bypass when False)
-PERMISSIONS_SUPERADMIN_OVERRIDE = config('PERMISSIONS_SUPERADMIN_OVERRIDE', default=False, cast=bool)
+PERMISSIONS_SUPERADMIN_OVERRIDE = config('PERMISSIONS_SUPERADMIN_OVERRIDE', default=True, cast=bool)
 
 # Admin access via permission keys (used by AdminAccessMiddleware)
 ADMIN_ACCESS_PERMISSION_KEYS = [

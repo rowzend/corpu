@@ -97,7 +97,9 @@ export default function LoginPage() {
             try {
                 const permRes = await api.get<{ success: boolean; data: { modules: string[] } }>('/management/permissions/user/');
                 const modules = permRes?.data?.modules || [];
-                isAdmin = modules.some(m => ['pengaturan', 'users', 'roles', 'settings'].includes(m));
+                const isStaff = user?.is_staff === true || user?.is_superuser === true;
+                const adminRole = user?.role === 'admin' || user?.role === 'superadmin' || isStaff;
+                isAdmin = modules.length > 0 && adminRole;
             } catch {}
             if (isAdmin) {
                 setSudoUser(user);
@@ -116,12 +118,12 @@ export default function LoginPage() {
     const isFormValid = formData.username.trim() && formData.password.trim();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-950 flex items-center justify-center px-4 py-12 relative overflow-hidden">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                <div className="absolute top-40 left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
+                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 dark:bg-purple-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 dark:bg-blue-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                <div className="absolute top-40 left-40 w-80 h-80 bg-indigo-500 dark:bg-indigo-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
                 {/* Floating Particles */}
                 {particles.map((particle, i) => (
@@ -159,7 +161,7 @@ export default function LoginPage() {
 
                 {/* Hint Message */}
                 {showHint && (
-                    <div className="mb-4 bg-yellow-400 text-yellow-900 px-4 py-3 rounded-xl shadow-lg animate-bounce-in flex items-center">
+                    <div className="mb-4 bg-yellow-400 dark:bg-yellow-500/20 text-yellow-900 dark:text-yellow-200 px-4 py-3 rounded-xl shadow-lg animate-bounce-in flex items-center">
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
@@ -168,11 +170,11 @@ export default function LoginPage() {
                 )}
 
                 {/* Login Form Card */}
-                <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+                <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 dark:bg-gray-800/95 dark:border-gray-700">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Error Message with Animation */}
                         {error && (
-                            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg animate-shake">
+                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg animate-shake">
                                 <div className="flex items-center">
                                     <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -184,12 +186,12 @@ export default function LoginPage() {
 
                         {/* Username Field with Icon */}
                         <div className="group">
-                            <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="username" className="block text-sm font-semibold text-foreground mb-2">
                                 Username
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
@@ -198,7 +200,7 @@ export default function LoginPage() {
                                     id="username"
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                                    className="w-full pl-12 pr-4 py-3 border-2 border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-muted focus:bg-card placeholder:text-muted-foreground"
                                     placeholder="Masukkan username Anda"
                                     required
                                     disabled={isLoading}
@@ -208,12 +210,12 @@ export default function LoginPage() {
 
                         {/* Password Field with Toggle */}
                         <div className="group">
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">
                                 Password
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                     </svg>
                                 </div>
@@ -225,7 +227,7 @@ export default function LoginPage() {
                                         setFormData({ ...formData, password: e.target.value });
                                         setError('');
                                     }}
-                                    className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                                    className="w-full pl-12 pr-12 py-3 border-2 border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-muted focus:bg-card placeholder:text-muted-foreground"
                                     placeholder="Masukkan password Anda"
                                     required
                                     disabled={isLoading}
@@ -233,7 +235,7 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     {showPassword ? (
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -254,11 +256,11 @@ export default function LoginPage() {
                             <label className="flex items-center group cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                                    className="w-4 h-4 text-blue-600 border-border rounded focus:ring-blue-500 cursor-pointer"
                                 />
-                                <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Ingat saya</span>
+                                <span className="ml-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">Ingat saya</span>
                             </label>
-                            <span className="text-sm text-gray-400 cursor-not-allowed">
+                            <span className="text-sm text-muted-foreground cursor-not-allowed">
                                 Lupa password?
                             </span>
                         </div>
@@ -320,18 +322,18 @@ export default function LoginPage() {
                     {/* Divider */}
                     <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-gray-200"></div>
+                            <div className="w-full border-t border-border"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-white text-gray-500">atau</span>
+                            <span className="px-4 bg-card text-muted-foreground">atau</span>
                         </div>
                     </div>
 
                     {/* Register Link */}
                     <div className="text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                             Belum punya akun?{' '}
-                            <span className="text-gray-400 cursor-not-allowed font-semibold">
+                            <span className="text-muted-foreground cursor-not-allowed font-semibold">
                                 Daftar sekarang
                             </span>
                         </p>

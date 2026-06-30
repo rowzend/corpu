@@ -20,3 +20,5 @@ export * from './permission.service';
 export * from './profile.service';
 export { newsService } from './news.service';
 export type { NewsItem, NewsListResponse } from './news.service';
+export { simpegService } from './simpeg.service';
+export type { PegawaiItem } from './simpeg.service';

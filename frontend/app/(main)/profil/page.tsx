@@ -57,8 +57,8 @@ export default function PublicProfilPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-2">Profile Instansi</h1>
-      <p className="text-gray-600 mb-8">Informasi tentang Lembaga Manajemen ASN CORPU</p>
+      <h1 className="text-3xl font-bold text-card-foreground mb-2">Profile Instansi</h1>
+      <p className="text-muted-foreground mb-8">Informasi tentang Lembaga Manajemen ASN CORPU</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {sections.filter(s => s.is_active).map(section => (
@@ -66,11 +66,11 @@ export default function PublicProfilPage() {
             <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
               <CardContent className="p-6">
                 <div className="text-4xl mb-4">{sectionIcons[section.key] || '📄'}</div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                <h2 className="text-xl font-semibold text-card-foreground mb-2">
                   {sectionLabels[section.key] || section.title}
                 </h2>
                 <div
-                  className="text-gray-600 line-clamp-3"
+                  className="text-muted-foreground line-clamp-3"
                   dangerouslySetInnerHTML={{ __html: section.content.substring(0, 200) }}
                 />
               </CardContent>
@@ -81,10 +81,10 @@ export default function PublicProfilPage() {
 
       <div className="mt-16">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Pengajar</h2>
+          <h2 className="text-2xl font-bold text-card-foreground">Pengajar</h2>
           <Link
             href="/profil/personalia"
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 font-medium text-sm"
           >
             Lihat Semua →
           </Link>
@@ -94,7 +94,7 @@ export default function PublicProfilPage() {
           {personalia.filter(p => p.is_active).slice(0, 4).map(person => (
             <Card key={person.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6 text-center">
-                <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-gray-200">
+                <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden bg-muted">
                   {person.photo ? (
                     <img
                       src={photoUrl(person.photo)}
@@ -102,13 +102,13 @@ export default function PublicProfilPage() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-2xl font-bold">
                       {person.name.charAt(0)}
                     </div>
                   )}
                 </div>
-                <h3 className="font-semibold text-gray-900">{person.name}</h3>
-                <p className="text-sm text-blue-600 mt-1">{person.position}</p>
+                <h3 className="font-semibold text-card-foreground">{person.name}</h3>
+                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">{person.position}</p>
               </CardContent>
             </Card>
           ))}

@@ -33,21 +33,18 @@ function isSudoSessionValid(sudoCookie: string | undefined): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const protectedRoutes = ['/dashboard', '/users', '/roles', '/settings', '/knowledge', '/profile', '/member'];
+  const protectedRoutes = ['/member'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
-  const isSudoRoute = pathname.startsWith('/sudo/') && pathname !== '/sudo/login';
+  const isAdminRoute = pathname.startsWith('/admin/') && pathname !== '/admin/login';
 
   const token = request.cookies.get('token')?.value;
 
-  // Sudo routes: require valid token + valid sudo session
-  if (isSudoRoute) {
+  // Admin routes: require valid token
+  if (isAdminRoute) {
     if (!token || isTokenExpired(token)) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
-    }
-    if (!isSudoSessionValid(request.cookies.get('sudo_session')?.value)) {
-      return NextResponse.redirect(new URL('/sudo/login', request.url));
     }
   }
 
@@ -63,22 +60,26 @@ export function middleware(request: NextRequest) {
 
   if (pathname === '/login') {
     if (token && !isTokenExpired(token)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
     }
   }
 
-  return NextResponse.next();
+  // Set default locale cookie if not present
+  const response = NextResponse.next();
+  const locale = request.cookies.get('NEXT_LOCALE')?.value;
+  if (!locale || !['id', 'en', 'ar'].includes(locale)) {
+    const acceptLang = request.headers.get('Accept-Language') || '';
+    const preferred = acceptLang.split(',')[0]?.split('-')[0];
+    const detected = preferred && ['id', 'en', 'ar'].includes(preferred) ? preferred : 'id';
+    response.cookies.set('NEXT_LOCALE', detected, { path: '/', maxAge: 365 * 24 * 60 * 60 });
+  }
+
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/users/:path*',
-    '/roles/:path*',
-    '/settings/:path*',
-    '/knowledge/:path*',
-    '/profile/:path*',
-    '/sudo/:path*',
+    '/admin/:path*',
     '/member/:path*',
     '/login',
   ]

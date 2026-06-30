@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, X } from 'lucide-react';
+import { Send, X, AlertCircle } from 'lucide-react';
+import { showError } from '@/lib/sweetalert';
 
 interface CommentFormProps {
     onSubmit: (content: string) => Promise<void>;
@@ -24,6 +25,7 @@ export default function CommentForm({
 }: CommentFormProps) {
     const [content, setContent] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,10 +34,13 @@ export default function CommentForm({
 
         try {
             setIsSubmitting(true);
+            setErrorMsg('');
             await onSubmit(content.trim());
             setContent('');
-        } catch (error) {
-            console.error('Failed to submit comment:', error);
+        } catch (error: any) {
+            const msg = error?.message || 'Gagal mengirim komentar. Silakan coba lagi.';
+            setErrorMsg(msg);
+            showError(msg, 'Gagal');
         } finally {
             setIsSubmitting(false);
         }
@@ -52,6 +57,12 @@ export default function CommentForm({
                 autoFocus={autoFocus}
                 disabled={isSubmitting}
             />
+            {errorMsg && (
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {errorMsg}
+                </div>
+            )}
             <div className="flex items-center gap-2 justify-end">
                 {onCancel && (
                     <Button

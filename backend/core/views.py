@@ -982,11 +982,9 @@ def api_jwt_login_v5(request):
                         'name': user.name or '',
                         'email': user.email or '',
                         'id_pegawai': user.id_pegawai or 0,
-                        'user_id_opd': user.user_id_opd or 0,
+                        'user_id_opd': user.user_id_opd or 0,  # Added to match ESIMPEG format
                         'is_active': user.is_active,
-                        'is_staff': getattr(user, 'is_staff', False),
-                        'is_superuser': getattr(user, 'is_superuser', False),
-                        'role_name': user.role.name if hasattr(user, 'role') and user.role else ''
+                        'is_staff': user.is_staff
                     }
                 },
                 'version': '5.0'

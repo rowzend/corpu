@@ -1,0 +1,24 @@
+{% extends 'base_dashboard.html' %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block title %}Perguruan Tinggi - Referensi{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-1">
+            <i class="fas fa-university mr-2"></i> Perguruan Tinggi
+        </h2>
+        <p class="text-gray-500">Daftar referensi perguruan tinggi</p>
+    </div>
+    <a href="{% url 'referensi:perguruan_tinggi_create' %}"
+       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+        <i class="fas fa-plus"></i> Tambah PT
+    </a>
+</div>
+
+<div class="bg-white rounded-xl p-6 shadow-lg">
+    {% include 'includes/datatable_table_scroll.html' %}
+</div>
+{% endblock %}

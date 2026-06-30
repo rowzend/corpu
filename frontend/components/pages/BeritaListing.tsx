@@ -6,7 +6,7 @@ import { Calendar, Eye, ArrowRight, Newspaper, Search, Loader2 } from 'lucide-re
 import { newsService } from '@/lib/services';
 
 const categoryColors: Record<string, string> = {
-    Program: 'bg-blue-100 text-blue-700',
+    Program: 'bg-blue-100 text-blue-700 dark:text-blue-400',
     Kerjasama: 'bg-green-100 text-green-700',
     Event: 'bg-purple-100 text-purple-700',
     Pengumuman: 'bg-yellow-100 text-yellow-700',
@@ -44,7 +44,7 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
     const totalPages = Math.ceil(total / perPage);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-muted">
             <section className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white">
                 <div className="container mx-auto px-4 py-16">
                     <div className="max-w-4xl mx-auto text-center">
@@ -57,7 +57,7 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
                             Update terbaru seputar program, kegiatan, dan pengumuman ASN Academy
                         </p>
                         <div className="max-w-md mx-auto relative">
-                            <Search className="absolute left-4 top-3 w-5 h-5 text-gray-400" />
+                            <Search className="absolute left-4 top-3 w-5 h-5 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Cari berita..."
@@ -73,13 +73,13 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
             <section className="container mx-auto px-4 py-12">
                 {loading ? (
                     <div className="flex justify-center py-20">
-                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                        <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
                     </div>
                 ) : filtered.length === 0 ? (
                     <div className="text-center py-20">
-                        <Newspaper className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">Belum ada berita</h3>
-                        <p className="text-gray-500">Belum ada berita yang dipublikasikan saat ini.</p>
+                        <Newspaper className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-semibold text-card-foreground mb-2">Belum ada berita</h3>
+                        <p className="text-muted-foreground">Belum ada berita yang dipublikasikan saat ini.</p>
                     </div>
                 ) : (
                     <>
@@ -88,7 +88,7 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
                                 <Link
                                     key={item.id}
                                      href={`${basePath}/${item.slug || item.id}`}
-                                    className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                                    className="group bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                                 >
                                     <div className="h-48 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-6xl relative overflow-hidden">
                                         {item.thumbnail ? (
@@ -97,12 +97,12 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
                                             <Newspaper className="w-16 h-16 text-white/40" />
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                                        <span className={`absolute top-4 left-4 text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[item.category] || 'bg-gray-100 text-gray-700'}`}>
+                                        <span className={`absolute top-4 left-4 text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[item.category] || 'bg-muted text-foreground'}`}>
                                             {item.category}
                                         </span>
                                     </div>
                                     <div className="p-6">
-                                        <div className="flex items-center gap-4 text-xs text-gray-400 mb-3">
+                                        <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
                                             <span className="flex items-center gap-1">
                                                 <Calendar className="w-3.5 h-3.5" />
                                                 {item.published_at ? new Date(item.published_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : item.created_at}
@@ -112,13 +112,13 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
                                                 {item.views || 0} dilihat
                                             </span>
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                        <h3 className="text-lg font-bold text-card-foreground mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                             {item.title}
                                         </h3>
-                                        <p className="text-sm text-gray-500 line-clamp-3 mb-4">
+                                        <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                                             {item.excerpt || item.content?.substring(0, 200)}
                                         </p>
-                                        <span className="inline-flex items-center gap-1 text-blue-600 font-semibold text-sm group-hover:gap-2 transition-all">
+                                        <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-semibold text-sm group-hover:gap-2 transition-all">
                                             Baca Selengkapnya <ArrowRight className="w-4 h-4" />
                                         </span>
                                     </div>
@@ -135,7 +135,7 @@ export default function BeritaPage({ basePath = '/berita' }: { basePath?: string
                                         className={`w-10 h-10 rounded-xl font-medium text-sm transition-all ${
                                             p === page
                                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
-                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                                : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                                         }`}
                                     >
                                         {p}

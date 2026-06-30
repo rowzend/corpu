@@ -40,11 +40,8 @@ limit_request_line = 4096
 limit_request_fields = 100
 limit_request_field_size = 16384
 
-# Auto-reload when DEBUG=True (development)
-reload = os.getenv('DEBUG', 'False').lower() == 'true'
-
 # Memory optimization
-preload_app = not reload  # Don't preload when reload is enabled (causes issues)
+preload_app = True  # Load application before forking workers (saves memory)
 
 # Restart workers after this many requests (to prevent memory leaks)
 max_requests = 1000

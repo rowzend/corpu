@@ -11,9 +11,6 @@ const nextConfig: NextConfig = {
     '127.0.0.1'
   ],
 
-  // Use webpack for production build (Turbopack causes global-error prerender issue)
-  // turbopack removed for stable build
-
   output: 'standalone',
 
   // Skip type checking and linting during production build

@@ -49,13 +49,6 @@ services:
       - APP_NAME=ASN CORPU
       - APP_LONG_NAME=ASN Corporate University
       - APP_INSTANSI=Pemerintah Kabupaten Pesisir Selatan
-      - MINIO_ENDPOINT=http://172.16.7.66:9000
-      - MINIO_ACCESS_KEY=admin
-      - MINIO_SECRET_KEY=5406@Pessel123
-      - MINIO_BUCKET=asncorpu
-      - MINIO_REGION=us-east-1
-      - MINIO_USE_PROXY=True
-      - MINIO_PROXY_URL=/media/minio/
     deploy:
       resources:
         limits:

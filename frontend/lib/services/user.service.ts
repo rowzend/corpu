@@ -17,7 +17,6 @@ export interface User {
     id_pegawai: number | null;
     user_id_opd: number | null;
     role: string | null;
-    roles: string[];
 }
 
 export interface CreateUserData {
@@ -30,7 +29,7 @@ export interface CreateUserData {
     is_active?: boolean;
     id_pegawai?: number;
     user_id_opd?: number;
-    role_ids?: number[];
+    role_id?: number;
 }
 
 export interface UpdateUserData {
@@ -42,7 +41,7 @@ export interface UpdateUserData {
     id_pegawai?: number;
     user_id_opd?: number;
     password?: string;
-    role_ids?: number[];
+    role_id?: number;
 }
 
 export interface UserListParams {

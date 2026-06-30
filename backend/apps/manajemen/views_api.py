@@ -57,17 +57,10 @@ class UserListAPIView(generics.ListAPIView):
                 Q(email__icontains=search)
             )
         
-        # Filter by role(s)
+        # Filter by role
         role_id = self.request.query_params.get('role_id', None)
         if role_id:
             queryset = queryset.filter(groups__id=role_id)
-        
-        # Filter by multiple role IDs (comma-separated)
-        role_ids = self.request.query_params.get('role_ids', None)
-        if role_ids:
-            ids = [int(r) for r in role_ids.split(',') if r.strip().isdigit()]
-            if ids:
-                queryset = queryset.filter(groups__id__in=ids)
         
         # Filter by status
         is_active = self.request.query_params.get('is_active', None)
@@ -518,41 +511,48 @@ class UserPermissionsAPIView(APIView):
                 }
             })
 
-        # Non-superadmin: check all user groups
+        # Non-superadmin: check user group permissions
         try:
-            user_groups = user.groups.all()
-            group_names = [g.name for g in user_groups]
+            group = user.groups.first()
+            if not group:
+                return Response({
+                    'success': True,
+                    'data': {
+                        'user': {
+                            'groups': []
+                        },
+                        'modules': [],
+                        'permissions': [],
+                        'is_superadmin': False
+                    }
+                })
 
             rules = RoleRule.objects.filter(
-                role__in=user_groups
+                role=group
             ).select_related(
                 'rule__module',
                 'rule__function',
                 'rule__control'
             )
 
-            seen = set()
             all_permissions = []
             modules = set()
             for rule in rules:
                 perm = rule.rule
                 if perm and perm.is_active:
-                    perm_key = f"{perm.module.nama_module}.{perm.function.nama_fungsi}.{perm.control.nama_kontrol}"
-                    if perm_key not in seen:
-                        seen.add(perm_key)
-                        modules.add(perm.module.nama_module)
-                        all_permissions.append({
-                            'module': perm.module.nama_module,
-                            'function': perm.function.nama_fungsi,
-                            'control': perm.control.nama_kontrol,
-                            'permission_string': perm_key
-                        })
+                    modules.add(perm.module.nama_module)
+                    all_permissions.append({
+                        'module': perm.module.nama_module,
+                        'function': perm.function.nama_fungsi,
+                        'control': perm.control.nama_kontrol,
+                        'permission_string': f"{perm.module.nama_module}.{perm.function.nama_fungsi}.{perm.control.nama_kontrol}"
+                    })
 
             return Response({
                 'success': True,
                 'data': {
                     'user': {
-                        'groups': group_names
+                        'groups': [group.name]
                     },
                     'modules': list(modules),
                     'permissions': all_permissions,

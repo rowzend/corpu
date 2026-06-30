@@ -26,17 +26,17 @@ const typeIcons = {
 export default function ActivityList({ activities, isLoading }: ActivityListProps) {
     if (isLoading) {
         return (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-6">
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
                     Recent Activities
                 </h3>
                 <div className="space-y-4">
                     {[...Array(5)].map((_, i) => (
                         <div key={i} className="flex items-start space-x-4 animate-pulse">
-                            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                            <div className="w-10 h-10 bg-muted rounded-full"></div>
                             <div className="flex-1">
-                                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                                <div className="h-3 bg-muted rounded w-1/2"></div>
                             </div>
                         </div>
                     ))}
@@ -46,9 +46,9 @@ export default function ActivityList({ activities, isLoading }: ActivityListProp
     }
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-card rounded-xl shadow-sm border border-border p-6">
             <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-card-foreground">
                     Recent Activities
                 </h3>
                 <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
@@ -59,7 +59,7 @@ export default function ActivityList({ activities, isLoading }: ActivityListProp
             {activities.length === 0 ? (
                 <div className="text-center py-8">
                     <div className="text-4xl mb-2">📭</div>
-                    <p className="text-gray-500">No recent activities</p>
+                    <p className="text-muted-foreground">No recent activities</p>
                 </div>
             ) : (
                 <div className="space-y-4">
@@ -72,13 +72,13 @@ export default function ActivityList({ activities, isLoading }: ActivityListProp
                                 </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900">
+                                <p className="text-sm font-medium text-card-foreground">
                                     {activity.title}
                                 </p>
-                                <p className="text-sm text-gray-600 mt-1">
+                                <p className="text-sm text-muted-foreground mt-1">
                                     {activity.description}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-muted-foreground mt-2">
                                     {new Date(activity.created_at).toLocaleString()}
                                 </p>
                             </div>

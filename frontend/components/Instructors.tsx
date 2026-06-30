@@ -181,17 +181,17 @@ export default function Instructors() {
       <section className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-blue-700 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-blue-700 mb-4">
               Profil Pengajar
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 px-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-3xl shadow-lg p-4 animate-pulse">
-                <div className="aspect-square bg-gray-200 rounded-2xl mb-4"></div>
-                <div className="h-6 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
+              <div key={i} className="bg-card rounded-3xl shadow-lg p-4 animate-pulse">
+                <div className="aspect-square bg-muted rounded-2xl mb-4"></div>
+                <div className="h-6 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded"></div>
               </div>
             ))}
           </div>
@@ -249,7 +249,7 @@ export default function Instructors() {
             {visibleInstructors.map((instructor, index) => (
               <div
                 key={`${instructor.id}-${index}`}
-                className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2"
+                className="group bg-card rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-2"
               >
                 {/* Image Container with Decorative Frame */}
                 <div className={`relative p-4 border-8 ${instructor.borderColor} rounded-3xl m-4 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden`}>
@@ -281,7 +281,7 @@ export default function Instructors() {
 
                 {/* Info Section */}
                 <div className="p-6 text-center">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-card-foreground mb-2">
                     {instructor.name}
                   </h3>
                   {(instructor as any).unit_kerja && (
@@ -289,7 +289,7 @@ export default function Instructors() {
                       {(instructor as any).unit_kerja}
                     </div>
                   )}
-                  <p className="text-sm text-gray-600 leading-relaxed">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {instructor.position}
                   </p>
                 </div>

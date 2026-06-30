@@ -56,8 +56,8 @@ export default function LatestNews() {
                                 📰 Informasi Terbaru
                             </span>
                         </div>
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-                        <p className="text-xl text-gray-600">Update terbaru seputar program dan kegiatan ASN Academy</p>
+                        <h2 className="text-4xl font-bold text-card-foreground mb-4">Berita Terkini</h2>
+                        <p className="text-xl text-muted-foreground">Update terbaru seputar program dan kegiatan ASN Academy</p>
                     </div>
                     <Link
                         href="/berita"
@@ -74,7 +74,7 @@ export default function LatestNews() {
                             key={item.id}
                             onMouseEnter={() => setHoveredNews(item.id)}
                             onMouseLeave={() => setHoveredNews(null)}
-                            className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
+                            className="group bg-card rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
                         >
                             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 h-48 flex items-center justify-center text-8xl relative overflow-hidden">
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -84,18 +84,18 @@ export default function LatestNews() {
                             </div>
                             <div className="p-6">
                                 <div className="flex items-center justify-between mb-3">
-                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[item.category] || 'bg-gray-100 text-gray-700'}`}>
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[item.category] || 'bg-muted text-foreground'}`}>
                                         {item.category}
                                     </span>
                                     {item.published_at && (
-                                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Calendar className="w-3 h-3" />
                                             {new Date(item.published_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900 mb-3">{item.title}</h3>
-                                <p className="text-gray-600 mb-4 line-clamp-3">{item.excerpt || item.content?.substring(0, 200)}</p>
+                                <h3 className="text-xl font-bold text-card-foreground mb-3">{item.title}</h3>
+                                <p className="text-muted-foreground mb-4 line-clamp-3">{item.excerpt || item.content?.substring(0, 200)}</p>
                                 <Link
                                     href={`/berita/${item.slug || item.id}`}
                                     className="group/link inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"

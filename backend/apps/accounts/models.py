@@ -40,6 +40,34 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(username, email, password, **extra_fields)
 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        'accounts.User', on_delete=models.CASCADE,
+        related_name='profile', primary_key=True,
+        verbose_name='User'
+    )
+    bio = models.TextField(null=True, blank=True, verbose_name='Bio/Deskripsi')
+    no_hp_pribadi = models.CharField(max_length=50, null=True, blank=True, verbose_name='No HP Pribadi')
+    alamat_domisili = models.TextField(null=True, blank=True, verbose_name='Alamat Domisili')
+    nik = models.CharField(max_length=20, null=True, blank=True, verbose_name='NIK (KTP)')
+    agama = models.CharField(max_length=50, null=True, blank=True, verbose_name='Agama')
+    pendidikan_terakhir = models.CharField(max_length=100, null=True, blank=True, verbose_name='Pendidikan Terakhir')
+    media_sosial = models.JSONField(null=True, blank=True, default=dict, verbose_name='Media Sosial')
+    preferensi = models.JSONField(null=True, blank=True, default=dict, verbose_name='Preferensi')
+    is_public = models.BooleanField(default=False, verbose_name='Profil Publik')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Dibuat')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Diperbarui')
+
+    class Meta:
+        app_label = 'accounts'
+        db_table = 'user_profiles'
+        verbose_name = 'Profil User'
+        verbose_name_plural = 'Profil User'
+
+    def __str__(self):
+        return f'Profil {self.user.name or self.user.username}'
+
+
 class User(AbstractBaseUser):
     """
     Custom User model - sesuai struktur users table
@@ -163,12 +191,11 @@ class User(AbstractBaseUser):
     
     @property
     def pegawai(self):
-        """Get related pegawai data"""
+        """Get related pegawai data from ESIMPEG sync"""
         if self.id_pegawai:
             try:
-                # Import here to avoid circular import
-                from apps.pegawai.models import MsPegawai
-                return MsPegawai.objects.get(id_pegawai=self.id_pegawai)
+                from apps.api_simpeg.models import Pegawai
+                return Pegawai.objects.get(id_pegawai=self.id_pegawai)
             except Exception:
                 return None
         return None

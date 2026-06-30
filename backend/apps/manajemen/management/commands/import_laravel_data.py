@@ -19,7 +19,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--skip-pegawai',
             action='store_true',
-            help='Skip import_ms_pegawai',
+            help='Skip import_ms_pegawai (deprecated - removed)',
         )
         parser.add_argument(
             '--skip-riwayat',
@@ -44,8 +44,7 @@ class Command(BaseCommand):
             call_command('import_ms_unit_organisasi', **cmd_opts)
 
         if not skip_pegawai:
-            self.stdout.write(self.style.WARNING('• Importing ms_pegawai'))
-            call_command('import_ms_pegawai', **cmd_opts)
+            self.stdout.write(self.style.WARNING('• Skipping ms_pegawai (removed - use api_simpeg sync instead)'))
 
         if not skip_riwayat:
             self.stdout.write(self.style.WARNING('• Importing riwayat pangkat (Mr_pangkat)'))

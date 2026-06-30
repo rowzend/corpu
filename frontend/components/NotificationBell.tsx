@@ -74,8 +74,8 @@ export default function NotificationBell() {
                 )}
             </Button>
             {open && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                    <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+                <div className="absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-lg border border-border z-50 max-h-96 overflow-y-auto">
+                    <div className="p-3 border-b border-border flex items-center justify-between">
                         <p className="text-sm font-semibold">Notifikasi</p>
                         {unreadCount > 0 && (
                             <button onClick={handleReadAll} className="text-xs text-blue-600 hover:underline">
@@ -84,19 +84,19 @@ export default function NotificationBell() {
                         )}
                     </div>
                     {notifications.length === 0 ? (
-                        <p className="p-4 text-sm text-gray-500 text-center">Tidak ada notifikasi</p>
+                        <p className="p-4 text-sm text-muted-foreground text-center">Tidak ada notifikasi</p>
                     ) : (
                         notifications.map(n => (
                             <button
                                 key={n.id}
                                 onClick={() => handleClick(n)}
-                                className={`w-full text-left p-3 border-b border-gray-50 hover:bg-gray-50 transition ${
+                                className={`w-full text-left p-3 border-b border-gray-50 hover:bg-muted transition ${
                                     !n.is_read ? 'bg-blue-50' : ''
                                 }`}
                             >
-                                <p className="text-sm font-medium text-gray-800">{n.title}</p>
-                                {n.message && <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>}
-                                <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
+                                <p className="text-sm font-medium text-foreground">{n.title}</p>
+                                {n.message && <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>}
+                                <p className="text-[10px] text-muted-foreground mt-1">{timeAgo(n.created_at)}</p>
                             </button>
                         ))
                     )}

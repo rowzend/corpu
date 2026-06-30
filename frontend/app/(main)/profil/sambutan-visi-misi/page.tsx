@@ -22,15 +22,15 @@ export default function SambutanVisiMisiPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Sambutan & Visi Misi</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Sambutan & Visi Misi</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {sambutan && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">{sambutan.title}</h2>
+              <h2 className="text-2xl font-bold text-card-foreground mb-4">{sambutan.title}</h2>
               <div
-                className="text-gray-700 leading-relaxed prose max-w-none"
+                className="text-foreground leading-relaxed prose max-w-none"
                 dangerouslySetInnerHTML={{ __html: sambutan.content }}
               />
             </CardContent>
@@ -39,9 +39,9 @@ export default function SambutanVisiMisiPage() {
         {visiMisi && (
           <Card>
             <CardContent className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">{visiMisi.title}</h2>
+              <h2 className="text-2xl font-bold text-card-foreground mb-4">{visiMisi.title}</h2>
               <div
-                className="text-gray-700 leading-relaxed prose max-w-none"
+                className="text-foreground leading-relaxed prose max-w-none"
                 dangerouslySetInnerHTML={{ __html: visiMisi.content }}
               />
             </CardContent>

@@ -45,10 +45,10 @@ export default function LatestCourses() {
   ];
 
   return (
-    <section className="py-20 bg-white relative overflow-hidden">
+    <section className="py-20 bg-card relative overflow-hidden">
       {/* Decorative Elements */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-100 rounded-full filter blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-100 rounded-full filter blur-3xl opacity-30 translate-y-1/2 -translate-x-1/2"></div>
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-100 dark:bg-blue-900/30 rounded-full filter blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-100 dark:bg-indigo-900/30 rounded-full filter blur-3xl opacity-30 translate-y-1/2 -translate-x-1/2"></div>
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="flex justify-between items-center mb-12">
@@ -58,10 +58,10 @@ export default function LatestCourses() {
                 📚 Pembelajaran Terkini
               </span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-card-foreground mb-4">
               Kursus Terbaru
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Pilihan kursus terbaik untuk pengembangan kompetensi Anda
             </p>
           </div>
@@ -82,7 +82,7 @@ export default function LatestCourses() {
               key={course.id}
               onMouseEnter={() => setHoveredCard(course.id)}
               onMouseLeave={() => setHoveredCard(null)}
-              className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105"
+              className="group bg-card border border-border rounded-xl overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105"
             >
               <div className="bg-gradient-to-br from-blue-500 to-indigo-600 h-48 flex items-center justify-center text-8xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
@@ -92,15 +92,15 @@ export default function LatestCourses() {
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     {course.category}
                   </span>
-                  <span className="text-xs text-gray-500">{course.level}</span>
+                  <span className="text-xs text-muted-foreground">{course.level}</span>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                <h3 className="text-lg font-bold text-card-foreground mb-3">
                   {course.title}
                 </h3>
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                   <span>⏱️ {course.duration}</span>
                   <span>👥 {course.participants}</span>
                 </div>

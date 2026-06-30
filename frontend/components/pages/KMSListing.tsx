@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getPublicArticles, getPublicCategories, getPublicKnowledgeStats, type Article, type Category } from '@/lib/api/knowledge';
 import { handleApiError } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 function CategoryNode({
   category,
@@ -28,8 +29,9 @@ function CategoryNode({
   onSelect: (name: string, id: number) => void;
 }) {
   const hasChildren = category.children && category.children.length > 0;
+  const [isExpanded, setIsExpanded] = useState(true); // Auto-expand by default
   
-  // Strip HTML for comparison
+  // Strip HTML for comparison and display
   const stripHtml = (html: string) => {
     const tmp = document.createElement('div');
     tmp.innerHTML = html;
@@ -37,6 +39,7 @@ function CategoryNode({
   };
   
   const categoryNameClean = stripHtml(category.name).toLowerCase();
+  const categoryNameDisplay = stripHtml(category.name);
   const isSelected = selectedKategori === categoryNameClean;
 
   const handleClick = () => {
@@ -50,34 +53,79 @@ function CategoryNode({
     onSelect(categoryNameClean, category.id);
   };
 
+  // Check if text is truncated
+  const isTruncated = categoryNameDisplay.length > (level > 0 ? 25 : 35);
+
   return (
     <>
       <button
         onClick={handleClick}
-        className={`w-full text-left rounded-lg transition-all duration-300 flex items-center gap-2 ${
+        className={`w-full text-left rounded-lg transition-all duration-300 flex items-center gap-2 group relative ${
           isSelected
             ? 'bg-indigo-600 text-white shadow-lg'
-            : 'text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
-        } ${level > 0 ? 'text-sm' : 'text-sm font-medium'}`}
-        style={{ padding: '8px 12px', paddingLeft: `${level * 20 + 12}px` }}
+            : 'text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'
+        } ${level > 0 ? 'text-xs' : 'text-sm font-medium'} ${level > 0 ? 'py-2' : 'py-2.5'}`}
+        style={{ paddingLeft: `${level * 16 + 12}px`, paddingRight: '12px' }}
+        title={categoryNameDisplay} // Native browser tooltip as fallback
       >
-        {level > 0 && (
-          <span className="w-3 h-px bg-gray-300 flex-shrink-0" />
+        {/* Expand/Collapse Icon for parent categories */}
+        {hasChildren && level === 0 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="flex-shrink-0 hover:scale-110 transition-transform"
+          >
+            <span className={`transition-transform duration-200 inline-block ${isExpanded ? 'rotate-90' : ''}`}>
+              ▶
+            </span>
+          </button>
         )}
-        <span 
-          className="truncate" 
-          dangerouslySetInnerHTML={{ __html: category.name }}
-        />
+        
+        {/* Tree connector for child categories */}
+        {level > 0 && (
+          <span className={`w-2 h-px ${isSelected ? 'bg-white' : 'bg-gray-300'} flex-shrink-0`} />
+        )}
+        
+        {/* Category Name with smart wrapping */}
+        <span className={`flex-1 min-w-0 ${level > 0 && isTruncated ? 'line-clamp-2' : 'truncate'}`}>
+          {categoryNameDisplay}
+        </span>
+        
+        {/* Article Count Badge */}
         {category.article_count > 0 && (
-          <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full ${
-            isSelected ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'
+          <span className={`ml-auto flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
+            isSelected ? 'bg-indigo-500 text-white' : 'bg-muted text-muted-foreground'
           }`}>
             {category.article_count}
           </span>
         )}
+        
+        {/* Enhanced Tooltip - only show if text is truncated */}
+        {isTruncated && (
+          <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden group-hover:block lg:block z-50 pointer-events-none animate-fadeIn">
+            <div className="relative">
+              {/* Tooltip Arrow */}
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
+              {/* Tooltip Content */}
+              <div className="bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg px-4 py-2.5 shadow-2xl max-w-xs ml-1">
+                <div className="font-semibold mb-1">{categoryNameDisplay}</div>
+                {category.article_count > 0 && (
+                  <div className="text-xs text-gray-300 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                    {category.article_count} artikel
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </button>
-      {hasChildren && (
-        <div>
+      
+      {/* Children with collapse animation */}
+      {hasChildren && isExpanded && (
+        <div className="overflow-hidden transition-all duration-300">
           {category.children!.map(child => (
             <CategoryNode
               key={child.id}
@@ -94,10 +142,13 @@ function CategoryNode({
 }
 
 export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
+  const t = useTranslations();
   const [selectedKategori, setSelectedKategori] = useState('semua');
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -243,6 +294,10 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
 
   const allCategoryNames = flattenCategoryNames(categoryTree);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedKategori, searchQuery, sortBy]);
+
   const filteredArticles = articles.filter((article) => {
     if (!article) return false;
 
@@ -289,6 +344,9 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
     }
   });
 
+  const totalPages = Math.ceil(sortedArticles.length / perPage);
+  const paginatedArticles = sortedArticles.slice((currentPage - 1) * perPage, currentPage * perPage);
+
   const getContentTypeIcon = (contentType: string) => {
     switch (contentType) {
       case 'video': return '🎥';
@@ -309,13 +367,13 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-muted">
         <div className="animate-pulse">
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 h-96"></div>
           <div className="container mx-auto px-4 py-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="h-64 bg-gray-200 rounded-2xl"></div>
+                <div key={i} className="h-64 bg-muted rounded-2xl"></div>
               ))}
             </div>
           </div>
@@ -325,7 +383,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white relative overflow-hidden">
         {/* Animated Background */}
@@ -338,12 +396,12 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-block mb-4">
               <span className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium">
-                🧠 Knowledge Management System
+                🧠 {t('kms_page.page_title')}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">KMS ASN Academy</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('kms_page.hero_title')}</h1>
             <p className="text-xl text-purple-100 mb-8">
-              Pusat pengetahuan, best practice, dan inovasi untuk pengembangan ASN yang berkelanjutan
+              {t('kms_page.subtitle')}
             </p>
 
             {/* Search Bar */}
@@ -351,10 +409,10 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Cari pengetahuan, best practice, atau topik..."
+                  placeholder={t('kms_page.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-6 py-4 pr-14 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
+                  className="w-full px-6 py-4 pr-14 rounded-xl text-card-foreground placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
                 />
                 <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg transition-colors">
                   <Search className="w-5 h-5" />
@@ -366,19 +424,19 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
             <div className="grid grid-cols-4 gap-4 mt-12 max-w-3xl mx-auto">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{stats.published_articles}+</div>
-                <div className="text-sm text-purple-100">Artikel</div>
+                <div className="text-sm text-purple-100">{t('kms_page.title')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{kmsCategories.length}+</div>
-                <div className="text-sm text-purple-100">Kategori</div>
+                <div className="text-sm text-purple-100">{t('kms_page.categories')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{Math.floor(stats.total_views / 1000)}K+</div>
-                <div className="text-sm text-purple-100">Views</div>
+                <div className="text-sm text-purple-100">{t('common.views')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{stats.total_likes}+</div>
-                <div className="text-sm text-purple-100">Likes</div>
+                <div className="text-sm text-purple-100">{t('common.likes')}</div>
               </div>
             </div>
           </div>
@@ -396,17 +454,17 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
         <div className="flex gap-8">
           {/* Sidebar Categories */}
           <div className="w-72 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-md p-6 sticky top-24">
+            <div className="bg-card rounded-xl shadow-md p-6 sticky top-24">
               <div className="flex items-center gap-2 mb-6">
-                <Filter className="w-5 h-5 text-indigo-600" />
-                <h2 className="text-xl font-bold text-gray-900">Filter</h2>
+                <Filter className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                <h2 className="text-xl font-bold text-card-foreground">{t('kms_page.filter')}</h2>
               </div>
 
               {/* Categories */}
               <div className="space-y-1 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <span>Kategori</span>
-                  <span className="text-xs text-gray-400 font-normal">({allCategoryNames.length})</span>
+                <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                  <span>{t('kms_page.categories')}</span>
+                  <span className="text-xs text-muted-foreground font-normal">({allCategoryNames.length})</span>
                 </h3>
                 <button
                   onClick={() => {
@@ -416,10 +474,10 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                   className={`w-full text-left px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${
                     selectedKategori === 'semua'
                       ? 'bg-indigo-600 text-white shadow-lg'
-                      : 'bg-gray-50 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600'
+                      : 'bg-muted text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'
                   }`}
                 >
-                  Semua Kategori
+                  {t('kms_page.all_categories')}
                 </button>
                 {categoryTree.map(cat => (
                   <CategoryNode
@@ -436,14 +494,14 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
               </div>
 
               {/* Quick Actions */}
-              <div className="pt-6 border-t border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="pt-6 border-t border-border">
+                <h3 className="font-semibold text-card-foreground mb-4">{t('kms_page.quick_actions')}</h3>
                 <div className="space-y-2">
                   <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300">
-                    ➕ Kontribusi Pengetahuan
+                    ➕ {t('kms_page.contribute')}
                   </Button>
                   <Button variant="outline" className="w-full">
-                    📊 Lihat Statistik
+                    📊 {t('kms_page.view_stats')}
                   </Button>
                 </div>
               </div>
@@ -454,31 +512,43 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
           <div className="flex-1">
             <div className="mb-8 flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-2">Knowledge Base</h2>
-                <p className="text-gray-600">
-                  Menampilkan <span className="font-semibold text-indigo-600">{sortedArticles.length}</span> dari {articles.length} artikel
+                <h2 className="text-3xl font-bold text-card-foreground mb-2">{t('kms_page.knowledge_base')}</h2>
+                <p className="text-muted-foreground">
+                  {t('kms_page.showing_articles', { count: sortedArticles.length, total: articles.length })}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">Urutkan:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">{t('kms_page.per_page')}:</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => { setPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                    className="px-3 py-2 border border-border rounded-lg bg-card text-card-foreground text-sm"
+                  >
+                    {[5, 10, 15, 20, 50].map(n => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <span className="text-sm text-muted-foreground">{t('kms_page.sort')}:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-card"
                 >
-                  <option value="newest">Terbaru</option>
-                  <option value="popular">Terpopuler</option>
-                  <option value="liked">Paling Disukai</option>
-                  <option value="commented">Paling Banyak Komentar</option>
+                  <option value="newest">{t('kms_page.newest')}</option>
+                  <option value="popular">{t('kms_page.popular')}</option>
+                  <option value="liked">{t('kms_page.most_liked')}</option>
+                  <option value="commented">{t('kms_page.most_commented')}</option>
                 </select>
               </div>
             </div>
 
             <div className="space-y-6">
-              {sortedArticles.map((article) => (
+              {paginatedArticles.map((article) => (
                 <div
                   key={article.id}
-                  className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1"
+                  className="group bg-card rounded-2xl shadow-md hover:shadow-2xl transition-all duration-500 overflow-hidden transform hover:-translate-y-1"
                 >
                   <div className="flex">
                     {/* Icon/Cover */}
@@ -494,29 +564,29 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {article.category && (
-                            <Badge className="text-xs font-semibold text-indigo-600 bg-indigo-50">
+                            <Badge className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30">
                               <span dangerouslySetInnerHTML={{ __html: article.category.name }} />
                             </Badge>
                           )}
-                          <Badge className="text-xs font-semibold text-gray-600 bg-gray-100">
+                          <Badge className="text-xs font-semibold text-muted-foreground bg-muted">
                             {article.content_type}
                           </Badge>
                           {article.is_featured && (
                             <Badge className="text-xs font-semibold text-yellow-600 bg-yellow-50">
-                              ⭐ Featured
+                              ⭐ {t('kms_page.featured')}
                             </Badge>
                           )}
                         </div>
-                        <button className="text-gray-400 hover:text-red-500 transition-colors">
+                        <button className="text-muted-foreground hover:text-red-500 dark:text-red-400 transition-colors">
                           <Heart className="w-6 h-6" />
                         </button>
                       </div>
 
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors line-clamp-2">
+                      <h3 className="text-xl font-bold text-card-foreground mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
                         {article.title}
                       </h3>
 
-                      <p className="text-gray-600 mb-4 line-clamp-2">
+                      <p className="text-muted-foreground mb-4 line-clamp-2">
                         {article.excerpt || article.content}
                       </p>
 
@@ -545,7 +615,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                       )}
 
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           {/* Removed author display */}
                           <div className="flex items-center gap-1">
                             <Calendar className="w-4 h-4" />
@@ -569,7 +639,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                           href={`${basePath}/${article.slug}`}
                           className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                         >
-                          Baca Selengkapnya →
+                          {t('kms_page.read_more')} →
                         </Link>
                       </div>
                     </div>
@@ -579,15 +649,15 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
             </div>
 
             {sortedArticles.length === 0 && (
-              <div className="text-center py-16 bg-white rounded-2xl shadow-md">
+              <div className="text-center py-16 bg-card rounded-2xl shadow-md">
                 <div className="text-8xl mb-4">🔍</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {searchQuery || selectedKategori !== 'semua' ? 'Tidak Ada Hasil' : 'Belum Ada Artikel'}
+                <h3 className="text-2xl font-bold text-card-foreground mb-2">
+                  {searchQuery || selectedKategori !== 'semua' ? t('kms_page.no_results') : t('kms_page.no_articles')}
                 </h3>
-                <p className="text-gray-500 text-lg">
+                <p className="text-muted-foreground text-lg">
                   {searchQuery || selectedKategori !== 'semua'
-                    ? 'Tidak ada artikel yang sesuai dengan pencarian Anda'
-                    : 'Artikel sedang dalam proses persiapan'
+                    ? t('kms_page.no_results_desc')
+                    : t('kms_page.no_articles_desc')
                   }
                 </p>
                 <button
@@ -598,8 +668,62 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                   }}
                   className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                 >
-                  Reset Filter
+                  {t('kms_page.reset_filter')}
                 </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {sortedArticles.length > 0 && (
+              <div className="mt-8 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  {t('kms_page.page_info', {
+                    start: (currentPage - 1) * perPage + 1,
+                    end: Math.min(currentPage * perPage, sortedArticles.length),
+                    total: sortedArticles.length
+                  })}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg border border-border bg-card text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-indigo-600 text-white'
+                            : 'border border-border bg-card hover:bg-muted text-card-foreground'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-lg border border-border bg-card text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
               </div>
             )}
           </div>

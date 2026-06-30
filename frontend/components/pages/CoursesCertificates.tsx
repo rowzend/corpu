@@ -60,11 +60,11 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="h-44 bg-gray-200 rounded-2xl animate-pulse" />
-                <div className="h-14 bg-gray-200 rounded-xl animate-pulse" />
+                <div className="h-44 bg-muted rounded-2xl animate-pulse" />
+                <div className="h-14 bg-muted rounded-xl animate-pulse" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-56 bg-gray-200 rounded-xl animate-pulse" />
+                        <div key={i} className="h-56 bg-muted rounded-xl animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -114,15 +114,15 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
 
             {/* Search */}
             {certificates.length > 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div className="bg-card rounded-xl shadow-sm border border-border p-4">
                     <div className="relative">
-                        <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                        <Search className="absolute left-3 top-2.5 w-5 h-5 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Cari sertifikat berdasarkan kursus atau nomor..."
                             value={search}
                             onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-gray-50 focus:bg-white transition-colors text-sm"
+                            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-muted focus:bg-card transition-colors text-sm"
                         />
                     </div>
                 </div>
@@ -130,14 +130,14 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
 
             {/* Certificate Grid */}
             {filtered.length === 0 ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-full flex items-center justify-center">
-                        <Award className="w-8 h-8 text-amber-500" />
+                <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                        <Award className="w-8 h-8 text-amber-500 dark:text-amber-300" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <h3 className="text-lg font-semibold text-card-foreground mb-2">
                         {certificates.length === 0 ? 'Belum ada sertifikat' : 'Sertifikat tidak ditemukan'}
                     </h3>
-                    <p className="text-gray-500 mb-6">
+                    <p className="text-muted-foreground mb-6">
                         {certificates.length === 0
                             ? 'Selesaikan kursus untuk mendapatkan sertifikat.'
                             : 'Tidak ada sertifikat yang cocok dengan pencarian.'}
@@ -156,27 +156,27 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
                     {filtered.map((cert) => (
                         <div
                             key={cert.id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-amber-200 transition-all overflow-hidden"
+                            className="bg-card rounded-xl shadow-sm border border-border hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700 transition-all overflow-hidden"
                         >
                             {/* Top Accent */}
                             <div className="h-2 bg-gradient-to-r from-amber-400 to-yellow-500" />
 
                             <div className="p-6">
                                 <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-gradient-to-br from-amber-100 to-yellow-200 flex items-center justify-center">
-                                    <Medal className="w-7 h-7 text-amber-600" />
+                                    <Medal className="w-7 h-7 text-amber-600 dark:text-amber-300" />
                                 </div>
 
-                                <h3 className="font-semibold text-gray-900 text-center mb-3 line-clamp-2">
+                                <h3 className="font-semibold text-card-foreground text-center mb-3 line-clamp-2">
                                     {cert.course_title}
                                 </h3>
 
-                                <div className="space-y-2 text-xs text-gray-500 mb-4">
+                                <div className="space-y-2 text-xs text-muted-foreground mb-4">
                                     <div className="flex items-center gap-2 justify-center">
-                                        <Hash className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                        <Hash className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                                         <span className="truncate">{cert.certificate_number}</span>
                                     </div>
                                     <div className="flex items-center gap-2 justify-center">
-                                        <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                                        <Calendar className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                                         <span>
                                             {new Date(cert.issued_at).toLocaleDateString('id-ID', {
                                                 year: 'numeric', month: 'long', day: 'numeric'
@@ -185,7 +185,7 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
                                     </div>
                                     {cert.user_username && (
                                         <div className="flex items-center gap-2 justify-center">
-                                            <span className="text-gray-400">@</span>
+                                            <span className="text-muted-foreground">@</span>
                                             <span>{cert.user_username}</span>
                                         </div>
                                     )}
@@ -194,7 +194,7 @@ export default function CoursesCertificates({ basePath = '/courses' }: { basePat
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => router.push(`${basePath}/${cert.course_slug}`)}
-                                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors border border-gray-200"
+                                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm text-muted-foreground hover:text-amber-600 dark:text-amber-300 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-xl transition-colors border border-border"
                                     >
                                         <BookOpen className="w-3.5 h-3.5" /> Kursus
                                     </button>

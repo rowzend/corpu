@@ -41,6 +41,10 @@ class SessionInactivityMiddleware:
     
     def __call__(self, request):
         # Skip untuk anonymous users
+        # Skip juga untuk API request yang pake JWT (Bearer token)
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if auth_header.startswith('Bearer '):
+            return self.get_response(request)
         if request.user.is_authenticated:
             # Get current time
             current_time = time.time()

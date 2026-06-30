@@ -17,16 +17,23 @@ import { authService } from '@/lib/services';
 export default function HomePage() {
     const router = useRouter();
     const [checked, setChecked] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+        
         if (authService.isAuthenticated()) {
             router.replace('/dashboard');
         } else {
             setChecked(true);
         }
-    }, [router]);
+    }, [mounted, router]);
 
-    if (!checked) {
+    if (!mounted || !checked) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

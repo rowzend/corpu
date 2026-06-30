@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { getPublicSettings } from '@/lib/api/profilePublic';
 import { api } from '@/lib/api';
 import { authService } from '@/lib/services';
@@ -12,19 +13,10 @@ import {
     Search, Menu, X, GraduationCap, BookMarked
 } from 'lucide-react';
 
-const sidebarItems = [
-    { name: 'Dashboard', href: '/member/dashboard', icon: LayoutDashboard },
-    { name: 'Akademi', href: '/member/courses', icon: BookOpen },
-    { name: 'Pengetahuanku', href: '/member/kms', icon: BookMarked },
-    { name: 'Berita', href: '/member/berita', icon: FileText },
-    { name: 'Pelatihan', href: '/member/pelatihan', icon: GraduationCap },
-    { name: 'Data Diri', href: '/member/data-diri', icon: User },
-    { name: 'Setting', href: '/member/setting', icon: Settings },
-];
-
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations();
     const [user, setUser] = useState<any>(null);
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +26,16 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     const [mobileMenu, setMobileMenu] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const sidebarItems = [
+        { name: t('member.nav.dashboard'), href: '/member/dashboard', icon: LayoutDashboard },
+        { name: t('member.nav.akademi'), href: '/member/courses', icon: BookOpen },
+        { name: t('member.nav.kms'), href: '/member/kms', icon: BookMarked },
+        { name: t('member.nav.berita'), href: '/member/berita', icon: FileText },
+        { name: t('member.nav.pelatihan'), href: '/member/pelatihan', icon: GraduationCap },
+        { name: t('member.nav.data_diri'), href: '/member/data-diri', icon: User },
+        { name: t('member.nav.setting'), href: '/member/setting', icon: Settings },
+    ];
 
     useEffect(() => {
         const u = authService.getCurrentUser();
@@ -76,17 +78,17 @@ router.push('/');
 
             const kmsData = kmsRes.status === 'fulfilled' ? kmsRes.value?.results || [] : [];
             kmsData.slice(0, 3).forEach((item: any) => results.push({
-                ...item, _type: 'Pengetahuan', _href: '/member/kms/' + item.slug,
+                ...item, _type: 'knowledge', _href: '/member/kms/' + item.slug,
             }));
 
             const coursesData = coursesRes.status === 'fulfilled' ? coursesRes.value?.results || [] : [];
             coursesData.slice(0, 3).forEach((item: any) => results.push({
-                ...item, _type: 'Kursus', _href: '/member/courses/' + item.slug,
+                ...item, _type: 'course', _href: '/member/courses/' + item.slug,
             }));
 
             const newsData = beritaRes.status === 'fulfilled' ? beritaRes.value?.results || [] : [];
             newsData.slice(0, 3).forEach((item: any) => results.push({
-                ...item, _type: 'Berita', _href: '/member/berita/' + (item.slug || item.id),
+                ...item, _type: 'news', _href: '/member/berita/' + (item.slug || item.id),
             }));
 
             setSearchResults(results);
@@ -106,18 +108,25 @@ const handleLogout = async () => {
     const appName = settings.app_name || 'ASN CORPU';
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950">
+            {/* Animated background blobs */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+                <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl animate-float" />
+                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-200/30 dark:bg-indigo-500/10 rounded-full blur-3xl animate-float animation-delay-2000" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-100/20 dark:bg-purple-500/5 rounded-full blur-3xl animate-float animation-delay-4000" />
+            </div>
+
             <SessionChecker timeoutMinutes={30} showWarning={true} />
 
             {/* Top Navbar */}
-            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <header className="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/50 shadow-lg shadow-black/[0.02] dark:shadow-black/[0.08]">
                 <div className="px-4 md:px-6">
                     <div className="flex items-center justify-between h-16 gap-4">
                         {/* Left: Logo + Mobile Toggle */}
                         <div className="flex items-center gap-3 flex-shrink-0">
                             <button
                                 onClick={() => setMobileSidebar(true)}
-                                className="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                                className="lg:hidden p-2 rounded-xl bg-white/50 dark:bg-white/5 text-muted-foreground hover:bg-white/80 dark:hover:bg-white/10 backdrop-blur-sm transition-all"
                             >
                                 <Menu className="w-5 h-5" />
                             </button>
@@ -126,46 +135,46 @@ const handleLogout = async () => {
                                 {settings.logo ? (
                                     <img src={settings.logo} alt={appName} className="h-8 w-auto" />
                                 ) : (
-                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
                                         <GraduationCap className="w-4 h-4 text-white" />
                                     </div>
                                 )}
-                                <span className="font-bold text-gray-900 hidden sm:block">{appName}</span>
+                                <span className="font-bold text-foreground hidden sm:block">{appName}</span>
                             </Link>
                         </div>
 
                         {/* Center: Search */}
                         <div ref={searchRef} className="flex-1 max-w-xl mx-auto hidden sm:block">
-                            <div className="flex items-center bg-gray-100 rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-all">
-                                <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                            <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white/80 dark:focus-within:bg-white/10 border border-white/20 dark:border-white/5 transition-all">
+                                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                                 <input
                                     ref={searchInputRef}
                                     type="text"
-                                    placeholder="Cari kursus, artikel..."
+                                    placeholder={t('member.search.placeholder')}
                                     value={searchQuery}
                                     onChange={e => handleSearch(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-sm pl-2 w-full text-gray-700 placeholder-gray-400"
+                                    className="bg-transparent border-none outline-none text-sm pl-2 w-full text-foreground placeholder-muted-foreground"
                                 />
                             </div>
                                 {showSearch && (
-                                    <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                                    <div className="absolute top-full mt-2 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/30 dark:border-gray-800/30 overflow-hidden z-50">
                                         {searchResults.length === 0 ? (
-                                            <div className="px-4 py-6 text-center text-sm text-gray-400">
-                                                Tidak ada hasil untuk "{searchQuery}"
+                                            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                                {t('member.search.no_results', { query: searchQuery })}
                                             </div>
                                         ) : searchResults.map((item: any, i: number) => (
                                         <Link
                                             key={`${item._type}-${item.id || i}`}
                                             href={item._href}
                                             onClick={() => { setShowSearch(false); setSearchQuery(''); }}
-                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-white/50 dark:hover:bg-white/5 transition-colors border-b border-white/20 dark:border-gray-800/30 last:border-0"
                                         >
-                                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gray-100 text-gray-500">
-                                                {item._type === 'Kursus' ? 'K' : item._type === 'Berita' ? 'B' : 'P'}
+                                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-blue-100/80 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 backdrop-blur-sm">
+                                                {item._type === 'course' ? 'K' : item._type === 'news' ? 'B' : 'P'}
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
-                                                <p className="text-xs text-gray-500">{item._type}</p>
+                                                <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+                                                <p className="text-xs text-muted-foreground">{t('member.search.type_' + item._type)}</p>
                                             </div>
                                         </Link>
                                     ))}
@@ -175,19 +184,19 @@ const handleLogout = async () => {
 
                         {/* Right: Avatar + Name */}
                         <div className="flex items-center gap-3 flex-shrink-0">
-                            <div className="hidden sm:flex items-center gap-2.5">
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="hidden sm:flex items-center gap-2.5 bg-white/30 dark:bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20 dark:border-white/5">
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
                                     <span className="text-white text-xs font-bold">
                                         {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                                     </span>
                                 </div>
-                                <span className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
+                                <span className="text-sm font-medium text-foreground truncate max-w-[120px]">
                                     {user?.name || user?.username}
                                 </span>
                             </div>
                             <button
                                 onClick={() => setMobileMenu(true)}
-                                className="sm:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100"
+                                className="sm:hidden p-2 rounded-xl bg-white/50 dark:bg-white/5 text-muted-foreground hover:bg-white/80 dark:hover:bg-white/10 backdrop-blur-sm transition-all"
                             >
                                 <Menu className="w-5 h-5" />
                             </button>
@@ -199,35 +208,35 @@ const handleLogout = async () => {
             {/* Mobile Menu Overlay */}
             {mobileMenu && (
                 <div className="fixed inset-0 z-50 lg:hidden">
-                    <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenu(false)} />
-                    <div className="absolute top-0 left-0 right-0 bg-white shadow-xl rounded-b-2xl">
-                        <div className="flex items-center justify-between p-4 border-b">
-                            <span className="font-bold text-gray-900">Menu</span>
-                            <button onClick={() => setMobileMenu(false)} className="p-1 rounded-lg hover:bg-gray-100">
-                                <X className="w-5 h-5" />
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenu(false)} />
+                    <div className="absolute top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-xl rounded-b-2xl border-b border-white/20 dark:border-gray-800/30">
+                        <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-gray-800/30">
+                            <span className="font-bold text-foreground">{t('member.nav.menu')}</span>
+                            <button onClick={() => setMobileMenu(false)} className="p-1.5 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-all">
+                                <X className="w-5 h-5 text-muted-foreground" />
                             </button>
                         </div>
                         <div className="p-4 space-y-1">
-                            <div className="flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-xl mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-3 px-3 py-2.5 bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-xl mb-3 border border-white/20 dark:border-white/5">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
                                     <span className="text-white text-sm font-bold">
                                         {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                                     </span>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-900">{user?.name || user?.username}</p>
-                                    <p className="text-xs text-gray-500">{user?.email || ''}</p>
+                                    <p className="text-sm font-semibold text-foreground">{user?.name || user?.username}</p>
+                                    <p className="text-xs text-muted-foreground">{user?.email || ''}</p>
                                 </div>
                             </div>
                             <div className="relative">
-                                <div className="flex items-center bg-gray-100 rounded-xl px-3 py-2">
-                                    <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/20 dark:border-white/5">
+                                    <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                                     <input
                                         type="text"
-                                        placeholder="Cari kursus, artikel..."
+                                        placeholder={t('member.search.placeholder')}
                                         value={searchQuery}
                                         onChange={e => handleSearch(e.target.value)}
-                                        className="bg-transparent border-none outline-none text-sm pl-2 w-full text-gray-700 placeholder-gray-400"
+                                    className="bg-transparent border-none outline-none text-sm pl-2 w-full text-foreground placeholder-muted-foreground"
                                     />
                                 </div>
                             </div>
@@ -236,31 +245,31 @@ const handleLogout = async () => {
                 </div>
             )}
 
-            <div className="flex">
+            <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
                 {/* Left Sidebar (Desktop) */}
-                <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-gray-200 min-h-[calc(100vh-4rem)] bg-white">
-                    <nav className="p-4 space-y-1 sticky top-16">
+                <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-white/20 dark:border-gray-800/30 overflow-y-auto bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
+                    <nav className="p-4 space-y-1">
                         {sidebarItems.map(item => (
                             <Link
                                 key={item.name}
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                                     isActive(item.href)
-                                        ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-600'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ? 'bg-blue-100/70 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500 backdrop-blur-sm shadow-sm'
+                                        : 'text-muted-foreground hover:bg-white/50 dark:hover:bg-white/5 hover:text-foreground backdrop-blur-sm'
                                 }`}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600' : 'text-gray-400'}`} />
+                                <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
                                 {item.name}
                             </Link>
                         ))}
-                        <div className="border-t my-3" />
+                        <div className="border-t border-white/20 dark:border-gray-800/30 my-3" />
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-all"
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 w-full transition-all backdrop-blur-sm"
                         >
                             <LogOut className="w-5 h-5" />
-                            Logout
+                            {t('member.nav.logout')}
                         </button>
                     </nav>
                 </aside>
@@ -268,12 +277,12 @@ const handleLogout = async () => {
                 {/* Mobile Sidebar Drawer */}
                 {mobileSidebar && (
                     <div className="fixed inset-0 z-50 lg:hidden">
-                        <div className="absolute inset-0 bg-black/50" onClick={() => setMobileSidebar(false)} />
-                        <div className="absolute top-0 left-0 bottom-0 w-72 bg-white shadow-xl">
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <span className="font-bold text-gray-900">Menu</span>
-                                <button onClick={() => setMobileSidebar(false)} className="p-1 rounded-lg hover:bg-gray-100">
-                                    <X className="w-5 h-5" />
+                        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileSidebar(false)} />
+                        <div className="absolute top-0 left-0 bottom-0 w-72 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 dark:border-gray-800/30">
+                            <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-gray-800/30">
+                                <span className="font-bold text-foreground">{t('member.nav.menu')}</span>
+                                <button onClick={() => setMobileSidebar(false)} className="p-1.5 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-all">
+                                    <X className="w-5 h-5 text-muted-foreground" />
                                 </button>
                             </div>
                             <nav className="p-4 space-y-1">
@@ -284,21 +293,21 @@ const handleLogout = async () => {
                                         onClick={() => setMobileSidebar(false)}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                                             isActive(item.href)
-                                                ? 'bg-blue-50 text-blue-700'
-                                                : 'text-gray-600 hover:bg-gray-50'
+                                                ? 'bg-blue-100/70 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 backdrop-blur-sm shadow-sm'
+                                                : 'text-muted-foreground hover:bg-white/50 dark:hover:bg-white/5'
                                         }`}
                                     >
-                                        <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600' : 'text-gray-400'}`} />
+                                        <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
                                         {item.name}
                                     </Link>
                                 ))}
-                                <div className="border-t my-3" />
+                                <div className="border-t border-white/20 dark:border-gray-800/30 my-3" />
                                 <button
                                     onClick={handleLogout}
-                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full"
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 w-full backdrop-blur-sm"
                                 >
                                     <LogOut className="w-5 h-5" />
-                                    Logout
+                                    {t('member.nav.logout')}
                                 </button>
                             </nav>
                         </div>
@@ -306,7 +315,7 @@ const handleLogout = async () => {
                 )}
 
                 {/* Right Content */}
-                <main className="flex-1 min-w-0 p-4 md:p-6 lg:p-8">
+                <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
                     {children}
                 </main>
             </div>
