@@ -362,8 +362,7 @@ class QuizQuestionPublicSerializer(serializers.ModelSerializer):
         ]
 
     def get_choices(self, obj):
-        # Randomize choices if quiz is randomized
-        if obj.quiz and obj.quiz.is_randomized:
+        if obj.quiz and obj.quiz.is_randomized and not self.context.get('no_randomize', False):
             choices = obj.choices.all().order_by('?')
         else:
             choices = obj.choices.all().order_by('order_index')

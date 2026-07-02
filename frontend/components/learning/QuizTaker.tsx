@@ -91,17 +91,6 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
             if (document.hidden) {
                 setTabHidden(true);
                 hiddenSinceRef.current = Date.now();
-            } else {
-                setTabHidden(false);
-                if (hiddenSinceRef.current) {
-                    const elapsed = (Date.now() - hiddenSinceRef.current) / 1000;
-                    if (elapsed > 3) {
-                        violationsRef.current += 1;
-                        setViolations(violationsRef.current);
-                        localStorage.setItem(VIOLATIONS_KEY, String(violationsRef.current));
-                    }
-                    hiddenSinceRef.current = null;
-                }
             }
         };
 
@@ -112,27 +101,12 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
             }
         };
 
-        const handleFocus = () => {
-            setTabHidden(false);
-            if (hiddenSinceRef.current) {
-                const elapsed = (Date.now() - hiddenSinceRef.current) / 1000;
-                if (elapsed > 3) {
-                    violationsRef.current += 1;
-                    setViolations(violationsRef.current);
-                    localStorage.setItem(VIOLATIONS_KEY, String(violationsRef.current));
-                }
-                hiddenSinceRef.current = null;
-            }
-        };
-
         document.addEventListener('visibilitychange', handleVisibility);
         window.addEventListener('blur', handleBlur);
-        window.addEventListener('focus', handleFocus);
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibility);
             window.removeEventListener('blur', handleBlur);
-            window.removeEventListener('focus', handleFocus);
         };
     }, []);
 
@@ -177,13 +151,8 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
             const idleTime = (Date.now() - lastActivityRef.current) / 1000;
             if (idleTime >= IDLE_TIMEOUT_SECONDS && !isInactiveRef.current) {
                 isInactiveRef.current = true;
-                violationsRef.current += 1;
-                setViolations(violationsRef.current);
-                localStorage.setItem(VIOLATIONS_KEY, String(violationsRef.current));
-
-                if (violationsRef.current >= MAX_VIOLATIONS) {
-                    doSubmitRef.current();
-                }
+                hiddenSinceRef.current = Date.now();
+                setTabHidden(true);
             }
         }, 5000);
 
@@ -249,34 +218,30 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
         };
     }, [quiz.id]);
 
-    // Save on beforeunload
+    // Save draft on beforeunload (refresh/tab close)
     useEffect(() => {
         const apiBase = typeof window !== 'undefined'
             ? `${window.location.origin}/apicorpu/1.0`
             : '';
 
         const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
-            if (submittingRef.current) return;
-
+            if (submittingRef.current || doneRef.current) return;
             const currentAnswers = answersRef.current;
             if (Object.keys(currentAnswers).length === 0) return;
 
             const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+            const token = localStorage.getItem('token') || '';
             const payload = JSON.stringify({
                 draft_answers: Object.values(currentAnswers),
                 time_spent: elapsed,
             });
 
             try {
-                const token = localStorage.getItem('token');
-                const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
-                await fetch(`${apiBase}/learning/quizzes/${quiz.id}/save_draft/`, {
+                fetch(`${apiBase}/learning/quizzes/${quiz.id}/save_draft/`, {
                     method: 'POST',
-                    headers,
-                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                     body: payload,
+                    keepalive: true,
                 });
             } catch {}
 
@@ -288,15 +253,14 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [quiz.id]);
 
-    // Final save when component unmounts (e.g., user clicks back)
+    // Save draft on unmount (navigation away)
     useEffect(() => {
         const apiBase = typeof window !== 'undefined'
             ? `${window.location.origin}/apicorpu/1.0`
             : '';
 
         return () => {
-            if (submittingRef.current) return;
-
+            if (submittingRef.current || doneRef.current) return;
             const currentAnswers = answersRef.current;
             if (Object.keys(currentAnswers).length === 0) return;
 
@@ -306,9 +270,6 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                 draft_answers: Object.values(currentAnswers),
                 time_spent: elapsed,
             });
-
-            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
 
             try {
                 navigator.sendBeacon(
@@ -494,6 +455,9 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
                             size="lg"
                             className="w-full"
                             onClick={() => {
+                                violationsRef.current += 1;
+                                setViolations(violationsRef.current);
+                                localStorage.setItem(VIOLATIONS_KEY, String(violationsRef.current));
                                 setTabHidden(false);
                                 hiddenSinceRef.current = null;
                             }}

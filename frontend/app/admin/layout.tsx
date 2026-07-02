@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import AdminHeader from '@/components/admin/AdminHeader';
+import ActivityPanel from '@/components/admin/ActivityPanel';
 import SessionChecker from '@/components/providers/SessionChecker';
 import { authService } from '@/lib/services';
 
@@ -13,6 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [activityPanelOpen, setActivityPanelOpen] = useState(false);
 
   useEffect(() => { setMobileSidebarOpen(false); }, [pathname]);
 
@@ -69,12 +71,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
 
       <div className="flex-1 flex flex-col min-w-0 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-        <AdminHeader onToggleSidebar={() => setMobileSidebarOpen(v => !v)} />
+        <AdminHeader
+          onToggleSidebar={() => setMobileSidebarOpen(v => !v)}
+          onToggleActivityPanel={() => setActivityPanelOpen(v => !v)}
+        />
 
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
+
+      <ActivityPanel
+        isOpen={activityPanelOpen}
+        onClose={() => setActivityPanelOpen(false)}
+      />
     </div>
   );
 }

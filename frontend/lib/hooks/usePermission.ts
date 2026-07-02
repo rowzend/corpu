@@ -13,7 +13,7 @@ interface PermissionItem {
 interface PermissionResponse {
   success: boolean;
   data: {
-    user: { groups: string[] };
+    user: { groups: Array<{ id: number; name: string }> };
     modules: string[];
     permissions: PermissionItem[];
     is_superadmin: boolean;

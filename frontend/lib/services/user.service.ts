@@ -13,10 +13,13 @@ export interface User {
     image: string;
     is_active: boolean;
     date_joined: string;
+    last_login: string | null;
     updated_at: string;
     id_pegawai: number | null;
     user_id_opd: number | null;
-    role: string | null;
+    kategori_user: number | null;
+    kategori_user_nama: string | null;
+    roles: Array<{ id: number; name: string }>;
 }
 
 export interface CreateUserData {
@@ -29,6 +32,8 @@ export interface CreateUserData {
     is_active?: boolean;
     id_pegawai?: number;
     user_id_opd?: number;
+    kategori_user?: number | null;
+    role_ids?: number[];
     role_id?: number;
 }
 
@@ -40,7 +45,9 @@ export interface UpdateUserData {
     is_active?: boolean;
     id_pegawai?: number;
     user_id_opd?: number;
+    kategori_user?: number | null;
     password?: string;
+    role_ids?: number[];
     role_id?: number;
 }
 

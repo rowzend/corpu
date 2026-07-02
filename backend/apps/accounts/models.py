@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.models import BaseUserManager
+from django.core.validators import RegexValidator
 from django.db import models
 from django.utils import timezone
 
@@ -41,17 +42,67 @@ class CustomUserManager(BaseUserManager):
 
 
 class UserProfile(models.Model):
+    JENIS_KELAMIN_CHOICES = [
+        ('L', 'Laki-laki'),
+        ('P', 'Perempuan'),
+    ]
+
     user = models.OneToOneField(
         'accounts.User', on_delete=models.CASCADE,
         related_name='profile', primary_key=True,
         verbose_name='User'
     )
-    bio = models.TextField(null=True, blank=True, verbose_name='Bio/Deskripsi')
-    no_hp_pribadi = models.CharField(max_length=50, null=True, blank=True, verbose_name='No HP Pribadi')
-    alamat_domisili = models.TextField(null=True, blank=True, verbose_name='Alamat Domisili')
+
+    # Data Pribadi
     nik = models.CharField(max_length=20, null=True, blank=True, verbose_name='NIK (KTP)')
+    tempat_lahir = models.CharField(max_length=100, null=True, blank=True, verbose_name='Tempat Lahir')
+    tanggal_lahir = models.DateField(null=True, blank=True, verbose_name='Tanggal Lahir')
+    jenis_kelamin = models.CharField(
+        max_length=1, null=True, blank=True,
+        choices=JENIS_KELAMIN_CHOICES,
+        verbose_name='Jenis Kelamin'
+    )
     agama = models.CharField(max_length=50, null=True, blank=True, verbose_name='Agama')
+    no_hp_pribadi = models.CharField(max_length=50, null=True, blank=True, verbose_name='No HP Pribadi')
+    bio = models.TextField(null=True, blank=True, verbose_name='Bio/Deskripsi')
+
+    # Alamat Domisili (linked to referensi wilayah)
+    provinsi = models.ForeignKey(
+        'referensi.MsProvinsi', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Provinsi'
+    )
+    kabupaten = models.ForeignKey(
+        'referensi.MsKabupaten', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Kabupaten/Kota'
+    )
+    kecamatan = models.ForeignKey(
+        'referensi.MsKecamatan', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Kecamatan'
+    )
+    kelurahan = models.ForeignKey(
+        'referensi.MsKelurahan', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Kelurahan/Desa'
+    )
+    alamat_domisili = models.TextField(null=True, blank=True, verbose_name='Detail Alamat Domisili')
+
+    # Pendidikan
+    perguruan_tinggi = models.ForeignKey(
+        'referensi.MsPerguruanTinggi', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Perguruan Tinggi'
+    )
+    program_studi = models.ForeignKey(
+        'referensi.MsProgramStudi', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Program Studi'
+    )
     pendidikan_terakhir = models.CharField(max_length=100, null=True, blank=True, verbose_name='Pendidikan Terakhir')
+
+    # Instansi/Unit Kerja
+    instansi = models.ForeignKey(
+        'referensi.MsInstansi', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name='Instansi'
+    )
+
+    # Data Lainnya
     media_sosial = models.JSONField(null=True, blank=True, default=dict, verbose_name='Media Sosial')
     preferensi = models.JSONField(null=True, blank=True, default=dict, verbose_name='Preferensi')
     is_public = models.BooleanField(default=False, verbose_name='Profil Publik')
@@ -137,6 +188,15 @@ class User(AbstractBaseUser):
         null=True, 
         blank=True,
         help_text='ID OPD user (nullable)'
+    )
+    
+    # Kategori User (Mahasiswa, Dosen, Widyaiswara, ASN, Swasta, Pensiun, dll)
+    kategori_user = models.ForeignKey(
+        'referensi.MsKategoriUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Kategori User'
     )
     
     

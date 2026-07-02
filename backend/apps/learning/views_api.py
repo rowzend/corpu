@@ -24,7 +24,7 @@ from .serializers import (
     LessonProgressSerializer,
     QuizSerializer, QuizDetailSerializer,
     QuizAnswerSerializer, QuizAnswerGradeSerializer,
-    QuizAttemptSerializer, QuizAttemptDetailSerializer,
+    QuizAttemptSerializer, QuizAttemptDetailSerializer, QuizSaveDraftSerializer,
     QuizQuestionSerializer, QuizQuestionWriteSerializer, QuizQuestionPublicSerializer,
     CertificateSerializer, CertificateSettingSerializer,
     CourseRatingSerializer, CourseLikeSerializer,
@@ -134,6 +134,18 @@ class CourseViewSet(viewsets.ModelViewSet):
                 lesson_dict['quiz_score'] = quiz_attempt.score if quiz_attempt else None
                 lesson_dict['quiz_passed'] = quiz_attempt.passed if quiz_attempt else None
                 lesson_dict['quiz_attempt_id'] = quiz_attempt.id if quiz_attempt else None
+
+                quiz = lesson.quizzes.first()
+                if quiz:
+                    lesson_dict['quiz_max_attempts'] = quiz.max_attempts
+                    lesson_dict['quiz_cooldown_remaining'] = quiz.get_cooldown_remaining_seconds(request.user)
+                    lesson_dict['quiz_attempts_count'] = QuizAttempt.objects.filter(
+                        quiz=quiz, user=request.user, status='completed'
+                    ).count()
+                else:
+                    lesson_dict['quiz_max_attempts'] = None
+                    lesson_dict['quiz_cooldown_remaining'] = 0
+                    lesson_dict['quiz_attempts_count'] = 0
 
                 lessons_data.append(lesson_dict)
                 if not is_completed:
@@ -260,6 +272,7 @@ class LessonViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def bypass_timer(self, request, slug=None):
         from apps.manajemen.helpers import check_permission
+        from django.utils import timezone
         lesson = self.get_object()
         if not check_permission(request.user, 'learning', 'lessons', 'timer_bypass'):
             return Response({'detail': 'Anda tidak memiliki izin bypass timer'}, status=status.HTTP_403_FORBIDDEN)
@@ -274,9 +287,10 @@ class LessonViewSet(viewsets.ModelViewSet):
             LessonProgress.objects.update_or_create(
                 enrollment=enrollment,
                 lesson=lesson,
-                defaults={'time_spent_minutes': time_spent}
+                defaults={'time_spent_minutes': time_spent, 'is_completed': True, 'completed_at': timezone.now()}
             )
-            return Response({'time_spent_minutes': time_spent, 'bypassed': True})
+            enrollment.update_progress()
+            return Response({'time_spent_minutes': time_spent, 'bypassed': True, 'is_completed': True, 'progress': enrollment.progress_percentage})
         except Enrollment.DoesNotExist:
             return Response({'detail': 'Anda belum mendaftar kursus ini'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -296,6 +310,8 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        # Filter by current user
+        qs = qs.filter(user=self.request.user)
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -408,15 +424,25 @@ class QuizViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_attempts(self, request):
-        attempts = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
-        serializer = QuizAttemptSerializer(attempts, many=True, context={'request': request})
+        qs = QuizAttempt.objects.filter(user=request.user).select_related('quiz', 'quiz__lesson')
+        quiz_id = request.query_params.get('quiz_id')
+        if quiz_id:
+            qs = qs.filter(quiz_id=quiz_id)
+        serializer = QuizAttemptSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def take(self, request, pk=None):
         quiz = self.get_object()
-        if not quiz.can_user_attempt(request.user):
-            return Response({'detail': 'Batas percobaan telah habis'}, status=status.HTTP_403_FORBIDDEN)
+        can, msg = quiz.can_user_attempt_detail(request.user)
+        if not can:
+            return Response({'detail': msg or 'Batas percobaan telah habis'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Hapus draft lama untuk quiz ini (dari auto-save), biar gak nge-block
+        QuizAttempt.objects.filter(
+            quiz=quiz, user=request.user, status='draft'
+        ).delete()
+
         if not request.user.is_staff:
             try:
                 course = quiz.lesson.module.course
@@ -447,6 +473,30 @@ class QuizViewSet(viewsets.ModelViewSet):
             'time_limit_minutes': quiz.time_limit_minutes,
             'total_questions': quiz.total_questions,
             'questions': serializer.data
+        })
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def resume(self, request, pk=None):
+        quiz = self.get_object()
+        attempt = QuizAttempt.objects.filter(
+            quiz=quiz, user=request.user, status='draft'
+        ).order_by('-started_at').first()
+        if not attempt:
+            return Response({'detail': 'Tidak ada draft untuk dilanjutkan'}, status=status.HTTP_404_NOT_FOUND)
+        # Resume pakai urutan fixed (order_index), jangan diacak ulang
+        questions = quiz.questions.all().order_by('order_index')
+        serializer = QuizQuestionPublicSerializer(questions, many=True, context={'no_randomize': True})
+        return Response({
+            'id': quiz.id,
+            'title': quiz.title,
+            'description': quiz.description,
+            'passing_score_percentage': quiz.passing_score_percentage,
+            'time_limit_minutes': quiz.time_limit_minutes,
+            'total_questions': quiz.total_questions,
+            'questions': serializer.data,
+            'draft_answers': attempt.draft_answers or [],
+            'time_spent': attempt.time_spent,
+            'draft_attempt_id': attempt.id,
         })
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
@@ -538,6 +588,7 @@ class QuizViewSet(viewsets.ModelViewSet):
         attempt.score = score_percentage
         attempt.correct_answers = correct_count
         attempt.passed = passed
+        attempt.status = 'completed'
         attempt.completed_at = timezone.now()
         attempt.time_spent = int(time_spent)
         attempt.save()
@@ -626,6 +677,87 @@ class QuizViewSet(viewsets.ModelViewSet):
             return Response(QuizAnswerSerializer(answer, context={'request': request}).data)
         except QuizAnswer.DoesNotExist:
             return Response({'detail': 'Jawaban tidak ditemukan'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def save_draft(self, request, pk=None):
+        quiz = self.get_object()
+        serializer = QuizSaveDraftSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        enrollment = None
+        try:
+            enrollment = Enrollment.objects.get(
+                course=quiz.lesson.module.course,
+                user=request.user,
+                status='active'
+            )
+        except Enrollment.DoesNotExist:
+            pass
+
+        attempt, created = QuizAttempt.objects.get_or_create(
+            quiz=quiz,
+            user=request.user,
+            enrollment=enrollment,
+            status='draft',
+            defaults={
+                'draft_answers': serializer.validated_data.get('draft_answers', []),
+                'time_spent': serializer.validated_data.get('time_spent', 0),
+                'total_questions': quiz.questions.count(),
+            }
+        )
+        if not created:
+            attempt.draft_answers = serializer.validated_data.get('draft_answers', [])
+            attempt.time_spent = serializer.validated_data.get('time_spent', 0)
+            attempt.save(update_fields=['draft_answers', 'time_spent'])
+
+        return Response({
+            'draft_attempt_id': attempt.id,
+            'saved': True,
+            'time_spent': attempt.time_spent,
+        })
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def resume_draft(self, request, pk=None):
+        quiz = self.get_object()
+        attempt = QuizAttempt.objects.filter(
+            quiz=quiz, user=request.user, status='draft'
+        ).order_by('-started_at').first()
+
+        if not attempt:
+            return Response({'has_draft': False, 'detail': 'Tidak ada draft'})
+
+        return Response({
+            'has_draft': True,
+            'draft_attempt_id': attempt.id,
+            'draft_answers': attempt.draft_answers or [],
+            'time_spent': attempt.time_spent,
+            'started_at': attempt.started_at,
+        })
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def bypass_cooldown(self, request, pk=None):
+        from apps.manajemen.helpers import check_permission
+        if not check_permission(request.user, 'learning', 'lessons', 'timer_bypass'):
+            return Response({'detail': 'Anda tidak memiliki izin bypass cooldown'}, status=status.HTTP_403_FORBIDDEN)
+        quiz = self.get_object()
+        # Hapus kelebihan completed attempts dulu (keep max_attempts - 1)
+        completed = QuizAttempt.objects.filter(
+            quiz=quiz, user=request.user, status='completed'
+        ).order_by('-completed_at')
+        keep = (quiz.max_attempts or 2) - 1
+        if completed.count() >= (quiz.max_attempts or 2):
+            excess = completed[keep:]
+            for att in excess:
+                att.delete()
+        # Bypass cooldown dengan memundurkan completed_at attempt gagal terakhir
+        last_failed = QuizAttempt.objects.filter(
+            quiz=quiz, user=request.user, status='completed', passed=False
+        ).order_by('-completed_at').first()
+        if last_failed and last_failed.completed_at:
+            from datetime import timedelta
+            last_failed.completed_at = timezone.now() - timedelta(minutes=quiz.retry_cooldown_minutes + 1)
+            last_failed.save(update_fields=['completed_at'])
+        return Response({'detail': 'Cooldown berhasil dilewati', 'bypassed': True})
 
 
 class QuizQuestionViewSet(viewsets.ModelViewSet):

@@ -10,6 +10,7 @@ from .models import (
     PermissionModule,
     PermissionRule,
     RoleRule,
+    GroupProfile,
     MenuItem,
 )
 
@@ -133,6 +134,12 @@ class RoleRuleAdmin(admin.ModelAdmin):
                 'module', 'control', 'function'
             ).order_by('module__order', 'control__nama_kontrol', 'function__nama_fungsi')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+@admin.register(GroupProfile)
+class GroupProfileAdmin(admin.ModelAdmin):
+    list_display = ['group', 'redirect_url']
+    search_fields = ['group__name']
+    list_filter = ['redirect_url']
 
 try:
     admin.site.unregister(MenuItem)

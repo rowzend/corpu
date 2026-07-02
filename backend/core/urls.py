@@ -90,8 +90,14 @@ urlpatterns = [
     # SIMPeG API (Sinkronisasi Data Pegawai)
     path('apicorpu/1.0/simpeg/', include('apps.api_simpeg.urls')),
 
-    # Referensi API (Perguruan Tinggi & Program Studi)
+    # Referensi (Perguruan Tinggi & Program Studi) - Django Template Views
     path('apicorpu/1.0/referensi/', include('apps.referensi.urls')),
+
+    # Accounts API (User Profile)
+    path('apicorpu/1.0/user/', include('apps.accounts.urls_api')),
+
+    # Referensi REST API untuk frontend Next.js
+    path('apicorpu/1.0/referensi-api/', include('apps.referensi.urls_api')),
 
     # Login redirect for permission_required decorator
     path('login/', RedirectView.as_view(url='/admin/login/', permanent=False), name='login'),

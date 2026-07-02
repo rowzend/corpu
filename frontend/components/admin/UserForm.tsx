@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Lock, ShieldCheck, Key, Eye, EyeOff } from 'lucide-react';
+import { X, User, Mail, Lock, ShieldCheck, Key, Eye, EyeOff, Users } from 'lucide-react';
 import { User as UserType, CreateUserData, UpdateUserData, Role, roleService } from '@/lib/services';
+import { referensiService, type KategoriUser } from '@/lib/services/referensi.service';
 
 interface UserFormProps {
     user?: UserType | null;
@@ -22,13 +23,16 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         password: '',
         password_confirm: '',
         is_active: true,
-        role_id: '',
+        kategori_user: null as number | null,
+        role_ids: [] as number[],
     });
     const [roles, setRoles] = useState<Role[]>([]);
+    const [kategoriList, setKategoriList] = useState<KategoriUser[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         loadRoles();
+        loadKategori();
         if (user) {
             setFormData({
                 username: user.username,
@@ -37,7 +41,8 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 password: '',
                 password_confirm: '',
                 is_active: user.is_active,
-                role_id: '',
+                kategori_user: user.kategori_user || null,
+                role_ids: user.roles?.map(r => r.id) || [],
             });
         }
     }, [user]);
@@ -51,6 +56,15 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         }
     };
 
+    const loadKategori = async () => {
+        try {
+            const res = await referensiService.getKategoriUserList({ all: 'true' });
+            setKategoriList(res.data || []);
+        } catch (error) {
+            console.error('Failed to load kategori:', error);
+        }
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({
@@ -60,6 +74,15 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
+    };
+
+    const toggleRole = (roleId: number) => {
+        setFormData(prev => ({
+            ...prev,
+            role_ids: prev.role_ids.includes(roleId)
+                ? prev.role_ids.filter(id => id !== roleId)
+                : [...prev.role_ids, roleId]
+        }));
     };
 
     const validateForm = () => {
@@ -111,7 +134,8 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 name: formData.name,
                 email: formData.email || undefined,
                 is_active: formData.is_active,
-                role_id: formData.role_id ? parseInt(formData.role_id) : undefined,
+                kategori_user: formData.kategori_user || undefined,
+                role_ids: formData.role_ids.length > 0 ? formData.role_ids : undefined,
             };
 
             if (!user) {
@@ -249,26 +273,54 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                                 )}
                             </div>
 
+                            {/* Kategori User */}
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-1.5">
+                                    Kategori User
+                                </label>
+                                <div className="relative">
+                                    <Users className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                                    <select
+                                        name="kategori_user"
+                                        value={formData.kategori_user ?? ''}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, kategori_user: e.target.value ? parseInt(e.target.value) : null }))}
+                                        className={`pl-9 ${inputClass('kategori_user')}`}
+                                    >
+                                        <option value="">- Pilih Kategori -</option>
+                                        {kategoriList.map(k => (
+                                            <option key={k.id} value={k.id}>{k.nama}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
                             {/* Role */}
                             <div>
                                 <label className="block text-sm font-medium text-foreground mb-1.5">
                                     Role / Peran
                                 </label>
-                                <div className="relative">
-                                    <ShieldCheck className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                    <select
-                                        name="role_id"
-                                        value={formData.role_id}
-                                        onChange={handleChange}
-                                        className={`pl-9 ${inputClass('role_id')} appearance-none`}
-                                    >
-                                        <option value="">Pilih role</option>
-                                        {roles.map((role) => (
-                                            <option key={role.id} value={role.id}>
+                                <div className="flex flex-wrap gap-2">
+                                    {roles.map((role) => {
+                                        const isSelected = formData.role_ids.includes(role.id);
+                                        return (
+                                            <button
+                                                key={role.id}
+                                                type="button"
+                                                onClick={() => toggleRole(role.id)}
+                                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all ${
+                                                    isSelected
+                                                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-200'
+                                                        : 'bg-muted text-muted-foreground border-border hover:border-blue-300 hover:text-blue-600'
+                                                }`}
+                                            >
+                                                <ShieldCheck className="w-3 h-3" />
                                                 {role.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                                {isSelected && (
+                                                    <X className="w-3 h-3 ml-0.5" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 

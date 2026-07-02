@@ -7,14 +7,40 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   CheckCircle, ChevronLeft, ChevronRight, FileText, Video,
-  ExternalLink, File, HelpCircle, Menu, X, Lock, Award, Clock
+  ExternalLink, File, HelpCircle, Menu, X, Lock, Award, Clock, XCircle
 } from 'lucide-react';
 import { getCourse, getCourseProgress } from '@/lib/api/learning';
-import { markLessonComplete, saveTimerProgress } from '@/lib/api/learning';
+import { markLessonComplete, saveTimerProgress, bypassTimer, bypassQuizCooldown } from '@/lib/api/learning';
 import { handleApiError } from '@/lib/api';
 import { showError, showToast, showWarning } from '@/lib/sweetalert';
 import ProgressBar from '@/components/learning/ProgressBar';
 import AuthGuard from '@/components/auth/AuthGuard';
+import { usePermission } from '@/lib/hooks/usePermission';
+
+function CooldownTimer({ seconds: initial }: { seconds: number }) {
+  const [secs, setSecs] = useState(initial);
+  useEffect(() => {
+    if (secs <= 0) return;
+    const t = setInterval(() => setSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (secs <= 0) return null;
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  const parts: string[] = [];
+  if (d) parts.push(`${d} hari`);
+  if (h) parts.push(`${h} jam`);
+  if (m) parts.push(`${m} menit`);
+  parts.push(`${s} detik`);
+  return (
+    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+      <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Cooldown Aktif</p>
+      <p className="text-xs text-amber-600 dark:text-amber-500 mt-0.5 font-mono">Tunggu {parts.join(' ')} lagi</p>
+    </div>
+  );
+}
 
 export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: string }) {
   const params = useParams();
@@ -26,23 +52,43 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
+  const [bypassLoading, setBypassLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(true);
   const elapsedRef = useRef(elapsedSeconds);
   elapsedRef.current = elapsedSeconds;
 
+  const { hasPermission } = usePermission();
+  const canBypassTimer = hasPermission('learning', 'timer_bypass', 'lessons');
+
   const lessons = progress?.lessons || [];
   const currentLesson = lessons[currentLessonIndex];
+  const nextLesson = lessons[currentLessonIndex + 1];
   const hasNext = currentLessonIndex < lessons.length - 1;
   const hasPrevious = currentLessonIndex > 0;
 
-  // Timer effect: resume from saved time_spent_minutes, count up per lesson
+  // Timer: resume dari localStorage (tahan refresh/new tab), fallback ke backend
   useEffect(() => {
-    const saved = currentLesson?.time_spent_minutes || 0;
+    if (!currentLesson) return;
+    if (currentLesson.is_unlocked === false) {
+      setTimerRunning(false);
+      return;
+    }
+    const key = `timer_${slug}_${currentLesson.id}`;
+    const local = localStorage.getItem(key);
+    if (local) {
+      const parsed = parseInt(local, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        setElapsedSeconds(parsed);
+        setTimerRunning(true);
+        return;
+      }
+    }
+    const saved = currentLesson.time_spent_minutes || 0;
     setElapsedSeconds(saved * 60);
     setTimerRunning(true);
-  }, [currentLessonIndex]);
+  }, [currentLessonIndex, currentLesson?.id]);
 
   useEffect(() => {
     if (!timerRunning) return;
@@ -51,6 +97,25 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
     }, 1000);
     return () => clearInterval(interval);
   }, [timerRunning]);
+
+  // Stop timer otomatis saat waktu minimum terpenuhi
+  useEffect(() => {
+    if (!currentLesson || !timerRunning) return;
+    const maxSeconds = (currentLesson.duration_minutes || 0) * 60;
+    if (maxSeconds > 0 && elapsedSeconds >= maxSeconds) {
+      setTimerRunning(false);
+    }
+  }, [elapsedSeconds, currentLesson?.duration_minutes, timerRunning, currentLesson?.id]);
+
+  // Simpan timer ke localStorage setiap 100ms biar tahan refresh/new tab
+  useEffect(() => {
+    if (!currentLesson) return;
+    const key = `timer_${slug}_${currentLesson.id}`;
+    const interval = setInterval(() => {
+      localStorage.setItem(key, String(elapsedRef.current));
+    }, 100);
+    return () => clearInterval(interval);
+  }, [currentLesson?.id, slug]);
 
   // Auto-pause timer when user switches tab
   useEffect(() => {
@@ -65,20 +130,60 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, []);
 
-  // Auto-save timer progress every 30 seconds
+  // Simpan timer saat ini ke server (dipanggil sebelum pindah lesson / close)
+  const saveCurrentTimer = useCallback(async () => {
+    if (!currentLesson || currentLesson.is_completed) return;
+    const sec = elapsedRef.current;
+    if (sec < 1) return;
+    const minutes = sec / 60;
+    try {
+      await saveTimerProgress(currentLesson.slug, minutes);
+    } catch {
+      // silent
+    }
+  }, [currentLesson]);
+
+  // Auto-save timer progress ke server setiap 1 detik
   useEffect(() => {
     if (!currentLesson || currentLesson.is_completed) return;
     const interval = setInterval(async () => {
       const sec = elapsedRef.current;
-      const minutes = Math.max(1, Math.round(sec / 60));
+      if (sec < 1) return;
+      const minutes = sec / 60;
       try {
         await saveTimerProgress(currentLesson.slug, minutes);
       } catch {
-        // silent fail — jangan ganggu user
+        // silent fail
       }
-    }, 30000);
+    }, 1000);
     return () => clearInterval(interval);
   }, [currentLesson?.slug, currentLesson?.is_completed]);
+
+  // beforeunload — simpan timer saat refresh/tutup tab
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const sec = elapsedRef.current;
+      const minutes = sec / 60;
+      if (currentLesson?.slug && !currentLesson.is_completed && minutes > 0) {
+        try {
+          navigator.sendBeacon(
+            `${window.location.origin}/apicorpu/1.0/learning/lessons/${currentLesson.slug}/save_timer/`,
+            JSON.stringify({ time_spent_minutes: minutes })
+          );
+        } catch {}
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentLesson?.slug, currentLesson?.is_completed]);
+
+  const goToLesson = useCallback(async (index: number) => {
+    await saveCurrentTimer();
+    if (currentLesson) {
+      localStorage.setItem(`timer_${slug}_${currentLesson.id}`, String(elapsedRef.current));
+    }
+    setCurrentLessonIndex(index);
+  }, [saveCurrentTimer, currentLesson, slug]);
 
   const formatTime = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
@@ -118,10 +223,10 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
 
     if (currentLesson.duration_minutes > 0) {
       const minRequired = currentLesson.duration_minutes;
-      const timeSpent = Math.max(1, Math.round(elapsedSeconds / 60));
-      if (timeSpent < minRequired) {
+      const timeSpent = elapsedSeconds / 60;
+      if (Math.round(timeSpent) < minRequired) {
         showWarning(
-          `Kamu baru belajar ${timeSpent} menit. Selesaikan minimal ${minRequired} menit sebelum menandai selesai.`,
+          `Kamu baru belajar ${Math.round(timeSpent)} menit. Selesaikan minimal ${minRequired} menit sebelum menandai selesai.`,
           'Waktu Belajar Kurang'
         );
         return;
@@ -131,8 +236,11 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
     setMarking(true);
     setTimerRunning(false);
     try {
-      const timeSpent = Math.max(1, Math.round(elapsedSeconds / 60));
+      const timeSpent = Math.max(0.1, elapsedSeconds / 60);
       await markLessonComplete(currentLesson.slug, timeSpent);
+      if (currentLesson) {
+        localStorage.removeItem(`timer_${slug}_${currentLesson.id}`);
+      }
       showToast('Pelajaran selesai!', 'success');
       await fetchData();
     } catch (error) {
@@ -140,6 +248,27 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
       setTimerRunning(true);
     } finally {
       setMarking(false);
+    }
+  };
+
+  const handleBypassTimer = async () => {
+    if (!currentLesson || bypassLoading) return;
+    setBypassLoading(true);
+    setTimerRunning(false);
+    const maxSeconds = (currentLesson.duration_minutes || 0) * 60;
+    if (maxSeconds > 0) setElapsedSeconds(maxSeconds);
+    try {
+      await bypassTimer(currentLesson.slug);
+      if (currentLesson) {
+        localStorage.removeItem(`timer_${slug}_${currentLesson.id}`);
+      }
+      showToast('Timer berhasil dilewati!', 'success');
+      await fetchData();
+    } catch (error) {
+      showError(handleApiError(error), 'Gagal Bypass Timer');
+      setTimerRunning(true);
+    } finally {
+      setBypassLoading(false);
     }
   };
 
@@ -282,7 +411,7 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
                           key={lesson.id}
                           onClick={() => {
                             if (lesson.is_unlocked === false) return;
-                            setCurrentLessonIndex(globalIndex);
+                            goToLesson(globalIndex);
                           }}
                           disabled={lesson.is_unlocked === false}
                           className={`w-full text-left p-2.5 rounded-lg transition flex items-start gap-3 ${
@@ -344,7 +473,7 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
             </button>
           )}
           <button
-            onClick={() => router.push(`${basePath}/${slug}`)}
+            onClick={async () => { await saveCurrentTimer(); router.push(`${basePath}/${slug}`); }}
             className="text-sm text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400"
           >
             &larr; Kembali
@@ -369,13 +498,13 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`${basePath}/${slug}`)}
+              onClick={async () => { await saveCurrentTimer(); router.push(`${basePath}/${slug}`); }}
             >
               Detail Kursus
             </Button>
             <Button
               size="sm"
-              onClick={() => router.push(`${basePath}/my-courses`)}
+              onClick={async () => { await saveCurrentTimer(); router.push(`${basePath}/my-courses`); }}
             >
               Kursus Saya
             </Button>
@@ -442,9 +571,13 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
               {/* Quiz button for quiz-type lessons */}
               {currentLesson.content_type === 'quiz' && (
                 currentLesson.quiz_score !== null && currentLesson.quiz_score !== undefined ? (
-                  <Card className="border-green-200">
+                  <Card className={currentLesson.quiz_passed ? 'border-green-200' : 'border-red-200'}>
                     <CardContent className="p-6 text-center">
-                      <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                      {currentLesson.quiz_passed ? (
+                        <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
+                      ) : (
+                        <XCircle className="w-12 h-12 text-red-400 mx-auto mb-2" />
+                      )}
                       <p className="font-semibold text-lg">Kuis Selesai</p>
                       <p className={`text-2xl font-bold mt-2 ${currentLesson.quiz_passed ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                         {currentLesson.quiz_score}%
@@ -452,24 +585,96 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
                       <p className="text-sm text-muted-foreground mt-1">
                         {currentLesson.quiz_passed ? 'Lulus' : 'Tidak Lulus'}
                       </p>
+                      {!currentLesson.quiz_passed && currentLesson.quiz_max_attempts !== null && (
+                        <div className="mt-3 pt-3 border-t border-border">
+                          {currentLesson.quiz_cooldown_remaining > 0 ? (
+                            <>
+                              <CooldownTimer seconds={currentLesson.quiz_cooldown_remaining} />
+                              {canBypassTimer && currentLesson.quiz_id && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await bypassQuizCooldown(currentLesson.quiz_id);
+                                      showToast('Cooldown berhasil dilewati!', 'success');
+                                      window.location.reload();
+                                    } catch (e) {
+                                      showError(handleApiError(e), 'Gagal');
+                                    }
+                                  }}
+                                  className="mt-2 text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 underline"
+                                >
+                                  ⏭ Bypass Cooldown (Developer)
+                                </button>
+                              )}
+                            </>
+                          ) : currentLesson.quiz_max_attempts === -1 || (currentLesson.quiz_attempts_count || 0) < currentLesson.quiz_max_attempts ? (
+                            <div className="space-y-2">
+                              <p className="text-xs text-muted-foreground">
+                                Sisa percobaan: {(currentLesson.quiz_max_attempts === -1 ? '∞' : currentLesson.quiz_max_attempts - (currentLesson.quiz_attempts_count || 0))}
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-blue-300 text-blue-700 dark:text-blue-400"
+                                onClick={() => router.push(`${basePath}/${slug}/lessons/${currentLesson.id}/quiz`)}
+                              >
+                                Mulai Ulang
+                              </Button>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-red-600 dark:text-red-400 font-medium">Batas percobaan telah habis</p>
+                          )}
+                        </div>
+                      )}
                       <Button
                         variant="outline"
-                        className="mt-4"
+                        className="mt-3"
                         onClick={() => router.push(`${basePath}/${slug}/lessons/${currentLesson.id}/quiz`)}
                       >
                         Lihat Hasil Kuis
                       </Button>
                     </CardContent>
                   </Card>
-                ) : (
-                  <Button
-                    className="w-full"
-                    disabled={currentLesson.is_unlocked === false}
-                    onClick={() => router.push(`${basePath}/${slug}/lessons/${currentLesson.id}/quiz`)}
-                  >
+                ) : !currentLesson.quiz_id ? (
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-center">
+                    <HelpCircle className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                    <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">Kuis Belum Tersedia</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">Soal kuis belum ditambahkan oleh instruktur.</p>
+                  </div>
+                ) : currentLesson.quiz_attempts_count >= currentLesson.quiz_max_attempts && currentLesson.quiz_max_attempts !== -1 ? (
+                  <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <XCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                    <p className="text-red-700 dark:text-red-400 font-medium">Batas Percobaan Habis</p>
+                    <p className="text-xs text-red-600 dark:text-red-500 mt-1">Anda telah mencapai batas maksimal percobaan ({currentLesson.quiz_max_attempts}x).</p>
+                  </div>
+                ) : currentLesson.is_unlocked === false ? (
+                  <Button className="w-full" disabled>
                     <HelpCircle className="w-4 h-4 mr-2" />
-                    {currentLesson.is_unlocked === false ? 'Selesaikan Materi Sebelumnya' : 'Mulai Kuis'}
+                    Selesaikan Materi Sebelumnya
                   </Button>
+                ) : (
+                  <Card className="border-blue-200 dark:border-blue-800">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Kuis Siap Dikerjakan</p>
+                          <p className="text-xs text-blue-600 dark:text-blue-500 mt-0.5">
+                            {currentLesson.quiz_max_attempts === -1
+                              ? 'Percobaan tidak terbatas'
+                              : `Sisa percobaan: ${currentLesson.quiz_max_attempts - (currentLesson.quiz_attempts_count || 0)}x`
+                            }
+                          </p>
+                        </div>
+                        <Button
+                          onClick={() => router.push(`${basePath}/${slug}/lessons/${currentLesson.id}/quiz`)}
+                          size="sm"
+                        >
+                          <HelpCircle className="w-4 h-4 mr-1" />
+                          Mulai Kuis
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )
               )}
 
@@ -477,25 +682,38 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
                   {hasPrevious && (
-                    <Button variant="outline" onClick={() => setCurrentLessonIndex(i => i - 1)}>
+                    <Button variant="outline" onClick={() => goToLesson(currentLessonIndex - 1)}>
                       <ChevronLeft className="w-4 h-4 mr-1" />Sebelumnya
                     </Button>
                   )}
                 </div>
                 <div className="flex gap-2">
                   {currentLesson.content_type !== 'quiz' && (
-                    <Button
-                      onClick={handleMarkComplete}
-                      disabled={marking || currentLesson.is_completed || currentLesson.is_unlocked === false}
-                      variant={currentLesson.is_completed ? 'outline' : 'default'}
-                      className={currentLesson.is_completed ? 'text-green-600 dark:text-green-400 border-green-300' : ''}
-                    >
-                      <CheckCircle className={`w-4 h-4 mr-2 ${currentLesson.is_completed ? 'fill-green-500 text-white' : ''}`} />
-                      {currentLesson.is_completed ? 'Selesai' : marking ? 'Memproses...' : 'Tandai Selesai'}
-                    </Button>
+                    <>
+                      <Button
+                        onClick={handleMarkComplete}
+                        disabled={marking || currentLesson.is_completed || currentLesson.is_unlocked === false}
+                        variant={currentLesson.is_completed ? 'outline' : 'default'}
+                        className={currentLesson.is_completed ? 'text-green-600 dark:text-green-400 border-green-300' : ''}
+                      >
+                        <CheckCircle className={`w-4 h-4 mr-2 ${currentLesson.is_completed ? 'fill-green-500 text-white' : ''}`} />
+                        {currentLesson.is_completed ? 'Selesai' : marking ? 'Memproses...' : 'Tandai Selesai'}
+                      </Button>
+                      {canBypassTimer && currentLesson.duration_minutes > 0 && !currentLesson.is_completed && (
+                        <Button
+                          variant="outline"
+                          onClick={handleBypassTimer}
+                          disabled={bypassLoading}
+                          className="text-amber-600 dark:text-amber-400 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                        >
+                          <Clock className="w-4 h-4 mr-2" />
+                          {bypassLoading ? 'Memproses...' : 'Bypass Waktu'}
+                        </Button>
+                      )}
+                    </>
                   )}
-                  {hasNext && (
-                    <Button onClick={() => setCurrentLessonIndex(i => i + 1)}>
+                  {hasNext && nextLesson?.is_unlocked !== false && (
+                    <Button onClick={() => goToLesson(currentLessonIndex + 1)}>
                       Selanjutnya<ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}

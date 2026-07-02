@@ -435,6 +435,19 @@ class Quiz(models.Model):
         can, _ = self.can_user_attempt_detail(user)
         return can
 
+    def get_cooldown_remaining_seconds(self, user):
+        if self.retry_cooldown_minutes <= 0:
+            return 0
+        from django.utils import timezone
+        from datetime import timedelta
+        attempts = QuizAttempt.objects.filter(quiz=self, user=user, status='completed', passed=False)
+        last_failed = attempts.order_by('-completed_at').first()
+        if last_failed and last_failed.completed_at:
+            cooldown_end = last_failed.completed_at + timedelta(minutes=self.retry_cooldown_minutes)
+            if timezone.now() < cooldown_end:
+                return int((cooldown_end - timezone.now()).total_seconds())
+        return 0
+
     def can_user_attempt_detail(self, user):
         """Return (can_attempt: bool, error_message: str)"""
         if self.max_attempts == -1:

@@ -123,6 +123,28 @@ class RoleRule(models.Model):
         return f"{self.role.name} → {self.rule}"
 
 
+class GroupProfile(models.Model):
+    """
+    Extended profile for auth.Group (Role).
+    Stores additional configuration like redirect_url.
+    """
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='profile')
+    redirect_url = models.CharField(
+        max_length=255,
+        blank=True,
+        default='/admin/dashboard',
+        help_text='Redirect URL when this role is selected at login'
+    )
+
+    class Meta:
+        db_table = 'group_profiles'
+        verbose_name = 'Role Profile'
+        verbose_name_plural = 'Role Profiles'
+
+    def __str__(self):
+        return f"Profile for {self.group.name}"
+
+
 class UserTableSelection(models.Model):
     """
     Store user table selections (checkboxes) per page
@@ -218,6 +240,7 @@ class MenuItem(models.Model):
     order = models.IntegerField(default=0)
     category = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    platform = models.CharField(max_length=20, choices=[('backend', 'Backend (Django)'), ('frontend', 'Frontend (Next.js)')], default='backend')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

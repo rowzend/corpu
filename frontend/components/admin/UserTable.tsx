@@ -130,7 +130,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                         {/* User Info */}
                         <div className="flex-1 min-w-0 flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
-                                roleColors[user.role?.toLowerCase() || ''] || 'from-gray-500 to-gray-600'
+                                roleColors[user.roles?.[0]?.name?.toLowerCase() || ''] || 'from-gray-500 to-gray-600'
                             } flex items-center justify-center flex-shrink-0 shadow-sm`}>
                                 <span className="text-white text-sm font-bold">
                                     {user.name.charAt(0).toUpperCase()}
@@ -154,14 +154,24 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
 
                         {/* Role */}
                         <div className="md:w-28">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${
-                                user.role
-                                    ? 'bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-100'
-                                    : `${card.hoverClass} ${text.mutedClass} border ${card.borderClass}`
-                            }`}>
-                                <Shield className="w-3 h-3" />
-                                {user.role || 'User'}
-                            </span>
+                            <div className="flex flex-wrap gap-1">
+                                {user.roles && user.roles.length > 0 ? (
+                                    user.roles.map((role) => (
+                                        <span
+                                            key={role.id}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700 border border-indigo-100`}
+                                        >
+                                            <Shield className="w-3 h-3" />
+                                            {role.name}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full ${card.hoverClass} ${text.mutedClass} border ${card.borderClass}`}>
+                                        <Shield className="w-3 h-3" />
+                                        User
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Status */}

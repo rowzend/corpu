@@ -9,7 +9,7 @@ from apps.accounts.models import User
 from apps.learning.models import Course, Enrollment, Certificate
 from apps.hcdp.models import HcdpProgram
 from apps.news.models import News
-from core.models import Notification
+from core.models import Notification, MsLogData
 
 
 class DashboardStatsAPIView(APIView):
@@ -129,6 +129,66 @@ class RecentActivitiesAPIView(APIView):
             'total': len(activities),
             'timestamp': timezone.now().isoformat()
         })
+
+
+class UserActivityAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        limit = int(request.query_params.get('limit', 10))
+        action = request.query_params.get('action')
+
+        activities = MsLogData.objects.filter(
+            status_log=1,
+        )
+
+        if action:
+            activities = activities.filter(action=action)
+
+        activities = activities.order_by('-created_at')[:limit]
+
+        results = []
+        for act in activities:
+            icon, act_type, title = self._map_activity(act)
+            username = act.username or 'System'
+            user_name = act.created_byname or username
+
+            results.append({
+                'id': f'log_{act.id}',
+                'title': title,
+                'description': act.description or '',
+                'icon': icon,
+                'type': act_type,
+                'action': act.action,
+                'via': act.via,
+                'table_name': act.table_name,
+                'diskripsi_tabel': act.diskripsi_tabel or '',
+                'user_name': user_name,
+                'username': username,
+                'user_id': act.user_id,
+                'ip_address': act.ip_address,
+                'created_byname': act.created_byname or '',
+                'created_at': act.created_at.isoformat(),
+            })
+
+        return Response({
+            'success': True,
+            'data': results,
+            'total': len(results),
+        })
+
+    def _map_activity(self, act):
+        action_map = {
+            'login': ('log-in', 'success', 'Login Akun'),
+            'login_failed': ('log-in', 'danger', 'Percobaan Login Gagal'),
+            'logout': ('log-out', 'warning', 'Logout Akun'),
+            'create': ('plus-circle', 'primary', 'Tambah Data'),
+            'update': ('edit', 'info', 'Ubah Data'),
+            'delete': ('trash-2', 'danger', 'Hapus Data'),
+            'password_change': ('lock', 'warning', 'Ubah Password'),
+            'password_change_error': ('lock', 'danger', 'Gagal Ubah Password'),
+        }
+        return action_map.get(act.action, ('activity', 'primary', act.action.replace('_', ' ').title()))
 
 
 class SystemStatusAPIView(APIView):

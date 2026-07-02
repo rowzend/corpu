@@ -24,6 +24,24 @@ export interface Activity {
     created_at: string;
 }
 
+export interface UserActivity {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    type: 'success' | 'primary' | 'info' | 'warning' | 'danger';
+    action: string;
+    via: string;
+    table_name: string;
+    diskripsi_tabel: string;
+    user_name: string;
+    username: string;
+    user_id: number | null;
+    ip_address: string;
+    created_byname: string;
+    created_at: string;
+}
+
 export interface SystemStatus {
     database: { status: string; message: string; icon: string; class: string };
     cache: { status: string; message: string; icon: string; class: string };
@@ -58,5 +76,10 @@ export const dashboardService = {
     async getChartData(): Promise<ChartData> {
         const res = await api.get<{ success: boolean; data: ChartData }>('/dashboard/charts/');
         return res.data;
+    },
+
+    async getUserActivities(limit = 10): Promise<UserActivity[]> {
+        const res = await api.get<{ success: boolean; data: UserActivity[] }>('/dashboard/user-activity/', { limit });
+        return res.data || [];
     },
 };

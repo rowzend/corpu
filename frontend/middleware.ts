@@ -39,12 +39,18 @@ export function middleware(request: NextRequest) {
 
   const token = request.cookies.get('token')?.value;
 
-  // Admin routes: require valid token
+  // Admin routes: require valid token AND admin role
   if (isAdminRoute) {
     if (!token || isTokenExpired(token)) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Block member role from accessing admin routes
+    const roleType = request.cookies.get('role_type')?.value;
+    if (roleType === 'member') {
+      return NextResponse.redirect(new URL('/member/dashboard', request.url));
     }
   }
 
@@ -56,11 +62,22 @@ export function middleware(request: NextRequest) {
       if (token) loginUrl.searchParams.set('reason', 'token_expired');
       return NextResponse.redirect(loginUrl);
     }
+
+    // Block admin role from accessing member routes
+    const roleType = request.cookies.get('role_type')?.value;
+    if (roleType === 'admin') {
+      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+    }
   }
 
   if (pathname === '/login') {
     if (token && !isTokenExpired(token)) {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      const activeGroupId = request.cookies.get('active_group_id')?.value;
+      const roleType = request.cookies.get('role_type')?.value;
+      if (activeGroupId) {
+        const redirectUrl = roleType === 'member' ? '/member/dashboard' : '/admin/dashboard';
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
+      }
     }
   }
 

@@ -3,10 +3,25 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { authService } from '@/lib/services';
+
+interface GroupInfo {
+  id: number;
+  name: string;
+  redirect_url?: string;
+}
 
 const ADMIN_ROLES = ['superadmin', 'admin'];
 
-export default function SudoPrompt({ user }: { user: Record<string, any> | null }) {
+export default function SudoPrompt({
+  user,
+  groups,
+  onChooseRole,
+}: {
+  user: Record<string, any> | null;
+  groups?: GroupInfo[];
+  onChooseRole?: (groups: GroupInfo[]) => void;
+}) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
   const t = useTranslations();
@@ -20,7 +35,16 @@ export default function SudoPrompt({ user }: { user: Record<string, any> | null 
 
   const handleSudo = () => {
     setVisible(false);
-    router.push('/admin/dashboard');
+    // If user has multiple admin groups, show role selector
+    if (groups && groups.length > 1 && onChooseRole) {
+      onChooseRole(groups);
+    } else if (groups && groups.length === 1) {
+      // Single group: set as active role and go to admin
+      authService.setActiveRole(groups[0].id !== undefined ? groups[0].id : null, groups[0].redirect_url || '/admin/dashboard');
+      router.push(groups[0].redirect_url || '/admin/dashboard');
+    } else {
+      router.push('/admin/dashboard');
+    }
   };
 
   const handleTester = () => {

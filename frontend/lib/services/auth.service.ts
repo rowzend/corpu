@@ -72,7 +72,7 @@ export const authService = {
     } catch (error) {
       // Continue with logout even if API call fails
       console.error('Logout API call failed:', error);
-    } finally {
+    }     finally {
       // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
@@ -81,6 +81,8 @@ export const authService = {
       // Clear cookies
       document.cookie = 'token=; max-age=0; path=/';
       document.cookie = 'refresh_token=; max-age=0; path=/';
+      document.cookie = 'active_group_id=; max-age=0; path=/';
+      document.cookie = 'role_type=; max-age=0; path=/';
     }
   },
 
@@ -135,6 +137,63 @@ export const authService = {
       // Don't automatically logout, just return false
       // Let the calling component decide what to do
       return false;
+    }
+  },
+
+  /**
+   * Get active group ID from cookie
+   */
+  getActiveGroupId(): number | null {
+    if (typeof window === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)active_group_id=([^;]*)/);
+    if (!match) return null;
+    const val = parseInt(match[1], 10);
+    return isNaN(val) ? null : val;
+  },
+
+  /**
+   * Set active group ID in cookie
+   */
+  setActiveGroupId(groupId: number | null): void {
+    if (typeof window === 'undefined') return;
+    if (groupId !== null && groupId !== undefined) {
+      document.cookie = `active_group_id=${groupId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    } else {
+      document.cookie = 'active_group_id=; max-age=0; path=/';
+    }
+  },
+
+  /**
+   * Set active role (group_id + role_type) from redirect_url
+   * If groupId is null, only role_type cookie is set (for member-only users)
+   */
+  setActiveRole(groupId: number | null, redirectUrl: string): void {
+    if (typeof window === 'undefined') return;
+    const roleType = redirectUrl.startsWith('/member/') ? 'member' : 'admin';
+    document.cookie = `role_type=${roleType}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    if (groupId !== null && groupId !== undefined) {
+      document.cookie = `active_group_id=${groupId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+    } else {
+      document.cookie = 'active_group_id=; max-age=0; path=/';
+    }
+  },
+
+  /**
+   * Get active role type from cookie
+   */
+  getActiveRoleType(): string | null {
+    if (typeof window === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)role_type=([^;]*)/);
+    return match ? match[1] : null;
+  },
+
+  /**
+   * Clear active group ID (when user switches to "all" or logs out)
+   */
+  clearActiveGroupId(): void {
+    this.setActiveGroupId(null);
+    if (typeof window !== 'undefined') {
+      document.cookie = 'role_type=; max-age=0; path=/';
     }
   },
 

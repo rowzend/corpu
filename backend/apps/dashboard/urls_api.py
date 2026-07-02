@@ -9,6 +9,7 @@ app_name = 'dashboard_api'
 urlpatterns = [
     path('stats/', views_api.DashboardStatsAPIView.as_view(), name='stats'),
     path('activities/', views_api.RecentActivitiesAPIView.as_view(), name='activities'),
+    path('user-activity/', views_api.UserActivityAPIView.as_view(), name='user_activity'),
     path('system-status/', views_api.SystemStatusAPIView.as_view(), name='system_status'),
     path('charts/', views_api.DashboardChartsAPIView.as_view(), name='charts'),
 ]

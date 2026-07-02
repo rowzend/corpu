@@ -317,6 +317,14 @@ def login_view(request):
 
 def logout_view(request):
     """Handle logout - supports both GET and POST"""
+    # Log logout activity to ms_log_data before logging out
+    if request.user.is_authenticated:
+        try:
+            from core.models import MsLogData
+            MsLogData.log_logout(request.user, request, via='web', description='Logout via web')
+        except Exception as e:
+            logger.error(f"Failed to log logout activity: {e}")
+    
     logout(request)
     messages.success(request, '✅ Anda telah logout. Sampai jumpa!')
     # Redirect to Next.js landing page

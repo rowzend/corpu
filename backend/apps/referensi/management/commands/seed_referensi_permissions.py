@@ -34,6 +34,11 @@ class Command(BaseCommand):
                 'deskripsi': 'Manajemen data program studi',
                 'functions': ['list', 'create', 'edit', 'delete'],
             },
+            'instansi': {
+                'label': 'Instansi',
+                'deskripsi': 'Manajemen data instansi',
+                'functions': ['list', 'create', 'edit', 'delete'],
+            },
         }
 
         for ctrl_name, ctrl_data in controls_data.items():

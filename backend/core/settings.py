@@ -485,7 +485,7 @@ SINGLE_SESSION_ENFORCE_WEB_NIP_NIK = config('SINGLE_SESSION_ENFORCE_WEB_NIP_NIK'
 SINGLE_SESSION_ENFORCE_API_NIP_NIK = config('SINGLE_SESSION_ENFORCE_API_NIP_NIK', default=False, cast=bool)
 
 # Permission system override flag (disable superadmin/staff bypass when False)
-PERMISSIONS_SUPERADMIN_OVERRIDE = config('PERMISSIONS_SUPERADMIN_OVERRIDE', default=True, cast=bool)
+PERMISSIONS_SUPERADMIN_OVERRIDE = config('PERMISSIONS_SUPERADMIN_OVERRIDE', default=False, cast=bool)
 
 # Admin access via permission keys (used by AdminAccessMiddleware)
 ADMIN_ACCESS_PERMISSION_KEYS = [

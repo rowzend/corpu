@@ -129,7 +129,7 @@ export default function UsersPage() {
     };
 
     const activeCount = users.filter(u => u.is_active).length;
-    const roleCount = new Set(users.map(u => u.role)).size;
+    const roleCount = new Set(users.flatMap(u => u.roles?.map(r => r.name) || [])).size;
 
     if (error) {
         return (

@@ -17,6 +17,7 @@ export default function RoleDetailPage() {
     const [error, setError] = useState<string | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
+    const [editRedirect, setEditRedirect] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => { loadRole(); }, [roleId]);
@@ -28,6 +29,7 @@ export default function RoleDetailPage() {
             const roleData = await roleService.getRoleById(roleId);
             setRole(roleData);
             setEditName(roleData.name);
+            setEditRedirect(roleData.redirect_url || '/admin/dashboard');
         } catch (err) {
             setError('Failed to load role details.');
             showError('Gagal memuat detail role. Silakan coba lagi.');
@@ -41,7 +43,7 @@ export default function RoleDetailPage() {
         try {
             setIsSaving(true);
             showLoading('Memperbarui role...');
-            await roleService.updateRole(roleId, { name: editName.trim() });
+            await roleService.updateRole(roleId, { name: editName.trim(), redirect_url_input: editRedirect.trim() });
             await loadRole();
             setIsEditing(false);
             closeLoading();
@@ -157,12 +159,21 @@ export default function RoleDetailPage() {
                 </div>
                 <div className="p-6">
                     {isEditing ? (
-                        <div className="space-y-4 max-w-md">
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-medium text-foreground">Role Name</label>
-                                <input type="text" value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                    className="w-full px-3 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-muted text-sm" />
+                        <div className="space-y-4 max-w-lg">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-medium text-foreground">Role Name</label>
+                                    <input type="text" value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        className="w-full px-3 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-muted text-sm" />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-sm font-medium text-foreground">Redirect URL</label>
+                                    <input type="text" value={editRedirect}
+                                        onChange={(e) => setEditRedirect(e.target.value)}
+                                        placeholder="/admin/dashboard"
+                                        className="w-full px-3 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-muted text-sm" />
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={handleSave} disabled={isSaving}
@@ -170,7 +181,7 @@ export default function RoleDetailPage() {
                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     {isSaving ? 'Saving...' : 'Save'}
                                 </button>
-                                <button onClick={() => { setIsEditing(false); setEditName(role.name); }}
+                                <button onClick={() => { setIsEditing(false); setEditName(role.name); setEditRedirect(role.redirect_url || '/admin/dashboard'); }}
                                     className="px-4 py-2.5 text-sm font-medium text-card-foreground bg-card border border-border rounded-xl hover:bg-muted hover:bg-muted transition-colors">
                                     Cancel
                                 </button>
@@ -183,6 +194,7 @@ export default function RoleDetailPage() {
                                 { label: 'Role Name', value: role.name },
                                 { label: 'Total Users', value: role.user_count },
                                 { label: 'Total Permissions', value: role.permission_count },
+                                { label: 'Redirect URL', value: role.redirect_url || '/admin/dashboard' },
                             ].map((field, i) => (
                                 <div key={i}>
                                     <p className="text-xs font-medium text-muted-foreground mb-1">{field.label}</p>

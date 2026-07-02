@@ -22,3 +22,4 @@ export { newsService } from './news.service';
 export type { NewsItem, NewsListResponse } from './news.service';
 export { simpegService } from './simpeg.service';
 export type { PegawaiItem } from './simpeg.service';
+export * from './management.service';

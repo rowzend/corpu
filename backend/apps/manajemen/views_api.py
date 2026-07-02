@@ -5,7 +5,7 @@ Provides REST API endpoints for user, role, and permission management
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny, BasePermission
 from django.contrib.auth.models import Group
 from django.db.models import Q, Count
 from apps.accounts.models import User
@@ -16,7 +16,10 @@ from .models import (
     PermissionRule,
     RoleRule,
     MenuItem,
-    AppSettings
+    MenuCategory,
+    ApiDocumentation,
+    AppSettings,
+    GroupProfile
 )
 from .serializers import (
     UserSerializer,
@@ -26,11 +29,22 @@ from .serializers import (
     PermissionFunctionSerializer,
     PermissionControlSerializer,
     PermissionModuleSerializer,
+    PermissionModuleListSerializer,
     PermissionRuleSerializer,
     RoleRuleSerializer,
     MenuItemSerializer,
+    MenuCategorySerializer,
+    ApiDocumentationSerializer,
     AppSettingsSerializer
 )
+from apps.manajemen.helpers import check_permission
+
+
+def require_permission(module, control, function):
+    class HasPermission(BasePermission):
+        def has_permission(self, request, view):
+            return check_permission(request.user, module, control, function)
+    return HasPermission
 
 
 # ============================================
@@ -42,7 +56,7 @@ class UserListAPIView(generics.ListAPIView):
     GET /apicorpu/1.0/users/
     List all users with pagination and search
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_user', 'view')]
     serializer_class = UserSerializer
     
     def get_queryset(self):
@@ -101,7 +115,7 @@ class UserDetailAPIView(generics.RetrieveAPIView):
     GET /apicorpu/1.0/users/{id}/
     Get user detail by ID
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_user', 'view')]
     serializer_class = UserSerializer
     queryset = User.objects.all()
     
@@ -120,7 +134,7 @@ class UserCreateAPIView(generics.CreateAPIView):
     POST /apicorpu/1.0/users/
     Create new user
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_user', 'create')]
     serializer_class = UserCreateSerializer
     
     def create(self, request, *args, **kwargs):
@@ -140,7 +154,7 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     PUT /apicorpu/1.0/users/{id}/
     Update user
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_user', 'edit')]
     serializer_class = UserUpdateSerializer
     queryset = User.objects.all()
     
@@ -162,7 +176,7 @@ class UserDeleteAPIView(generics.DestroyAPIView):
     DELETE /apicorpu/1.0/users/{id}/
     Delete user
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_user', 'delete')]
     queryset = User.objects.all()
     
     def destroy(self, request, *args, **kwargs):
@@ -185,7 +199,7 @@ class RoleListAPIView(generics.ListAPIView):
     GET /apicorpu/1.0/roles/
     List all roles
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'view')]
     serializer_class = RoleSerializer
     queryset = Group.objects.all().annotate(
         user_count=Count('user'),
@@ -208,7 +222,7 @@ class RoleDetailAPIView(generics.RetrieveAPIView):
     GET /apicorpu/1.0/roles/{id}/
     Get role detail with permissions
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'view')]
     serializer_class = RoleSerializer
     queryset = Group.objects.all()
     
@@ -236,18 +250,17 @@ class RoleCreateAPIView(generics.CreateAPIView):
     POST /apicorpu/1.0/roles/
     Create new role
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'create')]
     serializer_class = RoleSerializer
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         role = serializer.save()
-        
         return Response({
             'success': True,
             'message': 'Role created successfully',
-            'data': serializer.data
+            'data': self.get_serializer(role).data
         }, status=status.HTTP_201_CREATED)
 
 
@@ -256,7 +269,7 @@ class RoleUpdateAPIView(generics.UpdateAPIView):
     PUT /apicorpu/1.0/roles/{id}/
     Update role
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'edit')]
     serializer_class = RoleSerializer
     queryset = Group.objects.all()
     
@@ -278,7 +291,7 @@ class RoleDeleteAPIView(generics.DestroyAPIView):
     DELETE /apicorpu/1.0/roles/{id}/
     Delete role
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'delete')]
     queryset = Group.objects.all()
     
     def destroy(self, request, *args, **kwargs):
@@ -301,9 +314,9 @@ class PermissionModuleListAPIView(generics.ListAPIView):
     GET /apicorpu/1.0/permissions/modules/
     List all permission modules
     """
-    permission_classes = [IsAuthenticated]
-    serializer_class = PermissionModuleSerializer
-    queryset = PermissionModule.objects.filter(is_active=True)
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_module', 'view')]
+    serializer_class = PermissionModuleListSerializer
+    queryset = PermissionModule.objects.all()
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -320,7 +333,7 @@ class PermissionRuleListAPIView(generics.ListAPIView):
     GET /apicorpu/1.0/permissions/rules/
     List all permission rules
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_rule', 'view')]
     serializer_class = PermissionRuleSerializer
     
     def get_queryset(self):
@@ -350,7 +363,7 @@ class RolePermissionUpdateAPIView(APIView):
     POST /apicorpu/1.0/roles/{id}/permissions/
     Update role permissions
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_role', 'edit')]
     
     def post(self, request, pk):
         try:
@@ -394,10 +407,11 @@ class MenuListAPIView(generics.ListAPIView):
     serializer_class = MenuItemSerializer
     
     def get_queryset(self):
-        # Get root menu items (no parent)
+        # Get root menu items (no parent) — frontend-only
         return MenuItem.objects.filter(
             parent__isnull=True,
-            is_active=True
+            is_active=True,
+            platform='frontend'
         ).order_by('category', 'order')
     
     def list(self, request, *args, **kwargs):
@@ -411,6 +425,530 @@ class MenuListAPIView(generics.ListAPIView):
 
 
 # ============================================
+# PERMISSION FUNCTION CRUD
+# ============================================
+
+class PermissionFunctionListAPIView(generics.ListAPIView):
+    """
+    GET /apicorpu/1.0/management/permissions/functions/
+    List all permission functions
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_function', 'view')]
+    serializer_class = PermissionFunctionSerializer
+    queryset = PermissionFunction.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+        search = request.query_params.get('search', None)
+
+        if search:
+            queryset = queryset.filter(
+                Q(nama_fungsi__icontains=search) |
+                Q(label_fungsi__icontains=search) |
+                Q(deskripsi_fungsi__icontains=search)
+            )
+
+        total = queryset.count()
+        start = (page - 1) * page_size
+        end = start + page_size
+        items = queryset[start:end]
+
+        serializer = self.get_serializer(items, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total': total,
+                'total_pages': (total + page_size - 1) // page_size
+            }
+        })
+
+
+class PermissionFunctionCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_function', 'create')]
+    serializer_class = PermissionFunctionSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Function created successfully',
+            'data': PermissionFunctionSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class PermissionFunctionDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_function', 'view')]
+    serializer_class = PermissionFunctionSerializer
+    queryset = PermissionFunction.objects.all()
+
+
+class PermissionFunctionUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_function', 'edit')]
+    serializer_class = PermissionFunctionSerializer
+    queryset = PermissionFunction.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Function updated successfully',
+            'data': serializer.data
+        })
+
+
+class PermissionFunctionDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_function', 'delete')]
+    queryset = PermissionFunction.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        name = instance.label_fungsi
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': f'Function "{name}" deleted successfully'
+        })
+
+
+# ============================================
+# PERMISSION CONTROL CRUD
+# ============================================
+
+class PermissionControlListAPIView(generics.ListAPIView):
+    """
+    GET /apicorpu/1.0/management/permissions/controls/
+    List all permission controls
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_control', 'view')]
+    serializer_class = PermissionControlSerializer
+    queryset = PermissionControl.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+        search = request.query_params.get('search', None)
+
+        if search:
+            queryset = queryset.filter(
+                Q(nama_kontrol__icontains=search) |
+                Q(label_kontrol__icontains=search) |
+                Q(deskripsi_kontrol__icontains=search)
+            )
+
+        total = queryset.count()
+        start = (page - 1) * page_size
+        end = start + page_size
+        items = queryset[start:end]
+
+        serializer = self.get_serializer(items, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total': total,
+                'total_pages': (total + page_size - 1) // page_size
+            }
+        })
+
+
+class PermissionControlCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_control', 'create')]
+    serializer_class = PermissionControlSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Control created successfully',
+            'data': PermissionControlSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class PermissionControlDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_control', 'view')]
+    serializer_class = PermissionControlSerializer
+    queryset = PermissionControl.objects.all()
+
+
+class PermissionControlUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_control', 'edit')]
+    serializer_class = PermissionControlSerializer
+    queryset = PermissionControl.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Control updated successfully',
+            'data': serializer.data
+        })
+
+
+class PermissionControlDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_control', 'delete')]
+    queryset = PermissionControl.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        name = instance.label_kontrol
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': f'Control "{name}" deleted successfully'
+        })
+
+
+# ============================================
+# PERMISSION MODULE CRUD
+# ============================================
+
+class PermissionModuleCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_module', 'create')]
+    serializer_class = PermissionModuleSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Module created successfully',
+            'data': PermissionModuleSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class PermissionModuleUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_module', 'edit')]
+    serializer_class = PermissionModuleSerializer
+    queryset = PermissionModule.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Module updated successfully',
+            'data': serializer.data
+        })
+
+
+class PermissionModuleDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_module', 'delete')]
+    queryset = PermissionModule.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        name = instance.label_module
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': f'Module "{name}" deleted successfully'
+        })
+
+
+# ============================================
+# PERMISSION RULE CRUD
+# ============================================
+
+class PermissionRuleCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_rule', 'create')]
+    serializer_class = PermissionRuleSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Rule created successfully',
+            'data': PermissionRuleSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class PermissionRuleDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_rule', 'view')]
+    serializer_class = PermissionRuleSerializer
+    queryset = PermissionRule.objects.all()
+
+
+class PermissionRuleUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_rule', 'edit')]
+    serializer_class = PermissionRuleSerializer
+    queryset = PermissionRule.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Rule updated successfully',
+            'data': serializer.data
+        })
+
+
+class PermissionRuleDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'permission_rule', 'delete')]
+    queryset = PermissionRule.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': 'Rule deleted successfully'
+        })
+
+
+# ============================================
+# MENU ITEM CRUD
+# ============================================
+
+class MenuItemCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_menu', 'create')]
+    serializer_class = MenuItemSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Menu item created successfully',
+            'data': MenuItemSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class MenuItemDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_menu', 'view')]
+    serializer_class = MenuItemSerializer
+    queryset = MenuItem.objects.all()
+
+
+class MenuItemUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_menu', 'edit')]
+    serializer_class = MenuItemSerializer
+    queryset = MenuItem.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Menu item updated successfully',
+            'data': serializer.data
+        })
+
+
+class MenuItemDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_menu', 'delete')]
+    queryset = MenuItem.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        name = instance.name
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': f'Menu item "{name}" deleted successfully'
+        })
+
+
+# ============================================
+# MENU CATEGORY CRUD
+# ============================================
+
+class MenuCategoryListAPIView(generics.ListAPIView):
+    """
+    GET /apicorpu/1.0/management/menu-categories/
+    List all menu categories
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'menu_category', 'view')]
+    serializer_class = MenuCategorySerializer
+    queryset = MenuCategory.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data
+        })
+
+
+class MenuCategoryCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'menu_category', 'create')]
+    serializer_class = MenuCategorySerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Menu category created successfully',
+            'data': MenuCategorySerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class MenuCategoryDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'menu_category', 'view')]
+    serializer_class = MenuCategorySerializer
+    queryset = MenuCategory.objects.all()
+
+
+class MenuCategoryUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'menu_category', 'edit')]
+    serializer_class = MenuCategorySerializer
+    queryset = MenuCategory.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'Menu category updated successfully',
+            'data': serializer.data
+        })
+
+
+class MenuCategoryDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'menu_category', 'delete')]
+    queryset = MenuCategory.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        name = instance.name
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': f'Menu category "{name}" deleted successfully'
+        })
+
+
+# ============================================
+# API DOCUMENTATION CRUD
+# ============================================
+
+class ApiDocumentationListAPIView(generics.ListAPIView):
+    """
+    GET /apicorpu/1.0/management/api-documentation/
+    List all API documentation entries
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'api_documentation', 'view')]
+    serializer_class = ApiDocumentationSerializer
+    queryset = ApiDocumentation.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+        search = request.query_params.get('search', None)
+        method = request.query_params.get('method', None)
+
+        if search:
+            queryset = queryset.filter(
+                Q(url__icontains=search) |
+                Q(description__icontains=search)
+            )
+        if method:
+            queryset = queryset.filter(method_type__iexact=method)
+
+        total = queryset.count()
+        start = (page - 1) * page_size
+        end = start + page_size
+        items = queryset[start:end]
+
+        serializer = self.get_serializer(items, many=True)
+        return Response({
+            'success': True,
+            'data': serializer.data,
+            'pagination': {
+                'page': page,
+                'page_size': page_size,
+                'total': total,
+                'total_pages': (total + page_size - 1) // page_size
+            }
+        })
+
+
+class ApiDocumentationCreateAPIView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'api_documentation', 'create')]
+    serializer_class = ApiDocumentationSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        obj = serializer.save()
+        return Response({
+            'success': True,
+            'message': 'API documentation created successfully',
+            'data': ApiDocumentationSerializer(obj).data
+        }, status=status.HTTP_201_CREATED)
+
+
+class ApiDocumentationDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'api_documentation', 'view')]
+    serializer_class = ApiDocumentationSerializer
+    queryset = ApiDocumentation.objects.all()
+
+
+class ApiDocumentationUpdateAPIView(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'api_documentation', 'edit')]
+    serializer_class = ApiDocumentationSerializer
+    queryset = ApiDocumentation.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({
+            'success': True,
+            'message': 'API documentation updated successfully',
+            'data': serializer.data
+        })
+
+
+class ApiDocumentationDeleteAPIView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'api_documentation', 'delete')]
+    queryset = ApiDocumentation.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        return Response({
+            'success': True,
+            'message': 'API documentation deleted successfully'
+        })
+
+
+# ============================================
 # APP SETTINGS
 # ============================================
 
@@ -420,7 +958,6 @@ class AppSettingsListAPIView(generics.ListAPIView):
     Get app settings (public only for non-admin)
     """
     permission_classes = [IsAuthenticated]
-    serializer_class = AppSettingsSerializer
     
     def get_queryset(self):
         # TODO: Check if user is admin
@@ -474,15 +1011,29 @@ class UserPermissionsAPIView(APIView):
     """
     GET /apicorpu/1.0/permissions/user/
     Get current user's permissions
+
+    Query params:
+      - group_id: (optional) Filter permissions by specific group ID.
+                  When provided, only permissions from that group are returned.
     """
     permission_classes = [IsAuthenticated]
 
+    def serialize_group(self, g):
+        """Serialize group with redirect_url from GroupProfile."""
+        try:
+            redirect_url = g.profile.redirect_url
+        except:
+            redirect_url = '/admin/dashboard'
+        return {'id': g.id, 'name': g.name, 'redirect_url': redirect_url}
+
     def get(self, request):
         user = request.user
+        group_id = request.GET.get('group_id')
 
-        # Superadmin bypass: return all active modules if override enabled
         from apps.manajemen.helpers import is_superadmin
         from django.conf import settings
+
+        # Superadmin bypass: return all active modules if override enabled
         if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
             all_modules = PermissionModule.objects.filter(is_active=True)
             all_permissions = []
@@ -503,7 +1054,7 @@ class UserPermissionsAPIView(APIView):
                 'success': True,
                 'data': {
                     'user': {
-                        'groups': ['Super Admin']
+                        'groups': [self.serialize_group(g) for g in user.groups.all()] if not group_id else [self.serialize_group(g) for g in user.groups.filter(id=group_id)]
                     },
                     'modules': list(modules),
                     'permissions': all_permissions,
@@ -513,8 +1064,8 @@ class UserPermissionsAPIView(APIView):
 
         # Non-superadmin: check user group permissions
         try:
-            group = user.groups.first()
-            if not group:
+            all_user_groups = user.groups.all()
+            if not all_user_groups:
                 return Response({
                     'success': True,
                     'data': {
@@ -527,8 +1078,30 @@ class UserPermissionsAPIView(APIView):
                     }
                 })
 
+            # Optionally filter to a specific group (active role)
+            if group_id:
+                try:
+                    groups = all_user_groups.filter(id=group_id)
+                except (ValueError, TypeError):
+                    groups = all_user_groups
+            else:
+                groups = all_user_groups
+
+            if not groups:
+                return Response({
+                    'success': True,
+                    'data': {
+                        'user': {
+                            'groups': [self.serialize_group(g) for g in all_user_groups]
+                        },
+                        'modules': [],
+                        'permissions': [],
+                        'is_superadmin': False
+                    }
+                })
+
             rules = RoleRule.objects.filter(
-                role=group
+                role__in=groups
             ).select_related(
                 'rule__module',
                 'rule__function',
@@ -537,8 +1110,8 @@ class UserPermissionsAPIView(APIView):
 
             all_permissions = []
             modules = set()
-            for rule in rules:
-                perm = rule.rule
+            for role_rule in rules:
+                perm = role_rule.rule
                 if perm and perm.is_active:
                     modules.add(perm.module.nama_module)
                     all_permissions.append({
@@ -552,7 +1125,8 @@ class UserPermissionsAPIView(APIView):
                 'success': True,
                 'data': {
                     'user': {
-                        'groups': [group.name]
+                        'groups': [self.serialize_group(g) for g in all_user_groups],
+                        'active_group': groups.first().id if groups.count() == 1 else None
                     },
                     'modules': list(modules),
                     'permissions': all_permissions,

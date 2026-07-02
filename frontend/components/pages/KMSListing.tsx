@@ -70,17 +70,17 @@ function CategoryNode({
       >
         {/* Expand/Collapse Icon for parent categories */}
         {hasChildren && level === 0 && (
-          <button
+          <span
             onClick={(e) => {
               e.stopPropagation();
               setIsExpanded(!isExpanded);
             }}
-            className="flex-shrink-0 hover:scale-110 transition-transform"
+            className="flex-shrink-0 hover:scale-110 transition-transform cursor-pointer"
           >
             <span className={`transition-transform duration-200 inline-block ${isExpanded ? 'rotate-90' : ''}`}>
               ▶
             </span>
-          </button>
+          </span>
         )}
         
         {/* Tree connector for child categories */}

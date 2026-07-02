@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, HelpCircle, Award, ArrowLeft, RotateCcw } from 'lucide-react';
-import { takeQuiz, submitQuizAttempt, getMyQuizAttempts, getQuizResult, getQuizzes } from '@/lib/api/learning';
+import { takeQuiz, submitQuizAttempt, getMyQuizAttempts, getQuizResult, getQuizzes, getQuiz, resumeQuizDraft, resumeQuiz } from '@/lib/api/learning';
 import { handleApiError } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
 import QuizTaker from '@/components/learning/QuizTaker';
@@ -25,6 +25,26 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
   const [isTaking, setIsTaking] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isLoadingResult, setIsLoadingResult] = useState(false);
+  const [initialAnswers, setInitialAnswers] = useState<Record<number, any> | undefined>(undefined);
+  const [initialTimeSpent, setInitialTimeSpent] = useState<number | undefined>(undefined);
+  const [loadingDraft, setLoadingDraft] = useState(false);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [cooldownMsg, setCooldownMsg] = useState('');
+
+  const getCooldownInfo = (qz: any, atts: any[]) => {
+    if (!qz?.retry_cooldown_minutes) return '';
+    const failed = atts.filter(a => !a.passed).sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime());
+    const last = failed[0];
+    if (!last?.completed_at) return '';
+    const cooldownEnd = new Date(new Date(last.completed_at).getTime() + qz.retry_cooldown_minutes * 60000);
+    const now = Date.now();
+    if (cooldownEnd.getTime() <= now) return '';
+    const diffMs = cooldownEnd.getTime() - now;
+    const hours = Math.floor(diffMs / 3600000);
+    const minutes = Math.floor((diffMs % 3600000) / 60000);
+    return hours > 0 ? `Cooldown aktif. Tunggu ${hours} jam ${minutes} menit lagi.` : `Cooldown aktif. Tunggu ${minutes} menit lagi.`;
+  };
 
   useEffect(() => {
     fetchQuiz();
@@ -33,14 +53,30 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
   const fetchQuiz = async () => {
     try {
       setLoading(true);
-          const quizzesData = await getQuizzes({ lesson_id: parseInt(lessonId) });
+      const quizzesData = await getQuizzes({ lesson_id: parseInt(lessonId) });
       const quizzes = quizzesData?.results || [];
       if (quizzes.length > 0) {
-        const quizData = await takeQuiz(quizzes[0].id);
-        setQuiz(quizData);
+        const quizMeta = await getQuiz(quizzes[0].id);
+        setQuiz({
+          id: quizMeta.id,
+          title: quizMeta.title,
+          description: quizMeta.description,
+          passing_score_percentage: quizMeta.passing_score_percentage,
+          time_limit_minutes: quizMeta.time_limit_minutes,
+          retry_cooldown_minutes: quizMeta.retry_cooldown_minutes,
+          total_questions: quizMeta.total_questions,
+          questions: [],
+        });
 
         const attemptsData = await getMyQuizAttempts(quizzes[0].id).catch(() => []);
         setAttempts(attemptsData || []);
+
+        setCooldownMsg(getCooldownInfo(quizMeta, attemptsData || []));
+
+        try {
+          const draftRes = await resumeQuizDraft(quizzes[0].id);
+          setHasDraft(draftRes?.has_draft || false);
+        } catch { setHasDraft(false); }
       }
     } catch (error) {
       showError(handleApiError(error), 'Gagal Load Kuis');
@@ -49,10 +85,62 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
     }
   };
 
-  const handleStartQuiz = () => {
-    setIsTaking(true);
-    setSubmitted(false);
-    setLatestResult(null);
+  const handleStartQuiz = async () => {
+    if (!quiz) return;
+    setLoadingDraft(true);
+
+    try {
+      const quizData = await takeQuiz(quiz.id);
+      setQuiz(prev => prev ? { ...prev, questions: quizData.questions || [] } : prev);
+
+      // Mulai Ulang = fresh start, hapus draft localStorage
+      const STORAGE_KEY_PREFIX = 'quiz_draft_';
+      try {
+        localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}`);
+        localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_time`);
+        localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_marked`);
+        localStorage.removeItem(`${STORAGE_KEY_PREFIX}${quiz.id}_violations`);
+      } catch {}
+
+      setInitialAnswers(undefined);
+      setInitialTimeSpent(undefined);
+
+      setSubmitted(false);
+      setLatestResult(null);
+      setIsTaking(true);
+    } catch (error: any) {
+      const errMsg = handleApiError(error);
+      if (errMsg?.includes('Cooldown')) {
+        showError(errMsg, 'Cooldown Aktif');
+      } else {
+        showError(errMsg, 'Tidak dapat memulai kuis');
+      }
+    } finally {
+      setLoadingDraft(false);
+    }
+  };
+
+  const handleResumeQuiz = async () => {
+    if (!quiz) return;
+    setLoadingDraft(true);
+    try {
+      const quizData = await resumeQuiz(quiz.id);
+      setQuiz(prev => prev ? { ...prev, questions: quizData.questions || [] } : prev);
+
+      const answersMap: Record<number, any> = {};
+      (quizData.draft_answers || []).forEach((a: any) => {
+        if (a.question_id) answersMap[a.question_id] = a;
+      });
+      setInitialAnswers(answersMap);
+      setInitialTimeSpent(quizData.time_spent || 0);
+      setSubmitted(false);
+      setLatestResult(null);
+      setIsTaking(true);
+    } catch (error: any) {
+      showError(handleApiError(error), 'Gagal melanjutkan kuis');
+    } finally {
+      setLoadingDraft(false);
+    }
   };
 
   const handleSubmit = async (answers: any[], timeSpent?: number) => {
@@ -65,40 +153,27 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
       // Refresh attempts
       const attemptsData = await getMyQuizAttempts(quiz.id).catch(() => []);
       setAttempts(attemptsData || []);
+      setCooldownMsg(attemptsData ? getCooldownInfo(quiz, attemptsData) : '');
     } catch (error) {
       showError(handleApiError(error), 'Gagal Kirim Jawaban');
       throw error;
     }
   };
 
-  const handleViewResult = async (attemptId: number) => {
+  const handleViewResultClick = async (attemptId: number) => {
     if (!quiz) return;
+    setIsLoadingResult(true);
     try {
       const result = await getQuizResult(quiz.id, attemptId);
       setLatestResult(result);
       setSubmitted(true);
+      setCooldownMsg(getCooldownInfo(quiz, attempts));
     } catch (error) {
       showError(handleApiError(error), 'Gagal Load Hasil');
+    } finally {
+      setIsLoadingResult(false);
     }
   };
-
-  // Auto-show latest result if already attempted
-  useEffect(() => {
-    if (!quiz || attempts.length === 0 || submitted || isTaking) return;
-    const loadLatest = async () => {
-      const latest = attempts.reduce((best: any, a: any) =>
-        new Date(a.completed_at || a.started_at) > new Date(best.completed_at || best.started_at) ? a : best
-      , attempts[0]);
-      if (latest?.id) {
-        try {
-          const result = await getQuizResult(quiz.id, latest.id);
-          setLatestResult(result);
-          setSubmitted(true);
-        } catch (_) {}
-      }
-    };
-    loadLatest();
-  }, [quiz, attempts, submitted, isTaking]);
 
   if (loading) {
     return (
@@ -138,6 +213,8 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
           quiz={quiz}
           onSubmit={handleSubmit}
           onCancel={() => setIsTaking(false)}
+          initialAnswers={initialAnswers}
+          initialTimeSpent={initialTimeSpent}
         />
       </div>
       </AuthGuard>
@@ -179,6 +256,14 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
               <ProgressBar value={latestResult.score} color={latestResult.passed ? 'green' : 'red'} size="lg" />
 
               <div className="flex gap-3 justify-center mt-6">
+                {!latestResult.passed && !cooldownMsg && (
+                  <Button variant="outline" onClick={handleStartQuiz} disabled={loadingDraft}>
+                    {loadingDraft ? 'Memuat...' : <><RotateCcw className="w-4 h-4 mr-1" />Mulai Ulang</>}
+                  </Button>
+                )}
+                {!latestResult.passed && cooldownMsg && (
+                  <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">{cooldownMsg}</p>
+                )}
                 <Button onClick={() => router.push(`${basePath}/${slug}/learn`)}>
                   <ArrowLeft className="w-4 h-4 mr-1" />Kembali Belajar
                 </Button>
@@ -209,8 +294,8 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
                       )}
                       <div>
                         <p className="font-medium">{idx + 1}. {answer.question_text}</p>
-                        {answer.selected_choice && (
-                          <p className="text-sm text-gray-600 mt-1">Jawaban Anda: {answer.selected_choice}</p>
+                        {answer.selected_choice_text && (
+                          <p className="text-sm text-gray-600 mt-1">Jawaban Anda: {answer.selected_choice_text}</p>
                         )}
                         {answer.essay_answer && (
                           <p className="text-sm text-gray-600 mt-1">Jawaban Esai: {answer.essay_answer}</p>
@@ -274,7 +359,7 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
               </div>
               <div className="bg-purple-50 p-4 rounded-lg text-center">
                 <Award className="w-6 h-6 text-purple-600 mx-auto mb-1" />
-                <p className="text-xl font-bold text-purple-700">{attempts.length}</p>
+                <p className="text-xl font-bold text-purple-700">{attempts.filter(a => a.status === 'completed').length}</p>
                 <p className="text-xs text-gray-600">Percobaan</p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg text-center">
@@ -289,13 +374,59 @@ export default function QuizPage({ basePath = '/courses' }: { basePath?: string 
           </CardContent>
         </Card>
 
-        {attempts.length === 0 && (
-          <div className="text-center">
+        {attempts.filter(a => a.status === 'completed').length > 0 && (
+          <Card>
+            <CardHeader><CardTitle className="text-lg">Riwayat Percobaan</CardTitle></CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {attempts.filter(a => a.status === 'completed').sort((a, b) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime()).map((att, i) => (
+                  <div key={att.id} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${att.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`} onClick={() => handleViewResultClick(att.id)}>
+                    <div className="flex items-center gap-3">
+                      {att.passed ? <CheckCircle className="w-5 h-5 text-green-500" /> : <XCircle className="w-5 h-5 text-red-500" />}
+                      <div>
+                        <p className="text-sm font-medium">Percobaan #{i + 1}</p>
+                        <p className="text-xs text-gray-500">{new Date(att.completed_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-bold ${att.passed ? 'text-green-600' : 'text-red-600'}`}>{att.score}%</p>
+                      <p className="text-xs text-gray-500">{att.passed ? 'Lulus' : 'Tidak Lulus'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="text-center space-y-2">
+          {isLoadingResult ? (
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto" />
+          ) : attempts.length === 0 && !hasDraft ? (
             <Button size="lg" onClick={handleStartQuiz} className="px-8">
               Mulai Kuis
             </Button>
-          </div>
-        )}
+          ) : (
+            <div className="flex flex-col items-center gap-3">
+              {cooldownMsg ? (
+                <div className="max-w-md">
+                  <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2">{cooldownMsg}</p>
+                </div>
+              ) : (
+                <div className="flex gap-3 justify-center">
+                  {hasDraft && (
+                    <Button size="lg" onClick={handleResumeQuiz} className="px-8" disabled={loadingDraft}>
+                      {loadingDraft ? 'Memuat...' : 'Lanjutkan'}
+                    </Button>
+                  )}
+                  <Button size="lg" variant={hasDraft ? 'outline' : 'default'} onClick={handleStartQuiz} className="px-8">
+                    Mulai Ulang
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
     </AuthGuard>

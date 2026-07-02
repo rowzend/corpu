@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { dashboardService, type DashboardStats, type Activity, type SystemStatus, type ChartData } from '@/lib/services';
 import { LayoutDashboard, Users, BookOpen, GraduationCap, FileText, TrendingUp, Activity, Database, Wifi, Cpu, UserPlus, BarChart3, CheckCircle, PlayCircle, Loader2 } from 'lucide-react';
+import LastActivity from '@/components/admin/LastActivity';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 import { useTranslations } from 'next-intl';
 
@@ -239,8 +240,8 @@ export default function AdminDashboard() {
             <StatCard colSpan={2} stat={{ label: t('admin.dashboard.published_berita'), value: stats?.total_berita ?? '-', icon: FileText, color: 'text-rose-600 dark:text-rose-400', desc: t('admin.dashboard.berita_pengumuman') }} />
             <StatCard colSpan={2} stat={{ label: t('admin.dashboard.total_pegawai'), value: '-', icon: LayoutDashboard, color: text.secondaryClass, desc: t('admin.dashboard.data_pegawai_kosong') }} />
 
-            {/* Activities - full width */}
-            <div className="col-span-6 bg-card border border-border rounded-xl">
+            {/* Activities row: System Activities (4 cols) + Last Activity (2 cols) */}
+            <div className="col-span-4 bg-card border border-border rounded-xl">
                 <div className="px-5 py-4 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
@@ -270,6 +271,9 @@ export default function AdminDashboard() {
                         ))
                     )}
                 </div>
+            </div>
+            <div className="col-span-2">
+                <LastActivity limit={6} />
             </div>
         </div>
     );

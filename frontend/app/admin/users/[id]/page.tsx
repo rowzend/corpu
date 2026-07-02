@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService, roleService, type User, type Role } from '@/lib/services';
 import { showSuccess, showError, showDeleteConfirm, showConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
+import LastActivity from '@/components/admin/LastActivity';
+import { Clock } from 'lucide-react';
 
 export default function UserDetailPage() {
     const params = useParams();
@@ -23,7 +25,7 @@ export default function UserDetailPage() {
         email: '',
         username: '',
         is_active: true,
-        role_id: 0,
+        role_ids: [] as number[],
     });
 
     useEffect(() => {
@@ -47,7 +49,7 @@ export default function UserDetailPage() {
                 email: userData.email,
                 username: userData.username,
                 is_active: userData.is_active,
-                role_id: 0, // You may need to get this from user data
+                role_ids: userData.roles?.map(r => r.id) || [],
             });
         } catch (err) {
             console.error('Failed to load user:', err);
@@ -294,7 +296,7 @@ export default function UserDetailPage() {
                                         email: user.email,
                                         username: user.username,
                                         is_active: user.is_active,
-                                        role_id: 0,
+                                        role_ids: user.roles?.map(r => r.id) || [],
                                     });
                                 }}
                                 className="bg-muted hover:bg-muted text-card-foreground px-4 py-2 rounded-lg font-medium transition-colors"
@@ -331,9 +333,22 @@ export default function UserDetailPage() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-muted-foreground mb-1">
-                                Role
+                                Roles
                             </label>
-                            <p className="text-lg text-card-foreground">{user.role || 'No role assigned'}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {user.roles && user.roles.length > 0 ? (
+                                    user.roles.map((role) => (
+                                        <span
+                                            key={role.id}
+                                            className="inline-flex items-center px-3 py-1 text-sm font-medium rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                        >
+                                            {role.name}
+                                        </span>
+                                    ))
+                                ) : (
+                                    <p className="text-lg text-card-foreground">No role assigned</p>
+                                )}
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-muted-foreground mb-1">
@@ -369,6 +384,25 @@ export default function UserDetailPage() {
                                     month: 'long',
                                     day: 'numeric',
                                 })}
+                            </p>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-muted-foreground mb-1">
+                                Last Login
+                            </label>
+                            <p className="text-lg text-card-foreground flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                {user.last_login ? (
+                                    new Date(user.last_login).toLocaleDateString('id-ID', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    })
+                                ) : (
+                                    <span className="text-muted-foreground">Belum pernah login</span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -409,6 +443,9 @@ export default function UserDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Last Activity */}
+            <LastActivity limit={8} />
         </div>
     );
 }

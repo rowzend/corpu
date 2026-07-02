@@ -18,6 +18,7 @@ export default function RolesPage() {
     const [error, setError] = useState<string | null>(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [newRoleName, setNewRoleName] = useState('');
+    const [newRoleRedirect, setNewRoleRedirect] = useState('/admin/dashboard');
     const [isCreating, setIsCreating] = useState(false);
     const [search, setSearch] = useState('');
 
@@ -43,8 +44,9 @@ export default function RolesPage() {
         try {
             setIsCreating(true);
             showLoading(t('creating_loading'));
-            await roleService.createRole({ name: newRoleName.trim() });
+            await roleService.createRole({ name: newRoleName.trim(), redirect_url_input: newRoleRedirect.trim() });
             setNewRoleName('');
+            setNewRoleRedirect('/admin/dashboard');
             setShowCreateForm(false);
             await loadRoles();
             closeLoading();
@@ -156,16 +158,25 @@ export default function RolesPage() {
                             <X className="w-4 h-4" />
                         </button>
                     </div>
-                    <form onSubmit={handleCreateRole} className="flex flex-col sm:flex-row items-end gap-3">
-                        <div className="flex-1 w-full space-y-1.5">
-                            <label className={`text-sm font-medium ${text.secondaryClass}`}>{t('role_name')}</label>
-                            <input type="text" value={newRoleName}
-                                onChange={(e) => setNewRoleName(e.target.value)}
-                                placeholder={t('role_name_placeholder')}
-                                className={`w-full px-3 py-2.5 border ${card.borderClass} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${card.bgClass} text-sm ${text.primaryClass}`}
-                                required />
+                    <form onSubmit={handleCreateRole} className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <label className={`text-sm font-medium ${text.secondaryClass}`}>{t('role_name')}</label>
+                                <input type="text" value={newRoleName}
+                                    onChange={(e) => setNewRoleName(e.target.value)}
+                                    placeholder={t('role_name_placeholder')}
+                                    className={`w-full px-3 py-2.5 border ${card.borderClass} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${card.bgClass} text-sm ${text.primaryClass}`}
+                                    required />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className={`text-sm font-medium ${text.secondaryClass}`}>Redirect URL</label>
+                                <input type="text" value={newRoleRedirect}
+                                    onChange={(e) => setNewRoleRedirect(e.target.value)}
+                                    placeholder="/admin/dashboard"
+                                    className={`w-full px-3 py-2.5 border ${card.borderClass} rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${card.bgClass} text-sm ${text.primaryClass}`} />
+                            </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 pt-1">
                             <button type="submit" disabled={isCreating}
                                 className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-4 py-2.5 rounded-xl font-medium transition-all text-sm">
                                 {isCreating ? t('creating') : t('create')}
@@ -254,6 +265,9 @@ export default function RolesPage() {
                                     </Badge>
                                     <Badge className="bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border-0 text-xs font-medium">
                                         <Key className="w-3 h-3 mr-1" /> {role.permission_count} {t('permissions_count')}
+                                    </Badge>
+                                    <Badge className="bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-0 text-xs font-medium truncate max-w-[160px]">
+                                        <span className="w-3 h-3 mr-1">🔗</span> {role.redirect_url || '/admin/dashboard'}
                                     </Badge>
                                 </div>
 

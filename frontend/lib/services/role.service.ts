@@ -10,6 +10,7 @@ export interface Role {
     name: string;
     user_count: number;
     permission_count: number;
+    redirect_url?: string;
 }
 
 export interface RoleDetail extends Role {
@@ -36,10 +37,12 @@ export interface RolePermission {
 
 export interface CreateRoleData {
     name: string;
+    redirect_url_input?: string;
 }
 
 export interface UpdateRoleData {
-    name: string;
+    name?: string;
+    redirect_url_input?: string;
 }
 
 export const roleService = {

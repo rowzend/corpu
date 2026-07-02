@@ -263,6 +263,16 @@ export default function CreateQuizPage() {
                                     value={formData.max_attempts}
                                     onChange={(e) => setFormData(prev => ({ ...prev, max_attempts: parseInt(e.target.value) }))}
                                     className="mt-2" />
+                                {formData.max_attempts === 1 && (
+                                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                        <span>⚠</span> Hanya 1 kali percobaan, tidak ada remedial
+                                    </p>
+                                )}
+                                {formData.max_attempts > 1 && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {formData.max_attempts === -1 ? 'Tidak terbatas' : `${formData.max_attempts}x percobaan, remedial dengan cooldown`}
+                                    </p>
+                                )}
                             </div>
                             <div>
                                 <Label>Batas Waktu (menit)</Label>

@@ -2,12 +2,42 @@ import { api } from '../api';
 
 export interface UserProfile {
     user: number;
-    bio: string | null;
-    no_hp_pribadi: string | null;
-    alamat_domisili: string | null;
+    user_name: string;
+    user_email: string | null;
+    user_username: string;
+    user_image: string;
+
+    kategori_user: number | null;
+    kategori_user_nama: string | null;
+    kategori_user_kode: string | null;
+
     nik: string | null;
+    tempat_lahir: string | null;
+    tanggal_lahir: string | null;
+    jenis_kelamin: string | null;
     agama: string | null;
+    no_hp_pribadi: string | null;
+    bio: string | null;
+
+    provinsi: number | null;
+    provinsi_nama: string | null;
+    kabupaten: number | null;
+    kabupaten_nama: string | null;
+    kecamatan: number | null;
+    kecamatan_nama: string | null;
+    kelurahan: number | null;
+    kelurahan_nama: string | null;
+    alamat_domisili: string | null;
+
+    perguruan_tinggi: number | null;
+    perguruan_tinggi_nama: string | null;
+    program_studi: number | null;
+    program_studi_nama: string | null;
     pendidikan_terakhir: string | null;
+
+    instansi: number | null;
+    instansi_nama: string | null;
+
     media_sosial: Record<string, string> | null;
     preferensi: Record<string, any> | null;
     is_public: boolean;

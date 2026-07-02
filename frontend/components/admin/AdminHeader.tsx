@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { getPublicSettings } from '@/lib/api/profilePublic';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import NotificationBell from '@/components/NotificationBell';
-import { LogOut, ChevronDown, User, Settings, LayoutDashboard, Menu, Shield, Sun, Moon, Monitor, Globe } from 'lucide-react';
+import { LogOut, ChevronDown, User, Settings, LayoutDashboard, Menu, Shield, Sun, Moon, Monitor, Globe, Activity } from 'lucide-react';
 
 const locales = [
   { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
@@ -24,9 +24,10 @@ const themes = [
 
 interface AdminHeaderProps {
     onToggleSidebar?: () => void;
+    onToggleActivityPanel?: () => void;
 }
 
-export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: AdminHeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const locale = useLocale();
@@ -38,6 +39,8 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     const [showDropdown, setShowDropdown] = useState(false);
     const [appName, setAppName] = useState('');
 
+    const [allGroups, setAllGroups] = useState<Array<{ id: number; name: string }>>([]);
+
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
         setUser(currentUser);
@@ -46,17 +49,42 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
 
         const fetchUserRole = async () => {
             try {
-                const response = await api.get<{ success: boolean; data: { user: { groups: string[] } } }>('/management/permissions/user/');
+                const activeGroupId = authService.getActiveGroupId();
+                const permUrl = activeGroupId
+                    ? `/management/permissions/user/?group_id=${activeGroupId}`
+                    : '/management/permissions/user/';
+                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string }> } } }>(permUrl);
                 if (response.success && response.data.user.groups.length > 0) {
-                    setUserRole(response.data.user.groups[0]);
+                    const activeGroup = response.data.user.groups.find(g => g.id === activeGroupId);
+                    setUserRole(activeGroup?.name || response.data.user.groups[0].name);
                 }
             } catch (error) {
                 console.error('Failed to fetch user role:', error);
             }
         };
 
+        const fetchAllGroups = async () => {
+            try {
+                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string }> } } }>('/management/permissions/user/');
+                if (response.success && response.data.user.groups.length > 1) {
+                    setAllGroups(response.data.user.groups);
+                }
+            } catch {}
+        };
+
         fetchUserRole();
+        fetchAllGroups();
     }, []);
+
+    const handleSwitchRole = (groupId: number | null) => {
+        if (groupId) {
+            authService.setActiveGroupId(groupId);
+        } else {
+            authService.clearActiveGroupId();
+        }
+        setShowDropdown(false);
+        window.location.reload();
+    };
 
     const switchLocale = (newLocale: string) => {
         document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=${365 * 24 * 60 * 60}`;
@@ -132,6 +160,13 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                         <Shield className="w-3.5 h-3.5" />
                         <span>{t('admin.header.admin_badge')}</span>
                     </div>
+                    <button
+                        onClick={onToggleActivityPanel}
+                        className="relative p-2 rounded-xl hover:bg-muted/80 transition-colors text-muted-foreground hover:text-card-foreground group"
+                        title="Riwayat Aktivitas"
+                    >
+                        <Activity className="w-5 h-5" />
+                    </button>
                     <NotificationBell />
 
                     <div className="relative" ref={dropdownRef}>
@@ -186,6 +221,35 @@ export default function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                                         {t('admin.header.settings')}
                                     </button>
                                 </div>
+
+                                {/* Switch Role */}
+                                {allGroups.length > 0 && (
+                                    <div className="border-t border-border px-5 py-3">
+                                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1.5">
+                                            <Shield className="w-3 h-3" /> Ganti Role
+                                        </p>
+                                        <div className="space-y-1">
+                                            {allGroups.map(g => (
+                                                <button key={g.id} onClick={() => handleSwitchRole(g.id)}
+                                                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                                        authService.getActiveGroupId() === g.id
+                                                            ? 'bg-blue-100 dark:bg-blue-500/15 text-blue-700 dark:text-blue-300'
+                                                            : 'text-muted-foreground hover:bg-muted'
+                                                    }`}>
+                                                    <Shield className="w-3 h-3" />
+                                                    <span>{g.name}</span>
+                                                </button>
+                                            ))}
+                                            {authService.getActiveGroupId() !== null && (
+                                                <button onClick={() => handleSwitchRole(null)}
+                                                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted transition-all">
+                                                    <LayoutDashboard className="w-3 h-3" />
+                                                    <span>Semua Role</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Language */}
                                 <div className="border-t border-border px-5 py-3">

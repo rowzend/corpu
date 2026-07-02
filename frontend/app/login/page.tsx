@@ -7,6 +7,7 @@ import { authService } from '@/lib/services/auth.service';
 import { getPublicSettings } from '@/lib/api/profilePublic';
 import { api } from '@/lib/api';
 import SudoPrompt from '@/components/SudoPrompt';
+import RoleSelectorModal from '@/components/RoleSelectorModal';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -19,8 +20,10 @@ export default function LoginPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
-    const [showSudoPrompt, setShowSudoPrompt] = useState(false);
-    const [sudoUser, setSudoUser] = useState<any>(null);
+  const [showSudoPrompt, setShowSudoPrompt] = useState(false);
+  const [sudoUser, setSudoUser] = useState<any>(null);
+  const [userGroups, setUserGroups] = useState<Array<{ id: number; name: string; redirect_url?: string }>>([]);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
     const [particles, setParticles] = useState<Array<{ left: number; top: number; duration: number; delay: number }>>([]);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
     const [isButtonRunning, setIsButtonRunning] = useState(false);
@@ -30,6 +33,58 @@ export default function LoginPage() {
 
     useEffect(() => {
         getPublicSettings().then(setSettings).catch(() => {});
+    }, []);
+
+    // Auto-check existing session on mount (e.g. after refresh)
+    useEffect(() => {
+        const token = authService.getToken();
+        if (!token) return;
+
+        const user = authService.getCurrentUser();
+        if (!user) return;
+
+        // If user already has an active_group_id, redirect to admin
+        const existingGroupId = authService.getActiveGroupId();
+        if (existingGroupId !== null) {
+            window.location.href = '/admin/dashboard';
+            return;
+        }
+
+        (async () => {
+            try {
+                const permRes = await api.get<{ success: boolean; data: { modules: string[]; user: { groups: Array<{ id: number; name: string; redirect_url?: string }> } } }>('/management/permissions/user/');
+                const modules = permRes?.data?.modules || [];
+                const rawGroups = permRes?.data?.user?.groups || [];
+                const normalizedGroups: Array<{ id: number; name: string; redirect_url?: string }> = rawGroups.map((g: any) =>
+                    typeof g === 'string' ? { id: 0, name: g, redirect_url: '/admin/dashboard' } : g
+                );
+                const isStaff = user?.is_staff === true || user?.is_superuser === true;
+
+                // Pisahkan group berdasarkan redirect_url
+                const adminGroups = normalizedGroups.filter(g => (g.redirect_url || '/admin/dashboard').startsWith('/admin/'));
+                const memberGroups = normalizedGroups.filter(g => (g.redirect_url || '/admin/dashboard').startsWith('/member/'));
+
+                if (adminGroups.length === 0) {
+                    // Semua group adalah member → set role_type, redirect
+                    authService.setActiveRole(null, '/member/dashboard');
+                    window.location.href = '/member/dashboard';
+                } else if (adminGroups.length === 1) {
+                    // Hanya 1 group admin → auto-set dan redirect
+                    authService.setActiveRole(
+                        adminGroups[0].id !== undefined ? adminGroups[0].id : null,
+                        adminGroups[0].redirect_url || '/admin/dashboard'
+                    );
+                    window.location.href = adminGroups[0].redirect_url || '/admin/dashboard';
+                } else {
+                    // Multiple admin groups → show role selector dengan semua group
+                    setSudoUser(user);
+                    setUserGroups(normalizedGroups);
+                    setShowRoleSelector(true);
+                }
+            } catch {
+                window.location.href = '/member/dashboard';
+            }
+        })();
     }, []);
 
     useEffect(() => {
@@ -93,18 +148,40 @@ export default function LoginPage() {
         try {
             await authService.login(formData);
             const user = authService.getCurrentUser();
-            let isAdmin = false;
+            let groups: Array<{ id: number; name: string; redirect_url?: string }> = [];
             try {
-                const permRes = await api.get<{ success: boolean; data: { modules: string[] } }>('/management/permissions/user/');
+                const permRes = await api.get<{ success: boolean; data: { modules: string[]; user: { groups: Array<{ id: number; name: string; redirect_url?: string }> } } }>('/management/permissions/user/');
                 const modules = permRes?.data?.modules || [];
-                const isStaff = user?.is_staff === true || user?.is_superuser === true;
-                const adminRole = user?.role === 'admin' || user?.role === 'superadmin' || isStaff;
-                isAdmin = modules.length > 0 && adminRole;
-            } catch {}
-            if (isAdmin) {
-                setSudoUser(user);
-                setShowSudoPrompt(true);
-            } else {
+                groups = permRes?.data?.user?.groups || [];
+                console.log('[Login Debug] user:', user);
+                console.log('[Login Debug] modules:', modules);
+                console.log('[Login Debug] groups:', groups);
+                const normalizedGroups: Array<{ id: number; name: string; redirect_url?: string }> = (groups || []).map((g: any) =>
+                    typeof g === 'string' ? { id: 0, name: g, redirect_url: '/admin/dashboard' } : g
+                );
+                groups = normalizedGroups;
+
+                const adminGroups = groups.filter((g: any) => (g.redirect_url || '/admin/dashboard').startsWith('/admin/'));
+                console.log('[Login Debug] modules:', modules, 'adminGroups:', adminGroups.length, 'totalGroups:', groups.length);
+
+                if (adminGroups.length === 0) {
+                    authService.setActiveRole(null, '/member/dashboard');
+                    window.location.href = '/member/dashboard';
+                    return;
+                } else if (adminGroups.length === 1) {
+                    authService.setActiveRole(
+                        adminGroups[0].id !== undefined ? adminGroups[0].id : null,
+                        adminGroups[0].redirect_url || '/admin/dashboard'
+                    );
+                    window.location.href = adminGroups[0].redirect_url || '/admin/dashboard';
+                    return;
+                } else {
+                    setSudoUser(user);
+                    setUserGroups(groups);
+                    setShowSudoPrompt(true);
+                }
+            } catch (e) {
+                console.error('[Login Debug] Error fetching permissions:', e);
                 window.location.href = '/member/dashboard';
             }
         } catch (err) {
@@ -351,7 +428,20 @@ export default function LoginPage() {
                 </div>
             </div>
 
-            {showSudoPrompt && sudoUser && <SudoPrompt user={sudoUser} />}
+            {showSudoPrompt && sudoUser && (
+                <SudoPrompt
+                    user={sudoUser}
+                    groups={userGroups}
+                    onChooseRole={(groups) => {
+                        setShowSudoPrompt(false);
+                        setUserGroups(groups);
+                        setShowRoleSelector(true);
+                    }}
+                />
+            )}
+            {showRoleSelector && userGroups.length > 0 && (
+                <RoleSelectorModal groups={userGroups} />
+            )}
 
             <style jsx>{`
                 @keyframes float {

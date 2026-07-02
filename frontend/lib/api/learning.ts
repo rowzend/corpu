@@ -82,6 +82,8 @@ export interface Quiz {
   passing_score_percentage: number;
   max_attempts: number;
   is_randomized: boolean;
+  time_limit_minutes?: number;
+  retry_cooldown_minutes?: number;
   total_questions: number;
   questions: QuizQuestion[];
   created_at: string;
@@ -114,6 +116,7 @@ export interface QuizAttempt {
   total_questions: number;
   correct_answers: number;
   passed: boolean;
+  status?: string;
   started_at: string;
   completed_at?: string;
   answers?: QuizAnswer[];
@@ -411,6 +414,20 @@ export async function takeQuiz(quizId: number): Promise<{
   questions: QuizQuestion[];
 }> {
   return api.get(`/learning/quizzes/${quizId}/take/`);
+}
+
+export async function resumeQuiz(quizId: number): Promise<{
+  id: number;
+  title: string;
+  description?: string;
+  passing_score_percentage: number;
+  total_questions: number;
+  questions: QuizQuestion[];
+  draft_answers: any[];
+  time_spent: number;
+  draft_attempt_id: number;
+}> {
+  return api.get(`/learning/quizzes/${quizId}/resume/`);
 }
 
 export async function submitQuizAttempt(quizId: number, answers: any[], timeSpent?: number): Promise<QuizAttempt> {
