@@ -102,6 +102,15 @@ class UserProfile(models.Model):
         null=True, blank=True, verbose_name='Instansi'
     )
 
+    # Kategori User (Mahasiswa, Dosen, Widyaiswara, ASN, Swasta, Pensiun, dll)
+    kategori_user = models.ForeignKey(
+        'referensi.MsKategoriUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Kategori User'
+    )
+
     # Data Lainnya
     media_sosial = models.JSONField(null=True, blank=True, default=dict, verbose_name='Media Sosial')
     preferensi = models.JSONField(null=True, blank=True, default=dict, verbose_name='Preferensi')
@@ -189,16 +198,6 @@ class User(AbstractBaseUser):
         blank=True,
         help_text='ID OPD user (nullable)'
     )
-    
-    # Kategori User (Mahasiswa, Dosen, Widyaiswara, ASN, Swasta, Pensiun, dll)
-    kategori_user = models.ForeignKey(
-        'referensi.MsKategoriUser',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name='Kategori User'
-    )
-    
     
     # Laravel: image field (match Laravel - string 150)
     image = models.CharField(

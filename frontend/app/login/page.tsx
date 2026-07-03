@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/lib/services/auth.service';
 import { getPublicSettings } from '@/lib/api/profilePublic';
 import { api } from '@/lib/api';
@@ -11,6 +11,7 @@ import RoleSelectorModal from '@/components/RoleSelectorModal';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [settings, setSettings] = useState<Record<string, string>>({});
     const [formData, setFormData] = useState({
         username: '',
@@ -37,8 +38,26 @@ export default function LoginPage() {
 
     // Auto-check existing session on mount (e.g. after refresh)
     useEffect(() => {
+        // Jangan auto-redirect jika user diarahkan ke sini karena:
+        // - redirect param (dari middleware, token expired/invalid)
+        // - error param (dari admin layout, verifyToken gagal)
+        // - session param (dari SessionChecker, session expired)
+        if (searchParams.has('redirect') || searchParams.has('error') || searchParams.has('session')) {
+            return;
+        }
+
         const token = authService.getToken();
         if (!token) return;
+
+        // Cek expiry token untuk mencegah loop dengan middleware
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp && Date.now() >= payload.exp * 1000) {
+                return;
+            }
+        } catch {
+            return;
+        }
 
         const user = authService.getCurrentUser();
         if (!user) return;

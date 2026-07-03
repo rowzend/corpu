@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,7 @@ import {
     ArrowLeft, Save, Loader, Trash2, Plus, Edit,
     FileText, Video, Link as LinkIcon, File,
     HelpCircle, ChevronDown, ChevronRight, BookOpen,
-    GraduationCap, Clock, Image as ImageIcon, Layers, AlertCircle
+    GraduationCap, Clock, Image as ImageIcon, Layers, AlertCircle, Upload
 } from 'lucide-react';
 import {
     getCourse, updateCourse, deleteCourse,
@@ -99,12 +99,16 @@ export default function EditCoursePage() {
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<'informasi' | 'modul'>('informasi');
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+
     const [formData, setFormData] = useState({
         title: '', slug: '', description: '', short_description: '',
         level: 'beginner', duration_minutes: 60, status: 'draft', thumbnail: '',
         category_id: null as number | null,
         certificate_background: '', certificate_template: '',
         _cert_bg_file: null as File | null, _cert_tmpl_file: null as File | null,
+        _thumbnail_file: null as File | null,
     });
 
     const [courseId, setCourseId] = useState<number>(0);
@@ -137,8 +141,9 @@ export default function EditCoursePage() {
                 category_id: course.category?.id || null,
                 certificate_background: course.certificate_background || '',
                 certificate_template: course.certificate_template || '',
-                _cert_bg_file: null, _cert_tmpl_file: null,
+                _cert_bg_file: null, _cert_tmpl_file: null, _thumbnail_file: null,
             });
+            setThumbnailPreview(null);
             const courseModules = await getModules(slug);
             setModules(courseModules.results);
         } catch (error) {
@@ -193,6 +198,20 @@ export default function EditCoursePage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleThumbnailFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setFormData(prev => ({ ...prev, _thumbnail_file: file }));
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setThumbnailPreview(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setThumbnailPreview(null);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title.trim()) { showError('Judul kursus harus diisi', 'Validasi'); return; }
@@ -215,8 +234,8 @@ export default function EditCoursePage() {
             setSaving(true);
             const fd = new FormData();
             Object.entries(formData).forEach(([k, v]) => {
-                // Skip internal file fields, slug (readonly), and null values
-                if (k === '_cert_bg_file' || k === '_cert_tmpl_file' || k === 'slug') return;
+                // Skip internal file fields, thumbnail (sent as file), slug (readonly), and null values
+                if (k === '_cert_bg_file' || k === '_cert_tmpl_file' || k === '_thumbnail_file' || k === 'slug' || k === 'thumbnail') return;
                 if (v === null) return;
                 
                 // Convert to string for FormData
@@ -224,6 +243,7 @@ export default function EditCoursePage() {
             });
             
             // Add file uploads if present
+            if (formData._thumbnail_file) fd.append('thumbnail', formData._thumbnail_file);
             if (formData._cert_bg_file) fd.append('certificate_background', formData._cert_bg_file);
             if (formData._cert_tmpl_file) fd.append('certificate_template', formData._cert_tmpl_file);
             
@@ -588,10 +608,38 @@ export default function EditCoursePage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="thumbnail" className="text-sm font-medium text-foreground">URL Thumbnail</Label>
-                                    <Input id="thumbnail" name="thumbnail" type="url" placeholder="https://example.com/image.jpg"
-                                        value={formData.thumbnail} onChange={handleInputChange}
-                                        className="border-border focus:border-indigo-500 focus:ring-indigo-500" />
+                                    <Label htmlFor="thumbnail" className="text-sm font-medium text-foreground">Thumbnail (Opsional)</Label>
+                                    <div
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-muted/50 transition-colors overflow-hidden"
+                                    >
+                                        {thumbnailPreview ? (
+                                            <img src={thumbnailPreview} alt="thumbnail preview" className="w-full h-full object-cover rounded-xl" />
+                                        ) : formData.thumbnail && !formData._thumbnail_file ? (
+                                            <img src={formData.thumbnail} alt="thumbnail" className="w-full h-full object-cover rounded-xl"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                                <Upload className="w-6 h-6" />
+                                                <span className="text-sm">Klik untuk pilih file gambar</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <input
+                                        ref={fileInputRef}
+                                        id="thumbnail"
+                                        name="thumbnail"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleThumbnailFile}
+                                        className="hidden"
+                                    />
+                                    {formData._thumbnail_file && (
+                                        <p className="text-xs text-muted-foreground">{formData._thumbnail_file.name}</p>
+                                    )}
+                                    {formData.thumbnail && !formData._thumbnail_file && (
+                                        <p className="text-xs text-muted-foreground truncate">{formData.thumbnail}</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -758,8 +806,8 @@ export default function EditCoursePage() {
                                                             <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 {lesson.content_type === 'quiz' && (
                                                                     <button onClick={() => {
-                                                                        if (lesson.quiz_id) router.push(`/learning/quizzes/${lesson.quiz_id}/edit`);
-                                                                        else router.push(`/learning/quizzes/create?course_slug=${slug}&lesson_id=${lesson.id}&module_id=${mod.id}`);
+                                                                        if (lesson.quiz_id) router.push(`/admin/learning/quizzes/${lesson.quiz_id}/edit`);
+                                                                        else router.push(`/admin/learning/quizzes/create?course_slug=${slug}&lesson_id=${lesson.id}&module_id=${mod.id}`);
                                                                     }} className="px-2 py-1 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 rounded-lg hover:bg-amber-100 transition-colors">
                                                                         {lesson.quiz_id ? 'Edit Quiz' : 'Buat Quiz'}
                                                                     </button>

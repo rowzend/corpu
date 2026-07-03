@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Eye, Database, Clock, Users, UserCheck, UserX, Loader2 } from 'lucide-react';
 import { simpegService, type PegawaiItem } from '@/lib/services';
 import { showToast, showError, showConfirm } from '@/lib/sweetalert';
-import { handleApiError } from '@/lib/api';
+import { handleApiError, ApiError } from '@/lib/api';
 import Swal from 'sweetalert2';
 
 export default function SimpegPegawaiPage() {
@@ -93,6 +93,16 @@ export default function SimpegPegawaiPage() {
             }
         } catch (error) {
             Swal.close();
+            if (error instanceof ApiError) {
+                if (error.code === 'PASSWORD_REQUIRED') {
+                    showPasswordPopup();
+                    return;
+                }
+                if (error.code === 'LOGIN_FAILED') {
+                    showError('Login ke ESIMPEG gagal. Password salah atau akun tidak ditemukan.');
+                    return;
+                }
+            }
             showError(handleApiError(error), 'Gagal Sync');
         } finally {
             setSyncing(false);
@@ -186,9 +196,11 @@ export default function SimpegPegawaiPage() {
 
     const getEselonBadge = (kode: number | null) => {
         if (!kode) return <Badge variant="outline" className="text-gray-500">Non</Badge>;
-        if ([11, 12].includes(kode)) return <Badge className="bg-red-100 text-red-800">II</Badge>;
-        if ([21, 22].includes(kode)) return <Badge className="bg-yellow-100 text-yellow-800">III</Badge>;
-        if ([31, 32].includes(kode)) return <Badge className="bg-green-100 text-green-800">IV</Badge>;
+        if ([11, 12].includes(kode)) return <Badge className="bg-red-100 text-red-800">I</Badge>;
+        if ([21, 22].includes(kode)) return <Badge className="bg-red-100 text-red-800">II</Badge>;
+        if ([31, 32].includes(kode)) return <Badge className="bg-yellow-100 text-yellow-800">III</Badge>;
+        if ([41, 42].includes(kode)) return <Badge className="bg-green-100 text-green-800">IV</Badge>;
+        if (kode === 51) return <Badge className="bg-blue-100 text-blue-800">V</Badge>;
         return <Badge variant="outline">{kode}</Badge>;
     };
 

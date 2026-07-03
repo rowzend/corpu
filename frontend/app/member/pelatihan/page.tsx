@@ -84,7 +84,7 @@ export default function PelatihanPage() {
                     <CardContent className="p-12 text-center">
                         <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                         <p className="text-muted-foreground">Tidak ada pelatihan ditemukan</p>
-                        <Button className="mt-4" onClick={() => router.push('/courses')}>Jelajahi Kursus</Button>
+                        <Button className="mt-4" onClick={() => router.push('/member/courses')}>Jelajahi Kursus</Button>
                     </CardContent>
                 </Card>
             ) : (

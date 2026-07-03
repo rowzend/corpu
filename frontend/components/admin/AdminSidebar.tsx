@@ -60,7 +60,7 @@ const CATEGORY_MAP: MenuCategoryMap = {
     11: 'Manajemen Aplikasi',
 };
 
-const CATEGORY_ORDER = [1, 2, 3, 4, 5, 6, 7, 8, 10, 9, 11];
+const CATEGORY_ORDER = [1, 2, 3, 5, 10, 6, 7, 9];
 
 const sectionTitleMap: Record<string, string> = {
     'Utama': 'admin.sidebar.utama',
@@ -109,6 +109,7 @@ const itemNameMap: Record<string, string> = {
     'Settings': 'admin.sidebar.settings',
     'ESIMPEG': 'admin.sidebar.esimpeg',
     'Pegawai': 'admin.sidebar.pegawai',
+    'Bupati': 'admin.sidebar.bupati',
     'Perguruan Tinggi': 'admin.sidebar.perguruan_tinggi',
     'Program Studi': 'admin.sidebar.program_studi',
     'Lokasi Daerah': 'admin.sidebar.lokasi_daerah',
@@ -121,6 +122,8 @@ const itemNameMap: Record<string, string> = {
     'Manajemen Rules': 'admin.sidebar.manajemen_rules',
     'Dokumentasi API': 'admin.sidebar.dokumentasi_api',
     'Menu Categories': 'admin.sidebar.menu_categories',
+    'Integration': 'admin.sidebar.integrasi',
+    'Data References': 'admin.sidebar.data_referensi',
     'Manajemen Aplikasi': 'admin.sidebar.manajemen_aplikasi_parent',
     'Role Profile': 'admin.sidebar.role_profile',
 };
@@ -282,11 +285,61 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
     };
 
     const isActive = (href: string) => {
-        return pathname === href || pathname.startsWith(href + '/');
+        if (!href || href === '#') return false;
+        const pathParts = pathname.split('/').filter(Boolean);
+        const hrefParts = href.split('/').filter(Boolean);
+        if (hrefParts.length !== pathParts.length) return false;
+        return hrefParts.every((part, i) => part === pathParts[i]);
     };
 
     const isSubmenuOpen = (itemName: string) => {
         return expandedItems.includes(itemName);
+    };
+
+    const renderSubItems = (items: MenuItem[], parentKey: string, depth: number = 0) => {
+        return items.map(sub => {
+            const subKey = `${parentKey}.${sub.name}`;
+            if (sub.children) {
+                return (
+                    <div key={subKey}>
+                        <div
+                            className={`group flex items-center justify-between rounded-xl cursor-pointer transition-all duration-200 py-1.5 px-3 ${
+                                isActive(sub.href)
+                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                                    : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'
+                            }`}
+                            onClick={() => toggleExpanded(subKey)}
+                        >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <span className="text-sm flex-shrink-0">{sub.icon}</span>
+                                <span className="text-sm truncate font-medium">{safeT(itemNameMap[sub.name] || sub.name)}</span>
+                            </div>
+                            <span className={`transform transition-all duration-200 flex-shrink-0 w-3 h-3 flex items-center justify-center text-xs ${
+                                isSubmenuOpen(subKey) ? 'rotate-90' : ''
+                            }`}>▶</span>
+                        </div>
+                        {isSubmenuOpen(subKey) && (
+                            <div className={`${depth < 2 ? 'ml-3 mt-0.5 space-y-0.5 pl-3 border-l border-border' : ''}`}>
+                                {renderSubItems(sub.children, subKey, depth + 1)}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+            return (
+                <Link key={subKey} href={sub.href}
+                    onClick={() => { if (window.innerWidth < 1024) onToggleMobile(); }}
+                    className={`group flex items-center gap-3 py-1.5 px-3 rounded-lg transition-all duration-200 ${
+                        isActive(sub.href)
+                            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300'
+                            : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'
+                    }`}
+                >
+                    <span className="text-sm flex-shrink-0">{sub.icon}</span>
+                    <span className="text-sm truncate font-medium">{safeT(itemNameMap[sub.name] || sub.name)}</span>
+                </Link>
+            );
+        });
     };
 
     const handleTogglePin = () => {
@@ -308,7 +361,7 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
             {/* Logo */}
             <div className={`flex items-center border-b border-border flex-shrink-0 ${isExpanded ? 'px-5 h-16' : 'justify-center h-16'}`}>
                 <Link
-                    href="/dashboard"
+                    href="/admin/dashboard"
                     className={`flex items-center ${isExpanded ? 'gap-3' : 'justify-center'}`}
                 >
                     {settings.logo ? (
@@ -432,21 +485,7 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
 
                                         {item.children && isExpanded && isSubmenuOpen(item.name) && (
                                             <div className="ml-3 mt-1 space-y-0.5 pl-3 border-l border-border">
-                                                {item.children.map(child => (
-                                                    <Link
-                                                        key={child.name}
-                                                        href={child.href}
-                                                        onClick={() => { if (window.innerWidth < 1024) onToggleMobile(); }}
-                                                        className={`group flex items-center gap-3 py-1.5 px-3 rounded-lg transition-all duration-200 ${
-                                                            isActive(child.href)
-                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-300'
-                                                        : 'text-muted-foreground hover:bg-muted/70 hover:text-card-foreground'
-                                                        }`}
-                                                    >
-                                                        <span className="text-sm flex-shrink-0">{child.icon}</span>
-                                                        <span className="text-sm truncate font-medium">{safeT(itemNameMap[child.name] || child.name)}</span>
-                                                    </Link>
-                                                ))}
+                                                {renderSubItems(item.children, item.name, 1)}
                                             </div>
                                         )}
                                     </div>

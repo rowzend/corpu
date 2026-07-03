@@ -2,5 +2,5 @@
 
 import CoursesMyCourses from '@/components/pages/CoursesMyCourses';
 export default function AdminMyCoursesPage() {
-  return <CoursesMyCourses basePath="/courses" />;
+  return <CoursesMyCourses basePath="/admin/courses" />;
 }

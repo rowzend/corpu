@@ -25,12 +25,23 @@ export default function HomePage() {
 
     useEffect(() => {
         if (!mounted) return;
-        
+
         if (authService.isAuthenticated()) {
-            router.replace('/dashboard');
-        } else {
-            setChecked(true);
+            const token = authService.getToken();
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    if (payload.exp && Date.now() < payload.exp * 1000) {
+                        const roleType = authService.getActiveRoleType();
+                        router.replace(roleType === 'member' ? '/member/dashboard' : '/admin/dashboard');
+                        return;
+                    }
+                } catch {
+                    // Invalid token, fall through to landing page
+                }
+            }
         }
+        setChecked(true);
     }, [mounted, router]);
 
     if (!mounted || !checked) {

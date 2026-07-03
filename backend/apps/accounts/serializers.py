@@ -9,17 +9,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username', read_only=True)
     user_image = serializers.CharField(source='user.image', read_only=True)
 
-    # Kategori User dari User model (read-only)
-    kategori_user = serializers.PrimaryKeyRelatedField(
-        source='user.kategori_user',
-        read_only=True
-    )
+    # Kategori User (writable langsung dari UserProfile)
     kategori_user_nama = serializers.CharField(
-        source='user.kategori_user.nama',
+        source='kategori_user.nama',
         read_only=True
     )
     kategori_user_kode = serializers.CharField(
-        source='user.kategori_user.kode',
+        source='kategori_user.kode',
         read_only=True
     )
 

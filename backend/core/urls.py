@@ -159,8 +159,13 @@ urlpatterns = [
     path('', RedirectView.as_view(url='http://localhost:3000/', permanent=False), name='redirect_to_frontend'),
 ]
 
+# MinIO proxy - serve files from MinIO via Django proxy view
+from apps.manajemen.proxy_views import minio_proxy
+urlpatterns += [
+    path('media/minio/<path:key>', minio_proxy, name='minio_proxy'),
+]
+
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-1

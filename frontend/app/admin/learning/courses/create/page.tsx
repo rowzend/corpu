@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { RemoteSearchSelect } from '@/components/ui/remote-search-select';
-import { ArrowLeft, Save, Loader, BookOpen, GraduationCap, Clock, Image as ImageIcon, AlertCircle, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Save, Loader, BookOpen, GraduationCap, Clock, Image as ImageIcon, AlertCircle, Link as LinkIcon, Upload } from 'lucide-react';
 import { createCourse } from '@/lib/api/learning';
 import { api, handleApiError } from '@/lib/api';
 import { showToast, showError } from '@/lib/sweetalert';
@@ -60,6 +60,8 @@ const buildCategoryPath = (cat: any, allCats: any[]): string => {
 export default function CreateCoursePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         slug: '',
@@ -68,7 +70,7 @@ export default function CreateCoursePage() {
         level: 'beginner',
         duration_minutes: 60,
         status: 'draft',
-        thumbnail: '',
+        thumbnail: null as File | null,
         category_id: null as number | null,
     });
 
@@ -82,11 +84,24 @@ export default function CreateCoursePage() {
         }
     };
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setFormData(prev => ({ ...prev, thumbnail: file }));
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setThumbnailPreview(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setThumbnailPreview(null);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.title.trim()) { showError('Judul kursus harus diisi', 'Validasi'); return; }
         if (!formData.description.trim()) { showError('Deskripsi harus diisi', 'Validasi'); return; }
-        if (!formData.slug.trim()) { showError('Slug harus diisi', 'Validasi'); return; }
         try {
             setLoading(true);
             await createCourse(formData);
@@ -256,10 +271,32 @@ export default function CreateCoursePage() {
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="thumbnail" className="text-sm font-medium text-foreground">URL Thumbnail (Opsional)</Label>
-                                <Input id="thumbnail" name="thumbnail" type="url" placeholder="https://example.com/image.jpg"
-                                    value={formData.thumbnail} onChange={handleInputChange}
-                                    className="border-border focus:border-indigo-500 focus:ring-indigo-500" />
+                                <Label htmlFor="thumbnail" className="text-sm font-medium text-foreground">Thumbnail (Opsional)</Label>
+                                <div
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-indigo-400 hover:bg-muted/50 transition-colors"
+                                >
+                                    {thumbnailPreview ? (
+                                        <img src={thumbnailPreview} alt="thumbnail preview" className="w-full h-full object-cover rounded-xl" />
+                                    ) : (
+                                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                            <Upload className="w-6 h-6" />
+                                            <span className="text-sm">Klik untuk pilih file gambar</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <input
+                                    ref={fileInputRef}
+                                    id="thumbnail"
+                                    name="thumbnail"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                                {formData.thumbnail && (
+                                    <p className="text-xs text-muted-foreground">{formData.thumbnail.name}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -273,9 +310,8 @@ export default function CreateCoursePage() {
                     <div className="p-6">
                         <div className="border border-border rounded-xl p-5 bg-muted/50">
                             <div className="flex gap-5">
-                                {formData.thumbnail ? (
-                                    <img src={formData.thumbnail} alt="preview" className="w-32 h-32 object-cover rounded-xl"
-                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                {thumbnailPreview ? (
+                                    <img src={thumbnailPreview} alt="preview" className="w-32 h-32 object-cover rounded-xl" />
                                 ) : (
                                     <div className="w-32 h-32 rounded-xl bg-muted flex items-center justify-center">
                                         <ImageIcon className="w-8 h-8 text-muted-foreground" />

@@ -138,7 +138,7 @@ export default function SudoLoginPage() {
             </button>
 
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push('/admin/dashboard')}
               className="w-full text-gray-600 py-3 px-6 rounded-2xl font-medium hover:bg-gray-50 transition-all border-2 border-gray-200"
             >
               Lewati, lanjut sebagai user biasa

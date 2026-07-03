@@ -93,7 +93,7 @@ export default function StrukturPage() {
                 <div className="bg-card rounded-2xl shadow-sm border border-border p-16 text-center">
                     <LayoutList className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                     <p className="text-muted-foreground">{t('not_found')}</p>
-                    <Link href="/profile" className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 mt-4 font-medium">
+                    <Link href="/admin/profile" className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 mt-4 font-medium">
                         <ArrowLeft className="w-4 h-4" /> {t('back_to_profile')}
                     </Link>
                 </div>
@@ -210,7 +210,7 @@ export default function StrukturPage() {
 
                     <div className="flex items-center justify-between pt-2">
                         <Link
-                            href="/profile"
+                            href="/admin/profile"
                             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-card-foreground transition-colors"
                         >
                             <ArrowLeft className="w-4 h-4" /> {t('back')}

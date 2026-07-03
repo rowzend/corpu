@@ -33,9 +33,11 @@ services:
       - USE_X_FORWARDED_PORT=True
       - RUN_MIGRATIONS=0
       - RUN_COLLECTSTATIC=0
-      - ESIMPEG_API_URL=http://172.16.30.139:8005
+      - ESIMPEG_API_URL=http://host.docker.internal:8005
       - ESIMPEG_FALLBACK_ENABLED=True
       - PERMISSIONS_SUPERADMIN_OVERRIDE=True
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:

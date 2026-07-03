@@ -11,8 +11,8 @@ from django.db.models import Q, Case, When, Value, IntegerField
 from django.utils import timezone
 
 from apps.manajemen.helpers import check_permission
-from .models import Pegawai, SyncLog, SyncProgress
-from .serializers import PegawaiListSerializer, SyncProgressSerializer, SyncLogSerializer
+from .models import Pegawai, Bupati, SyncLog, SyncProgress
+from .serializers import PegawaiListSerializer, BupatiListSerializer, SyncProgressSerializer, SyncLogSerializer
 from .services import EsimpegAPIService
 
 logger = logging.getLogger(__name__)
@@ -415,3 +415,186 @@ def pegawai_sync_logs(request):
     logs = SyncLog.objects.all()[:20]
     serializer = SyncLogSerializer(logs, many=True)
     return Response({'success': True, 'data': serializer.data})
+
+
+# ─── Bupati ──────────────────────────────────────────────────────────
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def bupati_list(request):
+    if not check_permission(request.user, 'api_simpeg', 'bupati', 'view'):
+        return Response({'success': False, 'error': 'Akses ditolak.'}, status=status.HTTP_403_FORBIDDEN)
+
+    page = int(request.query_params.get('page', 1))
+    per_page = int(request.query_params.get('per_page', 10))
+
+    if per_page not in [10, 25, 50, 100]:
+        per_page = 10
+
+    qs = Bupati.objects.all()
+    total = qs.count()
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = qs[start:end]
+
+    serializer = BupatiListSerializer(items, many=True)
+
+    return Response({
+        'success': True,
+        'data': serializer.data,
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'total_pages': (total + per_page - 1) // per_page,
+        },
+    })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def bupati_sync(request):
+    if not check_permission(request.user, 'api_simpeg', 'bupati', 'sync'):
+        return Response({'success': False, 'error': 'Akses ditolak.'}, status=status.HTTP_403_FORBIDDEN)
+
+    password = request.data.get('password')
+    esimpeg_token = request.session.get('esimpeg_access_token')
+
+    if not esimpeg_token:
+        if not password:
+            return Response({
+                'success': False,
+                'code': 'PASSWORD_REQUIRED',
+                'error': 'Token ESIMPEG tidak ditemukan.',
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        api_service = EsimpegAPIService()
+        login_result = api_service.login(username=request.user.username, password=password)
+        if login_result and 'access_token' in login_result:
+            esimpeg_token = login_result['access_token']
+            request.session['esimpeg_access_token'] = esimpeg_token
+            request.session['esimpeg_refresh_token'] = login_result.get('refresh_token')
+        else:
+            return Response({
+                'success': False,
+                'code': 'LOGIN_FAILED',
+                'error': 'Login ke ESIMPEG gagal.',
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+    sync_id = str(uuid.uuid4())[:8]
+    sync_thread = threading.Thread(
+        target=_run_bupati_sync_in_background,
+        args=(sync_id, request.user.id, esimpeg_token)
+    )
+    sync_thread.daemon = True
+    sync_thread.start()
+
+    return Response({'success': True, 'sync_id': sync_id, 'message': 'Sync bupati started'})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def bupati_sync_progress(request, sync_id):
+    if not check_permission(request.user, 'api_simpeg', 'bupati', 'view'):
+        return Response({'success': False, 'error': 'Akses ditolak.'}, status=status.HTTP_403_FORBIDDEN)
+    try:
+        progress = SyncProgress.objects.get(sync_id=sync_id, user=request.user)
+        serializer = SyncProgressSerializer(progress)
+        return Response({'success': True, **serializer.data})
+    except SyncProgress.DoesNotExist:
+        return Response({'success': False, 'error': 'Progress not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+def _run_bupati_sync_in_background(sync_id, user_id, esimpeg_token):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        progress = SyncProgress.objects.create(sync_id=sync_id, user_id=user_id, status='running')
+        user = User.objects.get(id=user_id)
+
+        api_service = EsimpegAPIService()
+        data = api_service.get_bupati_list(token=esimpeg_token)
+
+        if not data or not data.get('items'):
+            progress.status = 'completed'
+            progress.processed_records = 0
+            progress.total_records = 0
+            progress.save()
+            return
+
+        items = data.get('items', [])
+        total = len(items)
+
+        progress.total_pages = 1
+        progress.total_records = total
+        progress.save()
+
+        now = timezone.now()
+        existing_ids = set(Bupati.objects.values_list('id_bupati', flat=True))
+
+        to_create = []
+        to_update_ids = []
+        to_update_data = []
+
+        for item in items:
+            id_bupati = item.get('id')
+            if not id_bupati:
+                continue
+
+            nama_status = item.get('namaStatus') or ''
+            status_val = item.get('status')
+            if status_val is None:
+                status_val = 1 if nama_status.lower() == 'aktif' else 0
+
+            bupati_data = {
+                'nama': item.get('nama', ''),
+                'gelar_depan': item.get('gelar_depan'),
+                'gelar_belakang': item.get('gelar_belakang'),
+                'nik': item.get('nik'),
+                'foto': item.get('foto'),
+                'jabatan': item.get('jabatan') or _safe_int(item.get('jabatan')),
+                'nama_jabatan': item.get('namaJabatan'),
+                'status': status_val,
+                'nama_status': nama_status,
+                'jenis_penugasan': item.get('jenisPenugasan'),
+                'periode_awal': item.get('periodeAwal'),
+                'periode_akhir': item.get('periodeAkhir'),
+                'raw_data': item,
+                'synced_by': user,
+                'synced_at': now,
+            }
+
+            if id_bupati in existing_ids:
+                to_update_ids.append(id_bupati)
+                to_update_data.append(bupati_data)
+            else:
+                bupati_data['id_bupati'] = id_bupati
+                bupati_data['created_at'] = now
+                to_create.append(Bupati(**bupati_data))
+
+        if to_create:
+            Bupati.objects.bulk_create(to_create, ignore_conflicts=True)
+
+        if to_update_ids:
+            for id_bupati, data in zip(to_update_ids, to_update_data):
+                Bupati.objects.filter(id_bupati=id_bupati).update(**data)
+
+        progress.current_page = 1
+        progress.processed_records = total
+        progress.new_records = len(to_create)
+        progress.updated_records = len(to_update_ids)
+        progress.status = 'completed'
+        progress.save()
+
+        logger.info(f"[Bupati Sync {sync_id}] Completed: {total} records")
+
+    except Exception as e:
+        logger.error(f"[Bupati Sync {sync_id}] Error: {str(e)}", exc_info=True)
+        try:
+            progress = SyncProgress.objects.get(sync_id=sync_id)
+            progress.status = 'failed'
+            progress.error_message = str(e)
+            progress.save()
+        except Exception:
+            pass

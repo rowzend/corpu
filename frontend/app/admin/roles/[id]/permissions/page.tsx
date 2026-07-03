@@ -140,7 +140,7 @@ export default function RolePermissionsPage() {
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sky-600 via-blue-700 to-indigo-800 p-6">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2MmgyM3Y0aDJWNmgyVjR6bTAtMzBWMEgzNHY0aC00djJoNHY0aDJWNmgyVjR6TTYgMzR2LTRINHY0SDB2Mmg0djRoMnYtNGg0di0yek02IDRWMUg0djRIMHYyaDR2NGgyVjZoNFY0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
                 <div className="relative z-10 flex items-center gap-4">
-                    <button onClick={() => router.push(`/roles/${roleId}`)}
+                    <button onClick={() => router.push(`/admin/roles/${roleId}`)}
                         className="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl p-2 transition-colors flex-shrink-0">
                         <ArrowLeft className="w-5 h-5 text-white" />
                     </button>
@@ -308,7 +308,7 @@ export default function RolePermissionsPage() {
                     <span className="font-semibold text-card-foreground">{selectedRuleIds.size}</span> of {allRules.length} permissions selected
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => router.push(`/roles/${roleId}`)}
+                    <button onClick={() => router.push(`/admin/roles/${roleId}`)}
                         className="px-5 py-2.5 border border-border rounded-xl font-medium text-sm text-card-foreground hover:bg-muted hover:bg-muted transition-colors">
                         Cancel
                     </button>

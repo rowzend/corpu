@@ -25,51 +25,66 @@ class Command(BaseCommand):
         else:
             self.stdout.write(f'  Module already exists: {module.label_module}')
 
-        control, created = PermissionControl.objects.get_or_create(
-            nama_kontrol='pegawai',
-            defaults={
-                'label_kontrol': 'Pegawai',
-                'deskripsi_kontrol': 'Manajemen data pegawai dari ESIMPEG',
-            }
-        )
-        if created:
-            self.stdout.write(self.style.SUCCESS(f'Created control: {control.label_kontrol}'))
-        else:
-            self.stdout.write(f'  Control already exists: {control.label_kontrol}')
-
-        functions_data = [
-            {'nama': 'view', 'label': 'View', 'deskripsi': 'Lihat daftar pegawai'},
-            {'nama': 'sync', 'label': 'Sync', 'deskripsi': 'Sinkronisasi data pegawai dari ESIMPEG'},
-            {'nama': 'export', 'label': 'Export', 'deskripsi': 'Export data pegawai'},
+        controls_data = [
+            {
+                'nama': 'pegawai',
+                'label': 'Pegawai',
+                'deskripsi': 'Manajemen data pegawai dari ESIMPEG',
+                'functions': [
+                    {'nama': 'view', 'label': 'View', 'deskripsi': 'Lihat daftar pegawai'},
+                    {'nama': 'sync', 'label': 'Sync', 'deskripsi': 'Sinkronisasi data pegawai dari ESIMPEG'},
+                    {'nama': 'export', 'label': 'Export', 'deskripsi': 'Export data pegawai'},
+                ]
+            },
+            {
+                'nama': 'bupati',
+                'label': 'Bupati',
+                'deskripsi': 'Manajemen data bupati/wakil bupati dari ESIMPEG',
+                'functions': [
+                    {'nama': 'view', 'label': 'View', 'deskripsi': 'Lihat daftar bupati'},
+                    {'nama': 'sync', 'label': 'Sync', 'deskripsi': 'Sinkronisasi data bupati dari ESIMPEG'},
+                ]
+            },
         ]
 
-        functions = []
-        for func_data in functions_data:
-            func, created = PermissionFunction.objects.get_or_create(
-                nama_fungsi=func_data['nama'],
+        total_rules = 0
+        for cd in controls_data:
+            control, created = PermissionControl.objects.get_or_create(
+                nama_kontrol=cd['nama'],
                 defaults={
-                    'label_fungsi': func_data['label'],
-                    'deskripsi_fungsi': func_data['deskripsi'],
+                    'label_kontrol': cd['label'],
+                    'deskripsi_kontrol': cd['deskripsi'],
                 }
             )
-            functions.append(func)
             if created:
-                self.stdout.write(self.style.SUCCESS(f'  Created function: {func.label_fungsi}'))
+                self.stdout.write(self.style.SUCCESS(f'Created control: {control.label_kontrol}'))
+            else:
+                self.stdout.write(f'  Control already exists: {control.label_kontrol}')
 
-        rules_created = 0
-        for func in functions:
-            rule, created = PermissionRule.objects.get_or_create(
-                module=module,
-                control=control,
-                function=func,
-                defaults={'is_active': True}
-            )
-            if created:
-                rules_created += 1
+            functions = []
+            for func_data in cd['functions']:
+                func, created = PermissionFunction.objects.get_or_create(
+                    nama_fungsi=func_data['nama'],
+                    defaults={
+                        'label_fungsi': func_data['label'],
+                        'deskripsi_fungsi': func_data['deskripsi'],
+                    }
+                )
+                functions.append(func)
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'  Created function: {func.label_fungsi}'))
+
+            for func in functions:
+                rule, created = PermissionRule.objects.get_or_create(
+                    module=module,
+                    control=control,
+                    function=func,
+                    defaults={'is_active': True}
+                )
+                if created:
+                    total_rules += 1
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('API SIMPEG Permissions Seeding Complete'))
         self.stdout.write(f'  Module: {module.label_module}')
-        self.stdout.write(f'  Control: {control.label_kontrol}')
-        self.stdout.write(f'  Functions: {len(functions)}')
-        self.stdout.write(f'  Rules created: {rules_created}')
+        self.stdout.write(f'  Total rules created: {total_rules}')

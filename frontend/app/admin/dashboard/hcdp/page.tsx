@@ -213,7 +213,7 @@ export default function AdminHCDPPage() {
                                         </Badge>
                                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button
-                                                onClick={() => router.push(`/dashboard/hcdp/${program.id}`)}
+                                                onClick={() => router.push(`/admin/dashboard/hcdp/${program.id}`)}
                                                 className="p-1.5 text-muted-foreground hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
@@ -229,7 +229,7 @@ export default function AdminHCDPPage() {
 
                                     <h3
                                         className="font-semibold text-card-foreground mb-2 line-clamp-2 cursor-pointer"
-                                        onClick={() => router.push(`/dashboard/hcdp/${program.id}`)}
+                                        onClick={() => router.push(`/admin/dashboard/hcdp/${program.id}`)}
                                     >
                                         {program.title}
                                     </h3>

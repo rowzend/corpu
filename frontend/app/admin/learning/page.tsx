@@ -102,10 +102,10 @@ export default function LearningDashboard() {
             {/* Quick Navigation */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'Manajemen Kursus', icon: BookOpen, href: '/learning/courses', color: 'text-blue-600', bg: 'bg-blue-50 hover:bg-blue-100' },
-                    { label: 'Enrollment', icon: Users, href: '/learning/enrollments', color: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100' },
-                    { label: 'Progress', icon: BarChart3, href: '/learning/progress', color: 'text-emerald-600', bg: 'bg-emerald-50 hover:bg-emerald-100' },
-                    { label: 'Quiz', icon: ClipboardCheck, href: '/learning/quizzes', color: 'text-amber-600', bg: 'bg-amber-50 hover:bg-amber-100' },
+                    { label: 'Manajemen Kursus', icon: BookOpen, href: '/admin/learning/courses', color: 'text-blue-600', bg: 'bg-blue-50 hover:bg-blue-100' },
+                    { label: 'Enrollment', icon: Users, href: '/admin/learning/enrollments', color: 'text-purple-600', bg: 'bg-purple-50 hover:bg-purple-100' },
+                    { label: 'Progress', icon: BarChart3, href: '/admin/learning/progress', color: 'text-emerald-600', bg: 'bg-emerald-50 hover:bg-emerald-100' },
+                    { label: 'Quiz', icon: ClipboardCheck, href: '/admin/learning/quizzes', color: 'text-amber-600', bg: 'bg-amber-50 hover:bg-amber-100' },
                 ].map((item, i) => (
                     <button
                         key={i}

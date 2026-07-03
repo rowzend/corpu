@@ -33,7 +33,18 @@ services:
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,asncorpu_backend_app,asncorpu-nginx,192.1.6.21,192.1.6.6,192.168.1.12,192.1.6.43,172.16.30.139,103.143.152.139,asncorpu.pesisirselatankab.go.id
       - USE_X_FORWARDED_HOST=True
       - USE_X_FORWARDED_PORT=True
-      - ESIMPEG_API_URL=http://172.16.30.139:8005
+      - ESIMPEG_API_URL=http://host.docker.internal:8005
+      # MinIO Configuration (External - same as ESIMPEG)
+      - MINIO_ENDPOINT=http://172.16.7.66:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=5406@Pessel123
+      - MINIO_BUCKET=asncorpu-media
+      - MINIO_REGION=us-east-1
+      - MINIO_USE_PROXY=True
+      - MINIO_PROXY_URL=/media/minio/
+      - DEFAULT_FILE_STORAGE=apps.manajemen.s3_storage.MinioStorage
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:

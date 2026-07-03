@@ -2,5 +2,5 @@
 
 import CoursesCertificates from '@/components/pages/CoursesCertificates';
 export default function AdminCertificatesPage() {
-  return <CoursesCertificates basePath="/courses" />;
+  return <CoursesCertificates basePath="/admin/courses" />;
 }

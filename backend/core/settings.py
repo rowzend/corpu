@@ -254,6 +254,18 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# MinIO / S3 Storage
+MINIO_ENDPOINT = config('MINIO_ENDPOINT', default='http://minio:9000')
+MINIO_ACCESS_KEY = config('MINIO_ACCESS_KEY', default='minioadmin')
+MINIO_SECRET_KEY = config('MINIO_SECRET_KEY', default='minioadmin')
+MINIO_BUCKET = config('MINIO_BUCKET', default='asncorpu-media')
+MINIO_REGION = config('MINIO_REGION', default='us-east-1')
+MINIO_USE_PROXY = config('MINIO_USE_PROXY', default=True, cast=bool)
+MINIO_PROXY_URL = config('MINIO_PROXY_URL', default='/media/minio/')
+
+# Use MinIO storage backend if available (falls back to local filesystem)
+DEFAULT_FILE_STORAGE = config('DEFAULT_FILE_STORAGE', default='apps.manajemen.s3_storage.MinioStorage')
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

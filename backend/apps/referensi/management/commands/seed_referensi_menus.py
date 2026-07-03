@@ -3,21 +3,47 @@ from apps.manajemen.models import MenuItem
 
 
 class Command(BaseCommand):
-    help = 'Seed Referensi sidebar menus'
+    help = 'Seed Referensi sidebar menus (under Data References in Management)'
 
     def handle(self, *args, **options):
         self.stdout.write('=' * 70)
         self.stdout.write('Seeding Referensi Menus')
         self.stdout.write('=' * 70)
 
-        # Deactivate old parent menu if exists (superseded by seed_frontend_menus.py)
+        # Deactivate old parent menu if exists
         old_parent = MenuItem.objects.filter(name='Referensi Pendidikan', parent__isnull=True).first()
         if old_parent:
             old_parent.is_active = False
             old_parent.save(update_fields=['is_active'])
             self.stdout.write('  Deactivated old parent: Referensi Pendidikan')
 
-        # Create/update menu items directly under Referensi category
+        # Deactivate old top-level referensi items (superseded by seed_frontend_menus.py)
+        for ref_name in ['Perguruan Tinggi', 'Program Studi', 'Instansi']:
+            old_ref = MenuItem.objects.filter(
+                name=ref_name, platform='frontend', parent__isnull=True, category=8
+            ).first()
+            if old_ref:
+                old_ref.is_active = False
+                old_ref.save(update_fields=['is_active'])
+                self.stdout.write(f'  Deactivated old {ref_name} (top-level, category 8)')
+
+        # Find or create Data References parent under Management
+        ref_parent, _ = MenuItem.objects.get_or_create(
+            name='Data References',
+            platform='frontend',
+            parent__isnull=True,
+            defaults={
+                'icon': '📚',
+                'type': 'menuItem',
+                'order': 3,
+                'category': 2,
+                'is_active': True,
+            }
+        )
+        if _:
+            self.stdout.write('  Created: Data References (parent)')
+
+        # Create/update menu items as children of Data References
         items = [
             {
                 'name': 'Perguruan Tinggi',
@@ -45,7 +71,7 @@ class Command(BaseCommand):
         for data in items:
             item, created = MenuItem.objects.update_or_create(
                 name=data['name'],
-                parent__isnull=True,
+                parent=ref_parent,
                 platform='frontend',
                 defaults={
                     'permission_key': data['permission_key'],
@@ -53,7 +79,7 @@ class Command(BaseCommand):
                     'icon': data['icon'],
                     'type': 'module',
                     'order': data['order'],
-                    'category': 8,
+                    'category': 2,
                     'is_active': True,
                 }
             )

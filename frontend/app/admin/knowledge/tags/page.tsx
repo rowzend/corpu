@@ -166,7 +166,7 @@ export default function TagsPage() {
                                             variant="outline"
                                             size="sm"
                                             className="h-8 w-8 p-0"
-                                            onClick={() => router.push(`/knowledge/tags/${tag.id}`)}
+                                            onClick={() => router.push(`/admin/knowledge/tags/${tag.id}`)}
                                         >
                                             <Edit className="w-3.5 h-3.5" />
                                         </Button>

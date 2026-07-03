@@ -958,6 +958,7 @@ class AppSettingsListAPIView(generics.ListAPIView):
     Get app settings (public only for non-admin)
     """
     permission_classes = [IsAuthenticated]
+    serializer_class = AppSettingsSerializer
     
     def get_queryset(self):
         # TODO: Check if user is admin

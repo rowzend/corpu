@@ -166,7 +166,7 @@ export default function UserDetailPage() {
                 <div>
                     <div className="flex items-center space-x-2 mb-2">
                         <Link
-                            href="/users"
+                            href="/admin/users"
                             className="text-blue-600 hover:text-blue-700"
                         >
                             ← Back to Users

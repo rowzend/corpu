@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Lock, ShieldCheck, Key, Eye, EyeOff, Users } from 'lucide-react';
+import { X, User, Mail, Lock, ShieldCheck, Key, Eye, EyeOff } from 'lucide-react';
 import { User as UserType, CreateUserData, UpdateUserData, Role, roleService } from '@/lib/services';
-import { referensiService, type KategoriUser } from '@/lib/services/referensi.service';
 
 interface UserFormProps {
     user?: UserType | null;
@@ -23,16 +22,13 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
         password: '',
         password_confirm: '',
         is_active: true,
-        kategori_user: null as number | null,
         role_ids: [] as number[],
     });
     const [roles, setRoles] = useState<Role[]>([]);
-    const [kategoriList, setKategoriList] = useState<KategoriUser[]>([]);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
     useEffect(() => {
         loadRoles();
-        loadKategori();
         if (user) {
             setFormData({
                 username: user.username,
@@ -41,7 +37,6 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 password: '',
                 password_confirm: '',
                 is_active: user.is_active,
-                kategori_user: user.kategori_user || null,
                 role_ids: user.roles?.map(r => r.id) || [],
             });
         }
@@ -53,15 +48,6 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
             setRoles(rolesData);
         } catch (error) {
             console.error('Failed to load roles:', error);
-        }
-    };
-
-    const loadKategori = async () => {
-        try {
-            const res = await referensiService.getKategoriUserList({ all: 'true' });
-            setKategoriList(res.data || []);
-        } catch (error) {
-            console.error('Failed to load kategori:', error);
         }
     };
 
@@ -134,7 +120,6 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                 name: formData.name,
                 email: formData.email || undefined,
                 is_active: formData.is_active,
-                kategori_user: formData.kategori_user || undefined,
                 role_ids: formData.role_ids.length > 0 ? formData.role_ids : undefined,
             };
 
@@ -271,27 +256,6 @@ export default function UserForm({ user, onSubmit, onCancel, isLoading }: UserFo
                                         <span>⚠</span> {errors.email}
                                     </p>
                                 )}
-                            </div>
-
-                            {/* Kategori User */}
-                            <div>
-                                <label className="block text-sm font-medium text-foreground mb-1.5">
-                                    Kategori User
-                                </label>
-                                <div className="relative">
-                                    <Users className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                    <select
-                                        name="kategori_user"
-                                        value={formData.kategori_user ?? ''}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, kategori_user: e.target.value ? parseInt(e.target.value) : null }))}
-                                        className={`pl-9 ${inputClass('kategori_user')}`}
-                                    >
-                                        <option value="">- Pilih Kategori -</option>
-                                        {kategoriList.map(k => (
-                                            <option key={k.id} value={k.id}>{k.nama}</option>
-                                        ))}
-                                    </select>
-                                </div>
                             </div>
 
                             {/* Role */}

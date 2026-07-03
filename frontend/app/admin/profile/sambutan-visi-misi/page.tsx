@@ -161,7 +161,7 @@ function SectionEditor({
 
                 <div className="flex items-center justify-between pt-2">
                     <Link
-                        href="/profile"
+                        href="/admin/profile"
                         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-card-foreground transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" /> {t('back')}

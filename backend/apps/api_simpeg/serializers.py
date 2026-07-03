@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pegawai, SyncProgress, SyncLog
+from .models import Pegawai, Bupati, SyncProgress, SyncLog
 
 
 class PegawaiListSerializer(serializers.ModelSerializer):
@@ -40,6 +40,17 @@ class SyncProgressSerializer(serializers.ModelSerializer):
             'processed_records', 'total_records', 'new_records',
             'updated_records', 'error_message', 'progress_percentage',
             'started_at', 'updated_at',
+        ]
+
+
+class BupatiListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bupati
+        fields = [
+            'id_bupati', 'nama', 'gelar_depan', 'gelar_belakang', 'nik',
+            'foto', 'jabatan', 'nama_jabatan', 'status', 'nama_status',
+            'jenis_penugasan', 'periode_awal', 'periode_akhir',
+            'synced_at', 'created_at',
         ]
 
 

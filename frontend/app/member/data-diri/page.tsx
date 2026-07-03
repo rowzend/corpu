@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { User, Save, Loader2, MapPin, BookOpen, Building2, Phone, Users } from 'lucide-react';
 import { userProfileService, type UserProfile } from '@/lib/services/user-profile.service';
-import { referensiService } from '@/lib/services/referensi.service';
+import { referensiService, type KategoriUser } from '@/lib/services/referensi.service';
 import { LazySearchSelect } from '@/components/ui/lazy-search-select';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
 
@@ -30,6 +30,7 @@ export default function DataDiriPage() {
             const data = await userProfileService.getProfile();
             setProfile(data);
             setForm({
+                kategori_user: data.kategori_user,
                 nik: data.nik,
                 tempat_lahir: data.tempat_lahir,
                 tanggal_lahir: data.tanggal_lahir,
@@ -139,23 +140,34 @@ export default function DataDiriPage() {
                 </div>
             </div>
 
-            {/* Kategori User */}
-            {profile?.kategori_user_nama && (
-                <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <Users className="w-5 h-5 text-primary" />
-                        <span className="text-sm text-muted-foreground">Kategori User:</span>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary">
-                            {profile.kategori_user_nama}
-                        </span>
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+                {/* Kategori User */}
+                <div className="bg-card border border-border rounded-2xl shadow-sm">
+                    <div className="bg-gradient-to-r from-pink-500 to-rose-600 px-6 py-4 rounded-t-2xl overflow-hidden">
+                        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Users className="w-5 h-5" /> Kategori User
+                        </h2>
+                    </div>
+                    <div className="p-6">
+                        <div className="max-w-md">
+                            <label className="block text-sm font-medium text-card-foreground mb-1.5">Pilih Kategori User</label>
+                            <LazySearchSelect
+                                fetchFn={async (q) => {
+                                    const res = await referensiService.getKategoriUserList({ search: q, all: 'true', page_size: '9999' as any });
+                                    return (res.data || []).map((k: KategoriUser) => ({ value: k.id, label: k.nama }));
+                                }}
+                                value={form.kategori_user}
+                                onChange={(v) => setForm(f => ({ ...f, kategori_user: v }))}
+                                placeholder="Pilih Kategori User"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1.5">Kategori ini menggambarkan jenis/status Anda (mis: Mahasiswa, Dosen, ASN, Swasta, dll)</p>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
                 {/* Data Pribadi */}
-                <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4">
+                <div className="bg-card border border-border rounded-2xl shadow-sm">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-4 rounded-t-2xl overflow-hidden">
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <User className="w-5 h-5" /> Data Pribadi
                         </h2>
@@ -223,8 +235,8 @@ export default function DataDiriPage() {
                 </div>
 
                 {/* Alamat Domisili */}
-                <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4">
+                <div className="bg-card border border-border rounded-2xl shadow-sm">
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4 rounded-t-2xl overflow-hidden">
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <MapPin className="w-5 h-5" /> Alamat Domisili
                         </h2>
@@ -292,8 +304,8 @@ export default function DataDiriPage() {
                 </div>
 
                 {/* Pendidikan */}
-                <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-500 to-violet-600 px-6 py-4">
+                <div className="bg-card border border-border rounded-2xl shadow-sm">
+                    <div className="bg-gradient-to-r from-purple-500 to-violet-600 px-6 py-4 rounded-t-2xl overflow-hidden">
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <BookOpen className="w-5 h-5" /> Pendidikan
                         </h2>
@@ -332,8 +344,8 @@ export default function DataDiriPage() {
                 </div>
 
                 {/* Instansi */}
-                <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4">
+                <div className="bg-card border border-border rounded-2xl shadow-sm">
+                    <div className="bg-gradient-to-r from-amber-500 to-orange-600 px-6 py-4 rounded-t-2xl overflow-hidden">
                         <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                             <Building2 className="w-5 h-5" /> Instansi / Unit Kerja
                         </h2>

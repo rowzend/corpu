@@ -26,7 +26,7 @@ class Course(models.Model):
     description = models.TextField(verbose_name='Deskripsi')
     short_description = models.CharField(max_length=500, blank=True, null=True, verbose_name='Deskripsi Singkat')
 
-    thumbnail = models.URLField(max_length=500, blank=True, null=True, verbose_name='URL Thumbnail')
+    thumbnail = models.ImageField(upload_to='courses/thumbnails/%Y/%m/', blank=True, null=True, verbose_name='Thumbnail')
 
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner', verbose_name='Level')
     duration_minutes = models.IntegerField(default=0, validators=[MinValueValidator(0)], verbose_name='Durasi (Menit)')

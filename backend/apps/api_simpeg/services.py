@@ -105,6 +105,29 @@ class EsimpegAPIService:
             logger.error(f"ESIMPEG API get pegawai by NIP error: {str(e)}")
             return None
 
+    def get_bupati_list(self, token, status=None):
+        url = f"{self.base_url}/apisimpeg/5.0/bupati/list"
+        params = {}
+        if status is not None:
+            params['status'] = status
+
+        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+        if self.host_header:
+            headers['Host'] = self.host_header
+
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=self.timeout)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success' and 'data' in data:
+                    return data['data']
+                if 'data' in data and isinstance(data.get('data'), dict) and 'items' in data['data']:
+                    return data['data']
+            return None
+        except Exception as e:
+            logger.error(f"ESIMPEG API get bupati list error: {str(e)}")
+            return None
+
     def is_api_available(self):
         cache_key = 'esimpeg_api_available'
         cached = cache.get(cache_key)

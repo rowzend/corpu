@@ -66,7 +66,7 @@ export default function QuizDetailPage() {
                             {quiz.description && <p className="text-pink-100 text-sm mt-0.5">{quiz.description}</p>}
                         </div>
                     </div>
-                    <button onClick={() => router.push(`/learning/quizzes/${quizId}/edit`)}
+                    <button onClick={() => router.push(`/admin/learning/quizzes/${quizId}/edit`)}
                         className="inline-flex items-center gap-2 bg-white text-pink-700 hover:bg-pink-50 px-4 py-2 rounded-xl font-semibold transition-all shadow-lg">
                         <Edit className="w-4 h-4" /> Edit
                     </button>
@@ -131,15 +131,15 @@ export default function QuizDetailPage() {
                         <h2 className="text-lg font-semibold text-card-foreground">Aksi</h2>
                     </div>
                     <div className="p-6 space-y-3">
-                        <button onClick={() => router.push(`/learning/quizzes/${quizId}/questions`)}
+                        <button onClick={() => router.push(`/admin/learning/quizzes/${quizId}/questions`)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-card-foreground bg-muted rounded-xl hover:bg-muted transition-colors">
                             <ListChecks className="w-5 h-5 text-pink-600" /> Kelola Soal
                         </button>
-                        <button onClick={() => router.push(`/learning/quizzes/${quizId}/edit`)}
+                        <button onClick={() => router.push(`/admin/learning/quizzes/${quizId}/edit`)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-card-foreground bg-muted rounded-xl hover:bg-muted transition-colors">
                             <Edit className="w-5 h-5 text-indigo-600" /> Edit Quiz
                         </button>
-                        <button onClick={() => router.push(`/learning/quizzes/${quizId}/essays`)}
+                        <button onClick={() => router.push(`/admin/learning/quizzes/${quizId}/essays`)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-card-foreground bg-muted rounded-xl hover:bg-muted transition-colors">
                             <ClipboardCheck className="w-5 h-5 text-emerald-600" /> Nilai Esai
                         </button>

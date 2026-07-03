@@ -381,7 +381,7 @@ export default function KnowledgePage() {
                             {/* Actions */}
                             <div className="flex border-t border-border">
                                 <button
-                                    onClick={() => router.push(`/knowledge/${article.slug || article.id}`)}
+                                    onClick={() => router.push(`/admin/knowledge/${article.slug || article.id}`)}
                                     className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50/50 transition-colors rounded-bl-xl"
                                 >
                                     <Edit className="w-3.5 h-3.5" /> {t('edit')}

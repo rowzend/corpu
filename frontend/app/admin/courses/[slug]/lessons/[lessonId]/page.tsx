@@ -2,5 +2,5 @@
 
 import LessonPage from '@/components/pages/CourseLesson';
 export default function AdminLessonPage() {
-  return <LessonPage basePath="/courses" />;
+  return <LessonPage basePath="/admin/courses" />;
 }

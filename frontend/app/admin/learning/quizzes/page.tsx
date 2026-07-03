@@ -123,11 +123,11 @@ export default function QuizzesPage() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2 flex-shrink-0 ml-4">
-                                        <button onClick={() => router.push(`/learning/quizzes/${quiz.id}/questions`)}
+                                        <button onClick={() => router.push(`/admin/learning/quizzes/${quiz.id}/questions`)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-pink-600 hover:bg-pink-50 rounded-lg transition-colors">
                                             <Eye className="w-3.5 h-3.5" /> Soal
                                         </button>
-                                        <button onClick={() => router.push(`/learning/quizzes/${quiz.id}/edit`)}
+                                        <button onClick={() => router.push(`/admin/learning/quizzes/${quiz.id}/edit`)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
                                             <Edit className="w-3.5 h-3.5" /> Edit
                                         </button>

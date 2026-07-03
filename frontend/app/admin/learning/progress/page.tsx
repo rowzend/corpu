@@ -114,7 +114,7 @@ export default function ProgressPage() {
                                     <div className="w-48">
                                         <ProgressBar value={enrollment.progress_percentage} size="md" />
                                     </div>
-                                    <button onClick={() => router.push(`/learning/enrollments/${enrollment.id}`)}
+                                    <button onClick={() => router.push(`/admin/learning/enrollments/${enrollment.id}`)}
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-card-foreground hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors">
                                         Detail
                                     </button>

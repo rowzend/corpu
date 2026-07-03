@@ -138,7 +138,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                             </div>
                             <div className="min-w-0">
                                 <Link
-                                    href={`/users/${user.id}`}
+                                    href={`/admin/users/${user.id}`}
                                     className={`text-sm font-semibold ${text.primaryClass} hover:text-blue-600 transition-colors truncate block`}
                                 >
                                     {user.name}
@@ -198,7 +198,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                         {/* Actions */}
                         <div className="md:w-28 flex items-center justify-end gap-1">
                             <Link
-                                href={`/users/${user.id}`}
+                                href={`/admin/users/${user.id}`}
                                 className={`p-2 ${text.mutedClass} hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all`}
                                 title="Lihat Detail"
                             >

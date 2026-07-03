@@ -174,7 +174,7 @@ export default function AdminBeritaPage() {
                                     </div>
                                     <div className="flex gap-2 flex-shrink-0">
                                         <button
-                                            onClick={() => router.push(`/dashboard/berita/${item.id}`)}
+                                            onClick={() => router.push(`/admin/dashboard/berita/${item.id}`)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                         >
                                             <Pencil className="w-3.5 h-3.5" /> {t('edit')}

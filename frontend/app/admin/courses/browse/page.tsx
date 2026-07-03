@@ -2,5 +2,5 @@
 
 import BrowseCoursesPage from '@/components/pages/CoursesBrowse';
 export default function AdminBrowseCoursesPage() {
-  return <BrowseCoursesPage basePath="/courses" />;
+  return <BrowseCoursesPage basePath="/admin/courses" />;
 }

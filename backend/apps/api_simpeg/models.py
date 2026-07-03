@@ -124,3 +124,32 @@ class SyncLog(models.Model):
 
     def __str__(self):
         return f"Sync {self.synced_at.strftime('%Y-%m-%d %H:%M')} - {self.total_records} records"
+
+
+class Bupati(models.Model):
+    id_bupati = models.BigIntegerField(unique=True, verbose_name='ID Bupati', db_index=True)
+    nama = models.CharField(max_length=255, verbose_name='Nama')
+    gelar_depan = models.CharField(max_length=50, null=True, blank=True)
+    gelar_belakang = models.CharField(max_length=100, null=True, blank=True)
+    nik = models.CharField(max_length=16, null=True, blank=True)
+    foto = models.TextField(null=True, blank=True)
+    jabatan = models.IntegerField(null=True, blank=True, verbose_name='Jabatan (1=Bupati, 2=Wakil)')
+    nama_jabatan = models.CharField(max_length=100, null=True, blank=True)
+    status = models.PositiveSmallIntegerField(default=1, verbose_name='Status (1=Aktif, 0=Non Aktif)')
+    nama_status = models.CharField(max_length=50, null=True, blank=True)
+    jenis_penugasan = models.CharField(max_length=255, null=True, blank=True)
+    periode_awal = models.DateField(null=True, blank=True)
+    periode_akhir = models.DateField(null=True, blank=True)
+    raw_data = models.JSONField(verbose_name='Raw Data dari API', null=True, blank=True)
+    synced_at = models.DateTimeField(auto_now=True, verbose_name='Terakhir Sync')
+    synced_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Di-sync oleh')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Dibuat')
+
+    class Meta:
+        db_table = 'api_simpeg_bupati'
+        verbose_name = 'Bupati / Wakil Bupati'
+        verbose_name_plural = 'Bupati / Wakil Bupati'
+        ordering = ['-status', 'jabatan', 'nama']
+
+    def __str__(self):
+        return self.nama or f'Bupati #{self.id_bupati}'

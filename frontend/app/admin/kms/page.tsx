@@ -2,5 +2,5 @@
 
 import KMSPage from '@/components/pages/KMSListing';
 export default function AdminKMSPage() {
-  return <KMSPage basePath="/kms" />;
+  return <KMSPage basePath="/admin/kms" />;
 }

@@ -166,7 +166,7 @@ export default function CategoriesPage() {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
-                            onClick={() => router.push(`/knowledge/categories/${category.id}`)}
+                            onClick={() => router.push(`/admin/knowledge/categories/${category.id}`)}
                         >
                             <Edit className="w-3.5 h-3.5" />
                         </Button>

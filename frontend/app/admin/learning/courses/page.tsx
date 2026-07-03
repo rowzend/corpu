@@ -170,11 +170,11 @@ export default function CoursesPage() {
                                         </div>
                                     </div>
                                     <div className="flex gap-2 flex-shrink-0 ml-4">
-                                        <button onClick={() => router.push(`/learning/courses/${course.slug}`)}
+                                        <button onClick={() => router.push(`/admin/learning/courses/${course.slug}`)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
                                             <Edit className="w-3.5 h-3.5" /> {t('edit')}
                                         </button>
-                                        <button onClick={() => router.push(`/courses/${course.slug}`)}
+                                        <button onClick={() => router.push(`/admin/courses/${course.slug}`)}
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                             <Eye className="w-3.5 h-3.5" /> {t('view')}
                                         </button>

@@ -118,7 +118,7 @@ export default function RoleDetailPage() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => router.push(`/roles/${roleId}/permissions`)}
+                        <button onClick={() => router.push(`/admin/roles/${roleId}/permissions`)}
                             className="inline-flex items-center gap-2 bg-indigo-500/20 hover:bg-indigo-500/30 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-medium transition-all text-sm">
                             <Key className="w-4 h-4" /> Permissions
                         </button>
@@ -212,7 +212,7 @@ export default function RoleDetailPage() {
                     <h2 className="text-lg font-semibold text-card-foreground">
                         Assigned Permissions <span className="text-muted-foreground font-normal">({role.permissions.length})</span>
                     </h2>
-                    <button onClick={() => router.push(`/roles/${roleId}/permissions`)}
+                    <button onClick={() => router.push(`/admin/roles/${roleId}/permissions`)}
                         className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium px-3 py-1.5 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
                         Manage <span className="text-lg leading-none">&rarr;</span>
                     </button>
@@ -225,7 +225,7 @@ export default function RoleDetailPage() {
                             </div>
                             <h3 className="font-semibold text-card-foreground mb-1">No Permissions Assigned</h3>
                             <p className="text-sm text-muted-foreground mb-4">This role doesn't have any permissions yet</p>
-                            <button onClick={() => router.push(`/roles/${roleId}/permissions`)}
+                            <button onClick={() => router.push(`/admin/roles/${roleId}/permissions`)}
                                 className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-all text-sm">
                                 <Key className="w-4 h-4" /> Add Permissions
                             </button>

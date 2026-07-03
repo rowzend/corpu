@@ -107,6 +107,52 @@ class SimpegService {
     async getSyncLogs(): Promise<{ success: boolean; data: SyncLogItem[] }> {
         return api.get<{ success: boolean; data: SyncLogItem[] }>(`${this.baseEndpoint}/pegawai/sync/logs/`);
     }
+
+    // ── Bupati ───────────────────────────────────────────────────────
+
+    async getBupatiList(params?: {
+        page?: number;
+        per_page?: number;
+    }): Promise<BupatiListResponse> {
+        return api.get<BupatiListResponse>(`${this.baseEndpoint}/bupati/`, params);
+    }
+
+    async syncBupati(password?: string): Promise<SyncProgressResponse> {
+        return api.post<SyncProgressResponse>(`${this.baseEndpoint}/bupati/sync/`, password ? { password } : {});
+    }
+
+    async getBupatiSyncProgress(syncId: string): Promise<SyncProgressResponse> {
+        return api.get<SyncProgressResponse>(`${this.baseEndpoint}/bupati/sync/progress/${syncId}/`);
+    }
+}
+
+export interface BupatiItem {
+    id_bupati: number;
+    nama: string;
+    gelar_depan: string | null;
+    gelar_belakang: string | null;
+    nik: string | null;
+    foto: string | null;
+    jabatan: number | null;
+    nama_jabatan: string | null;
+    status: number | null;
+    nama_status: string | null;
+    jenis_penugasan: string | null;
+    periode_awal: string | null;
+    periode_akhir: string | null;
+    synced_at: string;
+    created_at: string;
+}
+
+interface BupatiListResponse {
+    success: boolean;
+    data: BupatiItem[];
+    pagination: {
+        page: number;
+        per_page: number;
+        total: number;
+        total_pages: number;
+    };
 }
 
 export const simpegService = new SimpegService();

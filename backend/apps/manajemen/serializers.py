@@ -21,7 +21,6 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for User model"""
     roles = serializers.SerializerMethodField()
-    kategori_user_nama = serializers.CharField(source='kategori_user.nama', read_only=True, default=None)
     
     class Meta:
         model = User
@@ -29,7 +28,6 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'name', 'email', 'image',
             'is_active', 'date_joined', 'last_login', 'updated_at',
             'id_pegawai', 'user_id_opd', 'roles',
-            'kategori_user', 'kategori_user_nama',
         ]
         read_only_fields = ['id', 'date_joined', 'last_login', 'updated_at']
     
@@ -50,7 +48,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'name', 'email', 'password', 'password_confirm',
             'image', 'is_active', 'id_pegawai', 'user_id_opd', 'role_id', 'role_ids',
-            'kategori_user',
         ]
     
     def validate(self, data):
@@ -90,7 +87,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'name', 'email', 'image', 'is_active',
             'id_pegawai', 'user_id_opd', 'password', 'role_id', 'role_ids',
-            'kategori_user',
         ]
     
     def update(self, instance, validated_data):
