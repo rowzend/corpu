@@ -281,18 +281,23 @@ class Command(BaseCommand):
 
         upsert_child(profile, 'Sambutan & Visi Misi', {
             'icon': '📋', 'type': 'module', 'external_url': '/admin/profile/sambutan-visi-misi', 'order': 1, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
         })
         upsert_child(profile, 'Sejarah Corpu', {
             'icon': '📜', 'type': 'module', 'external_url': '/admin/profile/sejarah', 'order': 2, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
         })
         upsert_child(profile, 'Struktur Organisasi', {
             'icon': '🏗️', 'type': 'module', 'external_url': '/admin/profile/struktur', 'order': 3, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
         })
         upsert_child(profile, 'Personalia', {
             'icon': '👥', 'type': 'module', 'external_url': '/admin/profile/personalia', 'order': 4, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
         })
         upsert_child(profile, 'Brand', {
             'icon': '🏷️', 'type': 'module', 'external_url': '/admin/profile/brand', 'order': 5, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
         })
         self.stdout.write('  Created/Updated: Profile children')
 
@@ -320,24 +325,31 @@ class Command(BaseCommand):
 
         upsert_child(learning, 'Semua Kursus', {
             'icon': '📚', 'type': 'module', 'external_url': '/admin/learning/courses', 'order': 1, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Modul & Pelajaran', {
             'icon': '📖', 'type': 'module', 'external_url': '/admin/learning/modules', 'order': 2, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Enrollment', {
             'icon': '📝', 'type': 'module', 'external_url': '/admin/learning/enrollments', 'order': 3, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Progress', {
             'icon': '📊', 'type': 'module', 'external_url': '/admin/learning/progress', 'order': 4, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Quiz', {
             'icon': '❓', 'type': 'module', 'external_url': '/admin/learning/quizzes', 'order': 5, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Sertifikat User', {
             'icon': '👤', 'type': 'module', 'external_url': '/admin/learning/certificates/user', 'order': 6, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         upsert_child(learning, 'Template Sertifikat', {
             'icon': '🏆', 'type': 'module', 'external_url': '/admin/learning/certificates/template', 'order': 7, 'category': 6, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         self.stdout.write('  Created/Updated: Learning children')
 
@@ -352,16 +364,19 @@ class Command(BaseCommand):
         # ================================================================
         upsert('Kursus Saya', {
             'icon': '📖', 'type': 'module', 'external_url': '/admin/courses/my-courses', 'order': 1, 'category': 7, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         self.stdout.write('  Created/Updated: Kursus Saya')
 
         upsert('Progress Saya', {
             'icon': '📊', 'type': 'module', 'external_url': '/admin/courses/my-progress', 'order': 2, 'category': 7, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         self.stdout.write('  Created/Updated: Progress Saya')
 
         upsert('Sertifikat Saya', {
             'icon': '🏆', 'type': 'module', 'external_url': '/admin/courses/certificates', 'order': 3, 'category': 7, 'is_active': True,
+            'permission_key': 'learning.courses.view',
         })
         self.stdout.write('  Created/Updated: Sertifikat Saya')
 

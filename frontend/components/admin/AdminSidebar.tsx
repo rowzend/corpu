@@ -173,13 +173,14 @@ function apiItemToMenuItem(
     }
 
     if (item.type === 'menuItem') {
+        if (itemModule && !userModules.includes(itemModule)) return null;
+
         const visibleChildren = (item.children || [])
             .map(child => apiItemToMenuItem(child, pathname, userModules))
             .filter((c): c is MenuItem => c !== null);
 
         if (visibleChildren.length === 0) {
             if (!itemModule) return null;
-            if (!userModules.includes(itemModule)) return null;
             if (!item.external_url) return null;
 
             return {
