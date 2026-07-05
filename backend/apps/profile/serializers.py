@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ProfileSection, Personalia, Brand
+from .models import ProfileSection, Position, Personalia, Brand
 
 
 class ProfileSectionSerializer(serializers.ModelSerializer):
@@ -9,7 +9,30 @@ class ProfileSectionSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'updated_at']
 
 
+class PositionSerializer(serializers.ModelSerializer):
+    parent_name = serializers.CharField(
+        source='parent.name', read_only=True, default=None
+    )
+    children = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Position
+        fields = '__all__'
+        read_only_fields = ['created_at', 'updated_at']
+
+    def get_children(self, obj):
+        qs = obj.children.filter(is_active=True).order_by('order', 'name')
+        return PositionSerializer(qs, many=True, context=self.context).data
+
+
 class PersonaliaSerializer(serializers.ModelSerializer):
+    position_name = serializers.CharField(
+        source='position_fk.name', read_only=True, default=None
+    )
+    position_id = serializers.IntegerField(
+        source='position_fk.id', read_only=True, default=None
+    )
+
     class Meta:
         model = Personalia
         fields = '__all__'

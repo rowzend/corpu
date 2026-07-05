@@ -122,6 +122,9 @@ urlpatterns = [
     path('apicorpu/auth/1.0/revoke-all-tokens', views.api_revoke_all_tokens_v5, name='api_revoke_all_tokens_v5'),
     path('apicorpu/auth/1.0/revoke-by-username', views.api_revoke_by_username_v5, name='api_revoke_by_username_v5'),
     
+    # Session status (for frontend session monitoring)
+    path('session/status', views.session_status, name='session_status'),
+    
     # Session-based (for compatibility)
     path('apicorpu/auth/1.0/login-session', views.api_login_v5, name='api_login_v5'),
     

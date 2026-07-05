@@ -15,6 +15,9 @@ interface PersonaliaItem {
   name: string;
   nip: string | null;
   position: string;
+  position_fk: number | null;
+  position_name: string | null;
+  position_id: number | null;
   description: string | null;
   photo: string | null;
   email: string | null;

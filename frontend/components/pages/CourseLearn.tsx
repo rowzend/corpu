@@ -279,35 +279,78 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
       case 'video':
         return (
           <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
-            <video controls className="w-full h-full" src={currentLesson.video_url} />
+            {currentLesson.video_embed_id ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${currentLesson.video_embed_id}`}
+                className="w-full h-full"
+                allowFullScreen
+                title={currentLesson.title}
+              />
+            ) : currentLesson.video_url ? (
+              <video controls className="w-full h-full" src={currentLesson.video_url} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <Video className="w-12 h-12" />
+              </div>
+            )}
           </div>
         );
       case 'document':
-        return (
+        return currentLesson.external_url ? (
+          <div className="space-y-3">
+            <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
+              <iframe
+                src={currentLesson.external_url}
+                className="w-full h-full"
+                title={currentLesson.title}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <File className="w-4 h-4" />
+              <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                Buka di tab baru &rarr;
+              </a>
+            </div>
+          </div>
+        ) : currentLesson.file_url ? (
           <div className="flex items-center gap-4 p-6 bg-muted rounded-lg">
             <File className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             <div>
               <p className="font-medium">File Dokumen</p>
-              {currentLesson.file_url && (
-                <a href={currentLesson.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
-                  Download/View File
-                </a>
-              )}
+              <a href={currentLesson.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
+                Download/View File
+              </a>
             </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4 p-6 bg-muted rounded-lg">
+            <File className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <p className="text-muted-foreground italic">Tidak ada file</p>
           </div>
         );
       case 'link':
-        return (
+        return currentLesson.external_url ? (
+          <div className="space-y-3">
+            <div className="w-full aspect-video rounded-lg overflow-hidden border">
+              <iframe
+                src={currentLesson.external_url}
+                className="w-full h-full"
+                title={currentLesson.title}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <ExternalLink className="w-4 h-4" />
+              <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                Buka di tab baru &rarr;
+              </a>
+            </div>
+          </div>
+        ) : (
           <div className="flex items-center gap-4 p-6 bg-muted rounded-lg">
             <ExternalLink className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-            <div>
-              <p className="font-medium">Link Eksternal</p>
-              {currentLesson.external_url && (
-                <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
-                  {currentLesson.external_url}
-                </a>
-              )}
-            </div>
+            <p className="text-muted-foreground italic">Tidak ada URL</p>
           </div>
         );
       case 'article':

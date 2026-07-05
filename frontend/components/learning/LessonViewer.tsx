@@ -59,31 +59,61 @@ export default function LessonViewer({ lesson, progress, isCompleted, onMarkComp
                     </div>
                 );
             case 'document':
-                return (
+                return lesson.external_url ? (
+                    <div className="space-y-3">
+                        <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
+                            <iframe
+                                src={lesson.external_url}
+                                className="w-full h-full"
+                                title={lesson.title}
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <File className="w-4 h-4 text-blue-600" />
+                            <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                Buka di tab baru &rarr;
+                            </a>
+                        </div>
+                    </div>
+                ) : lesson.file_url ? (
                     <div className="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
                         <File className="w-8 h-8 text-blue-600" />
                         <div>
                             <p className="font-medium">File Dokumen</p>
-                            {lesson.file_url && (
-                                <a href={lesson.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                    Download/View File
-                                </a>
-                            )}
+                            <a href={lesson.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                Download/View File
+                            </a>
                         </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
+                        <File className="w-8 h-8 text-blue-600" />
+                        <p className="text-gray-500 italic">Tidak ada file</p>
                     </div>
                 );
             case 'link':
-                return (
+                return lesson.external_url ? (
+                    <div className="space-y-3">
+                        <div className="w-full aspect-video rounded-lg overflow-hidden border">
+                            <iframe
+                                src={lesson.external_url}
+                                className="w-full h-full"
+                                title={lesson.title}
+                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <ExternalLink className="w-4 h-4 text-blue-600" />
+                            <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                Buka di tab baru &rarr;
+                            </a>
+                        </div>
+                    </div>
+                ) : (
                     <div className="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
                         <ExternalLink className="w-8 h-8 text-blue-600" />
-                        <div>
-                            <p className="font-medium">Link Eksternal</p>
-                            {lesson.external_url && (
-                                <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
-                                    {lesson.external_url}
-                                </a>
-                            )}
-                        </div>
+                        <p className="text-gray-500 italic">Tidak ada URL</p>
                     </div>
                 );
             case 'article':

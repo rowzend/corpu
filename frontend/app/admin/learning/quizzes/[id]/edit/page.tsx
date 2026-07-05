@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { showToast, showError } from '@/lib/sweetalert';
 export default function EditQuizPage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const quizId = params.id as string;
 
     const [loading, setLoading] = useState(true);
@@ -56,7 +57,12 @@ export default function EditQuizPage() {
                 lesson: lessonId,
             });
             showToast('Quiz berhasil diperbarui!', 'success');
-            router.push('/admin/learning/quizzes');
+            const courseSlug = searchParams.get('course_slug');
+            if (courseSlug) {
+                router.push(`/admin/learning/courses/${courseSlug}`);
+            } else {
+                router.push('/admin/learning/quizzes');
+            }
         } catch (error) {
             showError(handleApiError(error), 'Gagal Memperbarui Quiz');
         } finally { setSaving(false); }

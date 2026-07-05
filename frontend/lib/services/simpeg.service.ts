@@ -30,6 +30,7 @@ export interface PegawaiItem {
     masa_kerja_tahun: number | null;
     masa_kerja_bulan: number | null;
     akhir_kerja_p3k: string | null;
+    pas_foto: string | null;
     synced_at: string;
     created_at: string;
 }

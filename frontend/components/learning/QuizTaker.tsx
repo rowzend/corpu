@@ -71,7 +71,6 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
     const hiddenSinceRef = useRef<number | null>(null);
     const violationsRef = useRef(0);
     const MAX_VIOLATIONS = 3;
-    const MAX_HIDDEN_SECONDS = 15;
     const VIOLATIONS_KEY = `${STORAGE_KEY_PREFIX}${quiz.id}_violations`;
 
     // Load violations from localStorage on mount
@@ -110,20 +109,13 @@ export default function QuizTaker({ quiz, onSubmit, onCancel, initialAnswers, in
         };
     }, []);
 
-    // Check if tab has been hidden too long or too many violations
+    // Check if too many violations (auto-submit after 3 violations)
     useEffect(() => {
         if (!tabHidden) return;
         const checkInterval = setInterval(() => {
             if (doneRef.current) return;
             if (violationsRef.current >= MAX_VIOLATIONS) {
                 doSubmitRef.current();
-                return;
-            }
-            if (hiddenSinceRef.current) {
-                const elapsed = (Date.now() - hiddenSinceRef.current) / 1000;
-                if (elapsed >= MAX_HIDDEN_SECONDS) {
-                    doSubmitRef.current();
-                }
             }
         }, 1000);
         return () => clearInterval(checkInterval);

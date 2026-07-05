@@ -57,6 +57,7 @@ def _build_pegawai_data(item, user):
         'masa_kerja_tahun': item.get('masaKerjaTahun') or None,
         'masa_kerja_bulan': item.get('masaKerjaBulan') or None,
         'akhir_kerja_p3k': item.get('akhirKerjaP3K'),
+        'pas_foto': item.get('pas_foto'),
         'raw_data': item,
         'synced_by': user,
     }

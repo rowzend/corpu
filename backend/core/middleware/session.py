@@ -23,6 +23,14 @@ class SessionInactivityMiddleware:
         self.get_response = get_response
         # Default timeout: 30 minutes (in seconds)
         self.default_timeout = 1800
+        self.skip_paths = [
+            '/accounts/login/',
+            '/accounts/logout/',
+            '/static/',
+            '/media/',
+            '/csrf/token',
+            '/session/status',
+        ]
     
     def get_session_timeout(self):
         """
@@ -46,46 +54,51 @@ class SessionInactivityMiddleware:
         if auth_header.startswith('Bearer '):
             return self.get_response(request)
         if request.user.is_authenticated:
-            # Get current time
-            current_time = time.time()
-            
-            # Get last activity time dari session
-            last_activity = request.session.get('last_activity')
-            
-            if last_activity:
-                # Get dynamic timeout from database
-                timeout = self.get_session_timeout()
+            # Skip untuk path tertentu (login, logout, session status, dll)
+            current_path = request.path
+            should_skip = any(current_path.startswith(path) for path in self.skip_paths)
+
+            if not should_skip:
+                # Get current time
+                current_time = time.time()
                 
-                # Calculate inactive time
-                inactive_time = current_time - last_activity
+                # Get last activity time dari session
+                last_activity = request.session.get('last_activity')
                 
-                # Check if user has been inactive too long
-                if inactive_time > timeout:
-                    # Save user info before logout
-                    user_to_log = request.user
+                if last_activity:
+                    # Get dynamic timeout from database
+                    timeout = self.get_session_timeout()
                     
-                    # Log auto-logout to ms_log_data
-                    try:
-                        from core.models import MsLogData
-                        MsLogData.log_logout(
-                            user=user_to_log,
-                            request=request,
-                            via='web',
-                            description=f'Auto-logout: Session expired after {int(inactive_time/60)} minutes inactive (timeout: {int(timeout/60)} minutes)'
-                        )
-                    except Exception as e:
-                        # Don't fail logout if logging fails
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.error(f"Failed to log auto-logout: {e}")
+                    # Calculate inactive time
+                    inactive_time = current_time - last_activity
                     
-                    # Logout user
-                    logout(request)
-                    # Set logout reason di session (untuk message)
-                    request.session['logout_reason'] = 'inactivity'
-            
-            # Update last activity time
-            request.session['last_activity'] = current_time
+                    # Check if user has been inactive too long
+                    if inactive_time > timeout:
+                        # Save user info before logout
+                        user_to_log = request.user
+                        
+                        # Log auto-logout to ms_log_data
+                        try:
+                            from core.models import MsLogData
+                            MsLogData.log_logout(
+                                user=user_to_log,
+                                request=request,
+                                via='web',
+                                description=f'Auto-logout: Session expired after {int(inactive_time/60)} minutes inactive (timeout: {int(timeout/60)} minutes)'
+                            )
+                        except Exception as e:
+                            # Don't fail logout if logging fails
+                            import logging
+                            logger = logging.getLogger(__name__)
+                            logger.error(f"Failed to log auto-logout: {e}")
+                        
+                        # Logout user
+                        logout(request)
+                        # Set logout reason di session (untuk message)
+                        request.session['logout_reason'] = 'inactivity'
+                
+                # Update last activity time
+                request.session['last_activity'] = current_time
         
         response = self.get_response(request)
         return response

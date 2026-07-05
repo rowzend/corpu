@@ -291,12 +291,16 @@ class Command(BaseCommand):
             'icon': '🏗️', 'type': 'module', 'external_url': '/admin/profile/struktur', 'order': 3, 'category': 5, 'is_active': True,
             'permission_key': 'profile.profile_main.view',
         })
+        upsert_child(profile, 'Jabatan', {
+            'icon': '🏗️', 'type': 'module', 'external_url': '/admin/profile/position', 'order': 4, 'category': 5, 'is_active': True,
+            'permission_key': 'profile.profile_main.view',
+        })
         upsert_child(profile, 'Personalia', {
-            'icon': '👥', 'type': 'module', 'external_url': '/admin/profile/personalia', 'order': 4, 'category': 5, 'is_active': True,
+            'icon': '👥', 'type': 'module', 'external_url': '/admin/profile/personalia', 'order': 5, 'category': 5, 'is_active': True,
             'permission_key': 'profile.profile_main.view',
         })
         upsert_child(profile, 'Brand', {
-            'icon': '🏷️', 'type': 'module', 'external_url': '/admin/profile/brand', 'order': 5, 'category': 5, 'is_active': True,
+            'icon': '🏷️', 'type': 'module', 'external_url': '/admin/profile/brand', 'order': 6, 'category': 5, 'is_active': True,
             'permission_key': 'profile.profile_main.view',
         })
         self.stdout.write('  Created/Updated: Profile children')

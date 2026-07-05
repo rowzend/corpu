@@ -172,10 +172,12 @@ html {
 /* Using very high z-index to ensure it appears above all modals */
 .swal2-container {
   z-index: 99999 !important;
+  pointer-events: auto !important;
 }
 
 .swal2-popup {
   z-index: 99999 !important;
+  pointer-events: auto !important;
 }
 
 .swal2-backdrop-show {
@@ -185,10 +187,12 @@ html {
 /* Custom class for high priority alerts */
 .swal-high-z-index {
   z-index: 99999 !important;
+  pointer-events: auto !important;
 }
 
 div.swal2-container.swal-high-z-index {
   z-index: 99999 !important;
+  pointer-events: auto !important;
 }
 
 /* Input text color - inherits from parent in light mode, overridden in dark mode */

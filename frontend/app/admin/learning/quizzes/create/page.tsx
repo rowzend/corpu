@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, Save, Loader, Plus, Trash2 } from 'lucide-react';
-import { createQuiz, getLessons, getCourses, getModules } from '@/lib/api/learning';
+import { createQuiz, createQuizQuestion, getLessons, getCourses, getModules } from '@/lib/api/learning';
 import { handleApiError } from '@/lib/api';
 import { showToast, showError } from '@/lib/sweetalert';
 
@@ -171,8 +171,30 @@ export default function CreateQuizPage() {
                 retry_cooldown_minutes: formData.retry_cooldown_minutes,
                 is_randomized: formData.is_randomized,
             });
+
+            for (const q of formData.questions) {
+                if (!q.question_text.trim()) continue;
+                await createQuizQuestion({
+                    quiz: result.id,
+                    question_text: q.question_text,
+                    question_type: q.question_type,
+                    points: q.points,
+                    order_index: q.order_index,
+                    choices: q.question_type === 'multiple_choice' ? q.choices.filter((c: any) => c.choice_text.trim()).map((c: any) => ({
+                        choice_text: c.choice_text,
+                        is_correct: c.is_correct,
+                        order_index: c.order_index,
+                    })) : undefined,
+                });
+            }
+
             showToast('Quiz berhasil dibuat!', 'success');
-            router.push('/admin/learning/quizzes');
+            const courseSlug = searchParams.get('course_slug');
+            if (courseSlug) {
+                router.push(`/admin/learning/courses/${courseSlug}`);
+            } else {
+                router.push('/admin/learning/quizzes');
+            }
         } catch (error) {
             showError(handleApiError(error), 'Gagal Membuat Quiz');
         } finally { setLoading(false); }
@@ -200,39 +222,72 @@ export default function CreateQuizPage() {
                             </div>
                         ) : (
                             <>
-                                <div>
-                                    <Label>Kursus</Label>
-                                    <select value={selectedCourseSlug}
-                                        onChange={(e) => { setSelectedCourseSlug(e.target.value); setSelectedModuleId(''); setFormData(prev => ({ ...prev, lesson: '' })); }}
-                                        className="w-full mt-2 p-2 border rounded-lg">
-                                        <option value="">Pilih Kursus...</option>
-                                        {courses.map((c: any) => (
-                                            <option key={c.id} value={c.slug}>{c.title}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <Label>Modul</Label>
-                                    <select value={selectedModuleId}
-                                        onChange={(e) => { setSelectedModuleId(e.target.value); setFormData(prev => ({ ...prev, lesson: '' })); }}
-                                        className="w-full mt-2 p-2 border rounded-lg">
-                                        <option value="">Pilih Modul...</option>
-                                        {modules.map((m: any) => (
-                                            <option key={m.id} value={m.id}>{m.title}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <Label>Pelajaran</Label>
-                                    <select name="lesson" value={formData.lesson}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, lesson: e.target.value }))}
-                                        className="w-full mt-2 p-2 border rounded-lg" required>
-                                        <option value="">Pilih Pelajaran...</option>
-                                        {lessons.map((l: any) => (
-                                            <option key={l.id} value={l.id}>{l.title}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                {(() => {
+                                    const isFromCourse = !!searchParams.get('course_slug');
+                                    const courseTitle = courses.find((c: any) => c.slug === selectedCourseSlug)?.title;
+                                    const moduleTitle = modules.find((m: any) => String(m.id) === String(selectedModuleId))?.title;
+                                    const lessonTitle = lessons.find((l: any) => String(l.id) === formData.lesson)?.title;
+                                    return (<>
+                                    {isFromCourse ? (
+                                        <>
+                                            <div>
+                                                <Label>Kursus</Label>
+                                                <div className="mt-2 p-2.5 border border-border rounded-lg bg-muted text-sm text-card-foreground">
+                                                    {courseTitle || selectedCourseSlug || '-'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label>Modul</Label>
+                                                <div className="mt-2 p-2.5 border border-border rounded-lg bg-muted text-sm text-card-foreground">
+                                                    {moduleTitle || selectedModuleId || '-'}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <Label>Pelajaran</Label>
+                                                <div className="mt-2 p-2.5 border border-border rounded-lg bg-muted text-sm text-card-foreground">
+                                                    {lessonTitle || formData.lesson || '-'}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div>
+                                                <Label>Kursus</Label>
+                                                <select value={selectedCourseSlug}
+                                                    onChange={(e) => { setSelectedCourseSlug(e.target.value); setSelectedModuleId(''); setFormData(prev => ({ ...prev, lesson: '' })); }}
+                                                    className="w-full mt-2 p-2 border rounded-lg">
+                                                    <option value="">Pilih Kursus...</option>
+                                                    {courses.map((c: any) => (
+                                                        <option key={c.id} value={c.slug}>{c.title}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <Label>Modul</Label>
+                                                <select value={selectedModuleId}
+                                                    onChange={(e) => { setSelectedModuleId(e.target.value); setFormData(prev => ({ ...prev, lesson: '' })); }}
+                                                    className="w-full mt-2 p-2 border rounded-lg">
+                                                    <option value="">Pilih Modul...</option>
+                                                    {modules.map((m: any) => (
+                                                        <option key={m.id} value={m.id}>{m.title}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <Label>Pelajaran</Label>
+                                                <select name="lesson" value={formData.lesson}
+                                                    onChange={(e) => setFormData(prev => ({ ...prev, lesson: e.target.value }))}
+                                                    className="w-full mt-2 p-2 border rounded-lg" required>
+                                                    <option value="">Pilih Pelajaran...</option>
+                                                    {lessons.map((l: any) => (
+                                                        <option key={l.id} value={l.id}>{l.title}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </>
+                                    )}
+                                    </>);
+                                })()}
                             </>
                         )}
                         <div>

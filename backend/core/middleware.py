@@ -23,6 +23,14 @@ class SessionInactivityMiddleware:
         self.get_response = get_response
         # Default timeout: 30 minutes (in seconds)
         self.default_timeout = 1800
+        self.skip_paths = [
+            '/accounts/login/',
+            '/accounts/logout/',
+            '/static/',
+            '/media/',
+            '/csrf/token',
+            '/session/status',
+        ]
     
     def get_session_timeout(self):
         """
@@ -42,35 +50,40 @@ class SessionInactivityMiddleware:
     def __call__(self, request):
         # Skip untuk anonymous users
         if request.user.is_authenticated:
-            # Get current time
-            current_time = time.time()
-            
-            # Get last activity time dari session
-            last_activity = request.session.get('last_activity')
-            
-            if last_activity:
-                # Get dynamic timeout from database
-                timeout = self.get_session_timeout()
+            # Skip untuk path tertentu (login, logout, session status, dll)
+            current_path = request.path
+            should_skip = any(current_path.startswith(path) for path in self.skip_paths)
+
+            if not should_skip:
+                # Get current time
+                current_time = time.time()
                 
-                # Calculate inactive time
-                inactive_time = current_time - last_activity
+                # Get last activity time dari session
+                last_activity = request.session.get('last_activity')
                 
-                # Check if user has been inactive too long
-                if inactive_time > timeout:
-                    # Logout user
-                    logout(request)
-                    # Set logout reason di session (untuk message)
-                    request.session['logout_reason'] = 'inactivity'
-            
-            # Update last activity time
-            request.session['last_activity'] = current_time
-            try:
-                if should_enforce_single_session_web(request.user):
-                    session_key = getattr(request.session, 'session_key', None)
-                    if session_key:
-                        track_user_session(request.user, session_key)
-            except Exception:
-                pass
+                if last_activity:
+                    # Get dynamic timeout from database
+                    timeout = self.get_session_timeout()
+                    
+                    # Calculate inactive time
+                    inactive_time = current_time - last_activity
+                    
+                    # Check if user has been inactive too long
+                    if inactive_time > timeout:
+                        # Logout user
+                        logout(request)
+                        # Set logout reason di session (untuk message)
+                        request.session['logout_reason'] = 'inactivity'
+                
+                # Update last activity time
+                request.session['last_activity'] = current_time
+                try:
+                    if should_enforce_single_session_web(request.user):
+                        session_key = getattr(request.session, 'session_key', None)
+                        if session_key:
+                            track_user_session(request.user, session_key)
+                except Exception:
+                    pass
         
         response = self.get_response(request)
         return response

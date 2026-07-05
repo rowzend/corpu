@@ -194,7 +194,7 @@ class PermissionModuleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PermissionModule
-        fields = ['id', 'name', 'description', 'is_active']
+        fields = ['id', 'name', 'description', 'is_active', 'nama_module', 'label_module', 'deskripsi_module', 'icon', 'order']
 
 
 class PermissionRuleSerializer(serializers.ModelSerializer):

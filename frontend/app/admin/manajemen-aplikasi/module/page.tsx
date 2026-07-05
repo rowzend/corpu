@@ -56,8 +56,8 @@ export default function ModulePage() {
     };
 
     const filtered = items.filter(i =>
-        i.nama_module.toLowerCase().includes(search.toLowerCase()) ||
-        i.label_module.toLowerCase().includes(search.toLowerCase())
+        (i.nama_module || '').toLowerCase().includes(search.toLowerCase()) ||
+        (i.label_module || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (

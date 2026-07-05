@@ -87,6 +87,7 @@ const itemNameMap: Record<string, string> = {
     'Sambutan & Visi Misi': 'admin.sidebar.sambutan_visi_misi',
     'Sejarah Corpu': 'admin.sidebar.sejarah_corpu',
     'Struktur Organisasi': 'admin.sidebar.struktur_organisasi',
+    'Jabatan': 'admin.sidebar.jabatan',
     'Personalia': 'admin.sidebar.personalia',
     'Brand': 'admin.sidebar.brand',
     'Knowledge Base': 'admin.sidebar.knowledge_base',
@@ -313,7 +314,7 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <span className="text-sm flex-shrink-0">{sub.icon}</span>
-                                <span className="text-sm truncate font-medium">{safeT(itemNameMap[sub.name] || sub.name)}</span>
+                                <span className="text-sm font-medium leading-snug">{safeT(itemNameMap[sub.name] || sub.name)}</span>
                             </div>
                             <span className={`transform transition-all duration-200 flex-shrink-0 w-3 h-3 flex items-center justify-center text-xs ${
                                 isSubmenuOpen(subKey) ? 'rotate-90' : ''
@@ -337,7 +338,7 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
                     }`}
                 >
                     <span className="text-sm flex-shrink-0">{sub.icon}</span>
-                    <span className="text-sm truncate font-medium">{safeT(itemNameMap[sub.name] || sub.name)}</span>
+                    <span className="text-sm font-medium leading-snug">{safeT(itemNameMap[sub.name] || sub.name)}</span>
                 </Link>
             );
         });
@@ -411,9 +412,9 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
                     menuSections.map(section => (
                         <div key={section.title} className="mb-3">
                             <div className={`overflow-hidden transition-all duration-300 ${
-                                isExpanded ? 'opacity-100 max-h-5 mb-1' : 'opacity-0 max-h-0'
+                                isExpanded ? 'opacity-100 mb-1' : 'opacity-0 max-h-0'
                             }`}>
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3 truncate">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-3">
                                     {safeT(sectionTitleMap[section.title] || section.title)}
                                 </p>
                             </div>

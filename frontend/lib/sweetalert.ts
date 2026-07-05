@@ -62,18 +62,31 @@ export const showInfo = (message: string, title: string = 'Informasi') => {
 };
 
 /**
- * Helper: disable Radix UI dialog overlay pointer-events so SweetAlert is clickable
+ * Helper: disable Radix UI dialog overlay/body events so SweetAlert is clickable
  */
 function disableDialogOverlay(disable: boolean) {
-    const overlays = document.querySelectorAll('[data-radix-dialog-overlay]');
-    overlays.forEach(el => {
+    // Disable Radix overlay so clicks pass through to SweetAlert
+    const elements = document.querySelectorAll(
+        '[data-radix-dialog-overlay]'
+    );
+    elements.forEach(el => {
         if (disable) {
-            el.setAttribute('data-swal-zindex', el.getAttribute('style') || '');
             (el as HTMLElement).style.pointerEvents = 'none';
         } else {
             (el as HTMLElement).style.pointerEvents = '';
         }
     });
+
+    // Ensure SweetAlert2 container is clickable even when Radix
+    // sets body pointer-events=none (DismissableLayer)
+    const swalContainer = document.querySelector('.swal2-container');
+    if (swalContainer) {
+        (swalContainer as HTMLElement).style.pointerEvents = disable ? 'auto' : '';
+    }
+    const swalPopup = document.querySelector('.swal2-popup');
+    if (swalPopup) {
+        (swalPopup as HTMLElement).style.pointerEvents = disable ? 'auto' : '';
+    }
 }
 
 /**
@@ -84,6 +97,13 @@ const swalBase = (extra: any = {}) => ({
     willOpen: (el: HTMLElement) => {
         disableDialogOverlay(true);
         extra.willOpen?.(el);
+    },
+    didOpen: (el: HTMLElement) => {
+        const popup = Swal.getPopup();
+        if (popup) {
+            popup.focus();
+        }
+        extra.didOpen?.(el);
     },
     didClose: (el: HTMLElement) => {
         disableDialogOverlay(false);
@@ -153,6 +173,8 @@ export const showLoading = (message: string = 'Memproses...') => {
         allowEnterKey: false,
         didOpen: () => {
             Swal.showLoading();
+            const popup = Swal.getPopup();
+            if (popup) popup.focus();
         },
         didClose: () => {
             disableDialogOverlay(false);

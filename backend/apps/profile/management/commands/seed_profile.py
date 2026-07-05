@@ -7,7 +7,7 @@ from apps.manajemen.models import (
     PermissionRule,
     RoleRule
 )
-from apps.profile.models import ProfileSection, Personalia
+from apps.profile.models import ProfileSection, Position, Personalia
 
 
 class Command(BaseCommand):
@@ -41,6 +41,7 @@ class Command(BaseCommand):
 
         controls = [
             ('profile_section', 'Section Profile', 'Mengelola section profile (sambutan, visi misi, sejarah, struktur)'),
+            ('profile_position', 'Jabatan', 'Mengelola master data jabatan'),
             ('profile_personalia', 'Personalia', 'Mengelola data personalia/pegawai'),
         ]
 
@@ -74,6 +75,10 @@ class Command(BaseCommand):
             (module, control_objs['profile_section'], create),
             (module, control_objs['profile_section'], edit),
             (module, control_objs['profile_section'], delete),
+            (module, control_objs['profile_position'], view),
+            (module, control_objs['profile_position'], create),
+            (module, control_objs['profile_position'], edit),
+            (module, control_objs['profile_position'], delete),
             (module, control_objs['profile_personalia'], view),
             (module, control_objs['profile_personalia'], create),
             (module, control_objs['profile_personalia'], edit),
@@ -146,6 +151,28 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'  ✅ Total sections: {ProfileSection.objects.count()}'))
 
     def seed_personalia(self):
+        self.stdout.write('\n📋 Seeding Positions...')
+
+        positions_data = [
+            {'name': 'Kepala Badan', 'order': 1},
+            {'name': 'Sekretaris Badan', 'order': 2},
+            {'name': 'Kepala Bidang Pengembangan Kompetensi', 'order': 3},
+        ]
+
+        position_map = {}
+        for data in positions_data:
+            pos, created = Position.objects.update_or_create(
+                name=data['name'],
+                defaults={'order': data['order'], 'is_active': True}
+            )
+            position_map[pos.name] = pos
+            if created:
+                self.stdout.write(f'  ✓ Created position: {data["name"]}')
+            else:
+                self.stdout.write(f'  ↻ Updated position: {data["name"]}')
+
+        self.stdout.write(f'  ✅ Total positions: {Position.objects.count()}')
+
         self.stdout.write('\n📋 Seeding Personalia...')
 
         personalia = [
@@ -178,6 +205,7 @@ class Command(BaseCommand):
                 defaults={
                     'nip': data.get('nip'),
                     'position': data['position'],
+                    'position_fk': position_map.get(data['position']),
                     'description': data.get('description', ''),
                     'order': data.get('order', 0),
                     'is_active': True,

@@ -12,11 +12,27 @@ export interface ProfileSection {
     updated_at: string;
 }
 
+export interface Position {
+    id: number;
+    name: string;
+    description: string | null;
+    parent: number | null;
+    parent_name: string | null;
+    order: number;
+    is_active: boolean;
+    children: Position[];
+    created_at: string;
+    updated_at: string;
+}
+
 export interface Personalia {
     id: number;
     name: string;
     nip: string | null;
     position: string;
+    position_fk: number | null;
+    position_name: string | null;
+    position_id: number | null;
     description: string | null;
     photo: string | null;
     email: string | null;
@@ -81,6 +97,31 @@ export const profileService = {
         }
         const response = await api.patch<ApiResponse<ProfileSection>>(`/profile/sections/${id}/`, payload);
         return response.data;
+    },
+
+    // Positions
+    async getPositions(): Promise<Position[]> {
+        const response = await api.get<ApiResponse<Position[]>>('/profile/positions/');
+        return response.data;
+    },
+
+    async getPosition(id: number): Promise<Position> {
+        const response = await api.get<ApiResponse<Position>>(`/profile/positions/${id}/`);
+        return response.data;
+    },
+
+    async createPosition(data: Partial<Position>): Promise<Position> {
+        const response = await api.post<ApiResponse<Position>>('/profile/positions/', data);
+        return response.data;
+    },
+
+    async updatePosition(id: number, data: Partial<Position>): Promise<Position> {
+        const response = await api.put<ApiResponse<Position>>(`/profile/positions/${id}/`, data);
+        return response.data;
+    },
+
+    async deletePosition(id: number): Promise<void> {
+        await api.delete(`/profile/positions/${id}/`);
     },
 
     // Personalia

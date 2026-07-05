@@ -33,6 +33,7 @@ class Pegawai(models.Model):
     masa_kerja_tahun = models.IntegerField(null=True, blank=True, verbose_name='Masa Kerja (Tahun)')
     masa_kerja_bulan = models.IntegerField(null=True, blank=True, verbose_name='Masa Kerja (Bulan)')
     akhir_kerja_p3k = models.CharField(max_length=50, null=True, blank=True, verbose_name='Akhir Kerja P3K')
+    pas_foto = models.TextField(null=True, blank=True, verbose_name='Path Foto (ASNCorpu MinIO)')
     raw_data = models.JSONField(verbose_name='Raw Data dari API', help_text='Full JSON response dari ESIMPEG API')
     synced_at = models.DateTimeField(auto_now=True, verbose_name='Terakhir Sync')
     synced_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Di-sync oleh')

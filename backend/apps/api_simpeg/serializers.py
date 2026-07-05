@@ -17,7 +17,7 @@ class PegawaiListSerializer(serializers.ModelSerializer):
             'id_golongan', 'nama_golongan', 'nama_pangkat',
             'kategori_pegawai', 'nama_kategori_pegawai',
             'tmt_cpns', 'masa_kerja_tahun', 'masa_kerja_bulan', 'akhir_kerja_p3k',
-            'synced_at', 'created_at',
+            'pas_foto', 'synced_at', 'created_at',
         ]
 
 

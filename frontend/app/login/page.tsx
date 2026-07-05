@@ -87,17 +87,22 @@ export default function LoginPage() {
                     // Semua group adalah member → set role_type, redirect
                     authService.setActiveRole(null, '/member/dashboard');
                     window.location.href = '/member/dashboard';
-                } else if (adminGroups.length === 1) {
-                    // Hanya 1 group admin → auto-set dan redirect
+                } else if (adminGroups.length === 1 && memberGroups.length === 0) {
+                    // Hanya 1 group admin, tidak ada member → auto-set dan redirect
                     authService.setActiveRole(
                         adminGroups[0].id !== undefined ? adminGroups[0].id : null,
                         adminGroups[0].redirect_url || '/admin/dashboard'
                     );
                     window.location.href = adminGroups[0].redirect_url || '/admin/dashboard';
-                } else {
-                    // Multiple admin groups → show role selector dengan semua group
+                } else if (adminGroups.length >= 1 && memberGroups.length > 0) {
+                    // Punya admin DAN member groups → tampilkan SudoPrompt
                     setSudoUser(user);
                     setUserGroups(normalizedGroups);
+                    setShowSudoPrompt(true);
+                } else {
+                    // Multiple admin groups, tanpa member → role selector dengan admin groups
+                    setSudoUser(user);
+                    setUserGroups(adminGroups);
                     setShowRoleSelector(true);
                 }
             } catch {
@@ -181,23 +186,30 @@ export default function LoginPage() {
                 groups = normalizedGroups;
 
                 const adminGroups = groups.filter((g: any) => (g.redirect_url || '/admin/dashboard').startsWith('/admin/'));
-                console.log('[Login Debug] modules:', modules, 'adminGroups:', adminGroups.length, 'totalGroups:', groups.length);
+                const memberGroups = groups.filter((g: any) => (g.redirect_url || '/admin/dashboard').startsWith('/member/'));
+                console.log('[Login Debug] modules:', modules, 'adminGroups:', adminGroups.length, 'memberGroups:', memberGroups.length, 'totalGroups:', groups.length);
 
                 if (adminGroups.length === 0) {
                     authService.setActiveRole(null, '/member/dashboard');
                     window.location.href = '/member/dashboard';
                     return;
-                } else if (adminGroups.length === 1) {
+                } else if (adminGroups.length === 1 && memberGroups.length === 0) {
                     authService.setActiveRole(
                         adminGroups[0].id !== undefined ? adminGroups[0].id : null,
                         adminGroups[0].redirect_url || '/admin/dashboard'
                     );
                     window.location.href = adminGroups[0].redirect_url || '/admin/dashboard';
                     return;
-                } else {
+                } else if (adminGroups.length >= 1 && memberGroups.length > 0) {
+                    // Punya admin DAN member → tampilkan SudoPrompt
                     setSudoUser(user);
                     setUserGroups(groups);
                     setShowSudoPrompt(true);
+                } else {
+                    // Multiple admin groups saja → tampilkan RoleSelector langsung
+                    setSudoUser(user);
+                    setUserGroups(adminGroups);
+                    setShowRoleSelector(true);
                 }
             } catch (e) {
                 console.error('[Login Debug] Error fetching permissions:', e);

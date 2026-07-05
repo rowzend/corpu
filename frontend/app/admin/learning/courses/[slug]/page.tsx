@@ -806,7 +806,7 @@ export default function EditCoursePage() {
                                                             <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 {lesson.content_type === 'quiz' && (
                                                                     <button onClick={() => {
-                                                                        if (lesson.quiz_id) router.push(`/admin/learning/quizzes/${lesson.quiz_id}/edit`);
+                                                                        if (lesson.quiz_id) router.push(`/admin/learning/quizzes/${lesson.quiz_id}/edit?course_slug=${slug}`);
                                                                         else router.push(`/admin/learning/quizzes/create?course_slug=${slug}&lesson_id=${lesson.id}&module_id=${mod.id}`);
                                                                     }} className="px-2 py-1 text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 rounded-lg hover:bg-amber-100 transition-colors">
                                                                         {lesson.quiz_id ? 'Edit Quiz' : 'Buat Quiz'}

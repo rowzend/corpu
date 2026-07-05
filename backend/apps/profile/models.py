@@ -49,13 +49,42 @@ class ProfileSection(models.Model):
         return self.get_key_display()
 
 
+class Position(models.Model):
+    name = models.CharField(max_length=255, verbose_name='Jabatan')
+    description = models.TextField(blank=True, null=True, verbose_name='Deskripsi')
+    parent = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='children', verbose_name='Parent Jabatan'
+    )
+    order = models.IntegerField(default=0, verbose_name='Urutan')
+    is_active = models.BooleanField(default=True, verbose_name='Aktif')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'profile_positions'
+        verbose_name = 'Jabatan'
+        verbose_name_plural = 'Jabatan'
+        ordering = ['order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
 class Personalia(models.Model):
     name = models.CharField(max_length=255, verbose_name='Nama')
     nip = models.CharField(
         max_length=30, blank=True, null=True,
         verbose_name='NIP'
     )
-    position = models.CharField(max_length=255, verbose_name='Jabatan')
+    position = models.CharField(
+        max_length=255, blank=True, null=True,
+        verbose_name='Jabatan'
+    )
+    position_fk = models.ForeignKey(
+        Position, on_delete=models.SET_NULL, null=True, blank=True,
+        verbose_name='Jabatan (Master)'
+    )
     description = models.TextField(blank=True, null=True, verbose_name='Deskripsi')
     photo = models.ImageField(
         upload_to=personalia_upload_to, blank=True, null=True,
@@ -83,6 +112,11 @@ class Personalia(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.position_fk and not self.position:
+            self.position = self.position_fk.name
+        super().save(*args, **kwargs)
 
 
 class Brand(models.Model):

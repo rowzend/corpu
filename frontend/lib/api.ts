@@ -3,6 +3,10 @@
  * Handles all HTTP requests to Django backend
  */
 
+/** ESIMPEG public media URL for serving photos directly */
+export const ESIMPEG_MEDIA_URL = process.env.NEXT_PUBLIC_ESIMPEG_MEDIA_URL
+    || 'https://esimpeg.pesisirselatankab.go.id/media/minio';
+
 // Use dynamic base URL based on browser location
 const getBaseURL = () => {
   if (typeof window !== 'undefined') {

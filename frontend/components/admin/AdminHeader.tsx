@@ -39,7 +39,7 @@ export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: 
     const [showDropdown, setShowDropdown] = useState(false);
     const [appName, setAppName] = useState('');
 
-    const [allGroups, setAllGroups] = useState<Array<{ id: number; name: string }>>([]);
+    const [allGroups, setAllGroups] = useState<Array<{ id: number; name: string; redirect_url?: string }>>([]);
 
     useEffect(() => {
         const currentUser = authService.getCurrentUser();
@@ -53,7 +53,7 @@ export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: 
                 const permUrl = activeGroupId
                     ? `/management/permissions/user/?group_id=${activeGroupId}`
                     : '/management/permissions/user/';
-                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string }> } } }>(permUrl);
+                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string; redirect_url?: string }> } } }>(permUrl);
                 if (response.success && response.data.user.groups.length > 0) {
                     const activeGroup = response.data.user.groups.find(g => g.id === activeGroupId);
                     setUserRole(activeGroup?.name || response.data.user.groups[0].name);
@@ -65,9 +65,12 @@ export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: 
 
         const fetchAllGroups = async () => {
             try {
-                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string }> } } }>('/management/permissions/user/');
+                const response = await api.get<{ success: boolean; data: { user: { groups: Array<{ id: number; name: string; redirect_url?: string }> } } }>('/management/permissions/user/');
                 if (response.success && response.data.user.groups.length > 1) {
-                    setAllGroups(response.data.user.groups);
+                    const adminGroups = response.data.user.groups.filter(g => (g.redirect_url || '/admin/dashboard').startsWith('/admin/'));
+                    if (adminGroups.length > 1) {
+                        setAllGroups(adminGroups);
+                    }
                 }
             } catch {}
         };
