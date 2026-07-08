@@ -237,13 +237,13 @@ class Article(models.Model):
         related_name='articles',
         verbose_name='Kategori'
     )
-    source_lesson = models.OneToOneField(
-        'learning.Lesson',
+    source_module = models.OneToOneField(
+        'learning.Module',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='synced_article',
-        verbose_name='Sumber Pelajaran LMS',
+        verbose_name='Sumber Modul LMS',
     )
     status = models.CharField(
         max_length=20,

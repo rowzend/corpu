@@ -17,6 +17,15 @@ import ProgressBar from '@/components/learning/ProgressBar';
 import AuthGuard from '@/components/auth/AuthGuard';
 import { usePermission } from '@/lib/hooks/usePermission';
 
+const isGoogleDriveUrl = (url: string) =>
+  url.includes('drive.google.com') || url.includes('docs.google.com');
+
+const getGoogleDrivePreviewUrl = (url: string) => {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return url;
+};
+
 function CooldownTimer({ seconds: initial }: { seconds: number }) {
   const [secs, setSecs] = useState(initial);
   useEffect(() => {
@@ -296,24 +305,35 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
           </div>
         );
       case 'document':
-        return currentLesson.external_url ? (
-          <div className="space-y-3">
-            <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
-              <iframe
-                src={currentLesson.external_url}
-                className="w-full h-full"
-                title={currentLesson.title}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
+        return currentLesson.external_url ? (() => {
+          const isDrive = isGoogleDriveUrl(currentLesson.external_url!);
+          const iframeSrc = isDrive
+            ? getGoogleDrivePreviewUrl(currentLesson.external_url!)
+            : currentLesson.external_url!;
+          return (
+            <div className="space-y-3">
+              <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800 relative">
+                <iframe
+                  src={iframeSrc}
+                  className="w-full h-full"
+                  title={currentLesson.title}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
+              </div>
+              {isDrive && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-lg">
+                  Jika dokumen tidak tampil, pastikan file telah diset ke &quot;Siapa pun yang memiliki link&quot; di Google Drive, atau buka langsung melalui tautan di bawah.
+                </p>
+              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <File className="w-4 h-4" />
+                <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  Buka di tab baru &rarr;
+                </a>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <File className="w-4 h-4" />
-              <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Buka di tab baru &rarr;
-              </a>
-            </div>
-          </div>
-        ) : currentLesson.file_url ? (
+          );
+        })() : currentLesson.file_url ? (
           <div className="flex items-center gap-4 p-6 bg-muted rounded-lg">
             <File className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             <div>
@@ -330,24 +350,35 @@ export default function CourseLearnPage({ basePath = '/courses' }: { basePath?: 
           </div>
         );
       case 'link':
-        return currentLesson.external_url ? (
-          <div className="space-y-3">
-            <div className="w-full aspect-video rounded-lg overflow-hidden border">
-              <iframe
-                src={currentLesson.external_url}
-                className="w-full h-full"
-                title={currentLesson.title}
-                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-              />
+        return currentLesson.external_url ? (() => {
+          const isDrive = isGoogleDriveUrl(currentLesson.external_url!);
+          const iframeSrc = isDrive
+            ? getGoogleDrivePreviewUrl(currentLesson.external_url!)
+            : currentLesson.external_url!;
+          return (
+            <div className="space-y-3">
+              <div className="w-full aspect-video rounded-lg overflow-hidden border">
+                <iframe
+                  src={iframeSrc}
+                  className="w-full h-full"
+                  title={currentLesson.title}
+                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                />
+              </div>
+              {isDrive && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-lg">
+                  Jika dokumen tidak tampil, pastikan file telah diset ke &quot;Siapa pun yang memiliki link&quot; di Google Drive, atau buka langsung melalui tautan di bawah.
+                </p>
+              )}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ExternalLink className="w-4 h-4" />
+                <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
+                  Buka di tab baru &rarr;
+                </a>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <ExternalLink className="w-4 h-4" />
-              <a href={currentLesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline">
-                Buka di tab baru &rarr;
-              </a>
-            </div>
-          </div>
-        ) : (
+          );
+        })() : (
           <div className="flex items-center gap-4 p-6 bg-muted rounded-lg">
             <ExternalLink className="w-8 h-8 text-blue-600 dark:text-blue-400" />
             <p className="text-muted-foreground italic">Tidak ada URL</p>

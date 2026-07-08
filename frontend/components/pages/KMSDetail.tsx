@@ -125,6 +125,15 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
         }
     };
 
+    const isGoogleDriveUrl = (url: string) =>
+        url.includes('drive.google.com') || url.includes('docs.google.com');
+
+    const getGoogleDriveEmbedUrl = (url: string) => {
+        const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+        return null;
+    };
+
     const renderMediaContent = () => {
         if (!article) return null;
         switch (article.content_type) {
@@ -175,26 +184,59 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 break;
             case 'link':
                 if (article.external_url) {
+                    const driveEmbedUrl = isGoogleDriveUrl(article.external_url) ? getGoogleDriveEmbedUrl(article.external_url) : null;
                     return (
                         <div className="mb-8">
-                            <Card className="border-green-200 bg-green-50">
-                                <CardContent className="p-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                                            <ExternalLink className="w-6 h-6 text-white" />
+                            {driveEmbedUrl ? (
+                                <Card className="border-green-200 bg-green-50">
+                                    <CardContent className="p-6 space-y-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                                <ExternalLink className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-card-foreground">Google Drive</h3>
+                                                <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
+                                            </div>
+                                            <Button asChild>
+                                                <a href={article.external_url} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="w-4 h-4 mr-2" /> Buka Link
+                                                </a>
+                                            </Button>
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-card-foreground">Link Eksternal</h3>
-                                            <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
+                                        <div className="aspect-video rounded-lg overflow-hidden border border-green-300 bg-white">
+                                            <iframe
+                                                src={driveEmbedUrl}
+                                                className="w-full h-full"
+                                                title={article.title}
+                                                allowFullScreen
+                                            />
                                         </div>
-                                        <Button asChild>
-                                            <a href={article.external_url} target="_blank" rel="noopener noreferrer">
-                                                <ExternalLink className="w-4 h-4 mr-2" /> Buka Link
-                                            </a>
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                        <p className="text-xs text-muted-foreground">
+                                            * Jika dokumen tidak tampil, pastikan file Google Drive telah diatur ke "Siapa pun yang memiliki link" atau buka langsung melalui tombol "Buka Link".
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <Card className="border-green-200 bg-green-50">
+                                    <CardContent className="p-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                                <ExternalLink className="w-6 h-6 text-white" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-card-foreground">Link Eksternal</h3>
+                                                <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
+                                            </div>
+                                            <Button asChild>
+                                                <a href={article.external_url} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="w-4 h-4 mr-2" /> Buka Link
+                                                </a>
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     );
                 }
@@ -334,8 +376,8 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
                 <Card className="mb-8">
                     <CardContent className="p-8">
-                        <div className="prose prose-lg max-w-none">
-                            <div className="whitespace-pre-wrap leading-relaxed">{article.content}</div>
+                        <div className="prose prose-lg max-w-none prose-headings:text-card-foreground prose-a:text-indigo-600 prose-img:rounded-xl">
+                            <div className="leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
                         </div>
                     </CardContent>
                 </Card>

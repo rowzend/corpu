@@ -7,7 +7,13 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from io import BytesIO
+import os
+import base64
+import tempfile
 import textwrap
+from PIL import Image as PILImage
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 
 from core.models import Notification
 
@@ -845,15 +851,15 @@ class CertificateViewSet(viewsets.ModelViewSet):
 
         try:
             from django.template import Template, Context
-            from django.conf import settings as django_settings
-            import os
 
             template_html = None
             if course.certificate_template and course.certificate_template.name:
-                tmpl_path = os.path.join(django_settings.MEDIA_ROOT, course.certificate_template.name)
-                if os.path.exists(tmpl_path):
-                    with open(tmpl_path, 'r') as f:
-                        template_html = f.read()
+                try:
+                    course.certificate_template.open('rb')
+                    template_html = course.certificate_template.read().decode('utf-8')
+                    course.certificate_template.close()
+                except Exception:
+                    template_html = None
 
             if template_html:
                 return self._render_html_certificate(cert, settings, course, use_tte, per_course_tte)
@@ -866,27 +872,27 @@ class CertificateViewSet(viewsets.ModelViewSet):
     def _cert_vals(self, course, settings):
         """Return effective certificate values: course override > global setting"""
         def img_b64(field):
-            from django.conf import settings as django_settings
-            import os, base64
             if not field or not getattr(field, 'name', None):
                 return ''
-            path = os.path.join(django_settings.MEDIA_ROOT, field.name)
-            if not os.path.exists(path):
+            try:
+                field.open('rb')
+                data = field.read()
+                field.close()
+            except Exception:
                 return ''
-            with open(path, 'rb') as f:
-                data = f.read()
             ext = os.path.splitext(field.name)[1].lower().lstrip('.')
             mime = {'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg', 'gif': 'image/gif', 'svg': 'image/svg+xml'}.get(ext, 'image/png')
             return f'data:{mime};base64,{base64.b64encode(data).decode()}'
         def img_field(field):
-            from django.conf import settings as django_settings
-            import os
             if not field or not getattr(field, 'name', None):
                 return None
-            path = os.path.join(django_settings.MEDIA_ROOT, field.name)
-            if os.path.exists(path):
-                return path
-            return None
+            try:
+                field.open('rb')
+                data = field.read()
+                field.close()
+                return PILImage.open(BytesIO(data))
+            except Exception:
+                return None
 
         return {
             'institution_name': course.cert_institution_name or settings.institution_name,
@@ -941,8 +947,6 @@ class CertificateViewSet(viewsets.ModelViewSet):
         from reportlab.lib.units import mm
         from reportlab.lib.colors import HexColor
         from reportlab.pdfgen import canvas
-        from django.conf import settings as django_settings
-        import os
 
         vals = self._cert_vals(course, settings)
 
@@ -952,18 +956,26 @@ class CertificateViewSet(viewsets.ModelViewSet):
 
         margin = 15 * mm
 
-        bg_path = None
+        bg_image = None
         if course.certificate_background and course.certificate_background.name:
-            p = os.path.join(django_settings.MEDIA_ROOT, course.certificate_background.name)
-            if os.path.exists(p):
-                bg_path = p
-        if not bg_path and settings.background and settings.background.name:
-            p = os.path.join(django_settings.MEDIA_ROOT, settings.background.name)
-            if os.path.exists(p):
-                bg_path = p
-        if bg_path:
             try:
-                c.drawImage(bg_path, 0, 0, w, h, preserveAspectRatio=True, anchor='n')
+                course.certificate_background.open('rb')
+                bg_data = course.certificate_background.read()
+                course.certificate_background.close()
+                bg_image = PILImage.open(BytesIO(bg_data))
+            except Exception:
+                bg_image = None
+        if bg_image is None and settings.background and settings.background.name:
+            try:
+                settings.background.open('rb')
+                bg_data = settings.background.read()
+                settings.background.close()
+                bg_image = PILImage.open(BytesIO(bg_data))
+            except Exception:
+                bg_image = None
+        if bg_image:
+            try:
+                c.drawImage(bg_image, 0, 0, w, h, preserveAspectRatio=True, anchor='n')
             except Exception:
                 pass
 
@@ -1074,47 +1086,54 @@ class CertificateViewSet(viewsets.ModelViewSet):
         return response
 
     def _sign_pdf_tte(self, pdf_bytes, tte_source, is_course=False):
-        from django.conf import settings as django_settings
         from pyhanko.sign import signers, fields
         from pyhanko.pdf_utils.reader import PdfFileReader
         from pyhanko.pdf_utils.writer import PdfFileWriter
-        import os
 
-        if is_course:
-            cert_path = os.path.join(django_settings.MEDIA_ROOT, tte_source['certificate'].name) if hasattr(tte_source['certificate'], 'name') else tte_source.get('certificate', '')
-            key_path = os.path.join(django_settings.MEDIA_ROOT, tte_source['private_key'].name) if hasattr(tte_source.get('private_key'), 'name') else tte_source.get('private_key', '')
-            passphrase = tte_source.get('passphrase', '').encode()
-        else:
-            cert_path = os.path.join(django_settings.MEDIA_ROOT, tte_source.tte_certificate.name) if hasattr(tte_source.tte_certificate, 'name') else ''
-            key_path = os.path.join(django_settings.MEDIA_ROOT, tte_source.tte_private_key.name) if hasattr(tte_source.tte_private_key, 'name') else ''
-            passphrase = tte_source.tte_passphrase.encode()
+        try:
+            if is_course:
+                cert_field = tte_source.get('certificate')
+                key_field = tte_source.get('private_key')
+                passphrase = tte_source.get('passphrase', '').encode()
+            else:
+                cert_field = tte_source.tte_certificate
+                key_field = tte_source.tte_private_key
+                passphrase = tte_source.tte_passphrase.encode()
 
-        if not os.path.exists(cert_path) or not os.path.exists(key_path):
+            if not cert_field or not getattr(cert_field, 'name', None) or not key_field or not getattr(key_field, 'name', None):
+                return pdf_bytes
+
+            cert_field.open('rb')
+            cert_bytes = cert_field.read()
+            cert_field.close()
+
+            key_field.open('rb')
+            key_bytes = key_field.read()
+            key_field.close()
+
+            private_key = serialization.load_pem_private_key(key_bytes, password=passphrase)
+            cert_obj = x509.load_pem_x509_certificate(cert_bytes)
+            signer = signers.SimpleSigner(signing_key=private_key, certificate=cert_obj)
+
+            input_buf = BytesIO(pdf_bytes)
+            reader = PdfFileReader(input_buf)
+            writer = PdfFileWriter(reader)
+
+            out_buf = BytesIO()
+            signers.sign_pdf(
+                writer,
+                signature_meta=signers.PdfSignatureMetadata(
+                    field_name='TTESignature',
+                    reason='Tanda Tangan Elektronik Sertifikat',
+                    location='ASN CorpU',
+                ),
+                signer=signer,
+                output=out_buf,
+            )
+
+            return out_buf.getvalue()
+        except Exception:
             return pdf_bytes
-
-        signer = signers.SimpleSigner.load(
-            key_file=key_path,
-            cert_file=cert_path,
-            key_passphrase=passphrase,
-        )
-
-        input_buf = BytesIO(pdf_bytes)
-        reader = PdfFileReader(input_buf)
-        writer = PdfFileWriter(reader)
-
-        out_buf = BytesIO()
-        signers.sign_pdf(
-            writer,
-            signature_meta=signers.PdfSignatureMetadata(
-                field_name='TTESignature',
-                reason='Tanda Tangan Elektronik Sertifikat',
-                location='ASN CorpU',
-            ),
-            signer=signer,
-            output=out_buf,
-        )
-
-        return out_buf.getvalue()
 
 
 @api_view(['GET', 'PUT', 'POST'])
@@ -1150,9 +1169,8 @@ def _generate_tte_certificate(request, settings):
     from cryptography.x509.oid import NameOID
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
+    from django.core.files.base import ContentFile
     import datetime
-    import os
-    from django.conf import settings as django_settings
 
     passphrase = request.data.get('passphrase', '').strip()
     if not passphrase:
@@ -1180,27 +1198,20 @@ def _generate_tte_certificate(request, settings):
         .sign(key, hashes.SHA256())
     )
 
-    tte_dir = os.path.join(django_settings.MEDIA_ROOT, 'certificates', 'tte')
-    os.makedirs(tte_dir, exist_ok=True)
-
-    pem_path = os.path.join(tte_dir, 'certificate.pem')
-    key_path = os.path.join(tte_dir, 'private_key.pem')
-
-    with open(pem_path, 'wb') as f:
-        f.write(cert.public_bytes(serialization.Encoding.PEM))
+    cert_bytes = cert.public_bytes(serialization.Encoding.PEM)
+    settings.tte_certificate.save('certificate.pem', ContentFile(cert_bytes), save=False)
 
     enc_key = key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.BestAvailableEncryption(passphrase.encode()),
     )
-    with open(key_path, 'wb') as f:
-        f.write(enc_key)
+    settings.tte_private_key.save('private_key.pem', ContentFile(enc_key), save=False)
 
     settings.tte_enabled = True
     settings.tte_passphrase = passphrase
     settings.tte_created_at = datetime.datetime.now(datetime.timezone.utc)
-    settings.save(update_fields=['tte_enabled', 'tte_passphrase', 'tte_created_at'])
+    settings.save()
 
     return Response({
         'detail': 'Sertifikat TTE berhasil dibuat',
@@ -1214,9 +1225,9 @@ def _generate_course_tte(request):
     from cryptography.x509.oid import NameOID
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import rsa
+    from django.core.files.base import ContentFile
     from apps.learning.models import Course
-    import datetime, os
-    from django.conf import settings as django_settings
+    import datetime
     from apps.manajemen.helpers import check_permission
     if not check_permission(request.user, 'learning', 'certificates', 'edit'):
         return Response({'detail': 'Hanya admin'}, status=status.HTTP_403_FORBIDDEN)
@@ -1250,25 +1261,20 @@ def _generate_course_tte(request):
         .sign(key, hashes.SHA256())
     )
 
-    tte_dir = os.path.join(django_settings.MEDIA_ROOT, 'certificates', 'tte', f'course_{course.id}')
-    os.makedirs(tte_dir, exist_ok=True)
-    pem_path = os.path.join(tte_dir, 'certificate.pem')
-    key_path = os.path.join(tte_dir, 'private_key.pem')
+    cert_bytes = cert.public_bytes(serialization.Encoding.PEM)
+    course.cert_tte_certificate.save('certificate.pem', ContentFile(cert_bytes), save=False)
 
-    with open(pem_path, 'wb') as f:
-        f.write(cert.public_bytes(serialization.Encoding.PEM))
     enc_key = key.private_bytes(
         encoding=serialization.Encoding.PEM,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.BestAvailableEncryption(passphrase.encode()),
     )
-    with open(key_path, 'wb') as f:
-        f.write(enc_key)
+    course.cert_tte_private_key.save('private_key.pem', ContentFile(enc_key), save=False)
 
     course.cert_tte_enabled = True
     course.cert_tte_passphrase = passphrase
     course.cert_tte_created_at = datetime.datetime.now(datetime.timezone.utc)
-    course.save(update_fields=['cert_tte_enabled', 'cert_tte_passphrase', 'cert_tte_created_at'])
+    course.save()
 
     return Response({
         'detail': f'Sertifikat TTE untuk {course.title} berhasil dibuat',

@@ -7,6 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ChevronLeft, ChevronRight, FileText, Video, ExternalLink, File } from 'lucide-react';
 import ProgressBar from './ProgressBar';
 
+const isGoogleDriveUrl = (url: string) =>
+  url.includes('drive.google.com') || url.includes('docs.google.com');
+
+const getGoogleDrivePreviewUrl = (url: string) => {
+  const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+  return url;
+};
+
 interface LessonViewerProps {
     lesson: {
         id: number;
@@ -59,24 +68,35 @@ export default function LessonViewer({ lesson, progress, isCompleted, onMarkComp
                     </div>
                 );
             case 'document':
-                return lesson.external_url ? (
-                    <div className="space-y-3">
-                        <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800">
-                            <iframe
-                                src={lesson.external_url}
-                                className="w-full h-full"
-                                title={lesson.title}
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                            />
+                return lesson.external_url ? (() => {
+                    const isDrive = isGoogleDriveUrl(lesson.external_url!);
+                    const iframeSrc = isDrive
+                        ? getGoogleDrivePreviewUrl(lesson.external_url!)
+                        : lesson.external_url!;
+                    return (
+                        <div className="space-y-3">
+                            <div className="w-full aspect-video rounded-lg overflow-hidden border bg-gray-100 dark:bg-gray-800 relative">
+                                <iframe
+                                    src={iframeSrc}
+                                    className="w-full h-full"
+                                    title={lesson.title}
+                                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                />
+                            </div>
+                            {isDrive && (
+                                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-lg">
+                                    Jika dokumen tidak tampil, pastikan file telah diset ke &quot;Siapa pun yang memiliki link&quot; di Google Drive, atau buka langsung melalui tautan di bawah.
+                                </p>
+                            )}
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <File className="w-4 h-4 text-blue-600" />
+                                <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    Buka di tab baru &rarr;
+                                </a>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <File className="w-4 h-4 text-blue-600" />
-                            <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                Buka di tab baru &rarr;
-                            </a>
-                        </div>
-                    </div>
-                ) : lesson.file_url ? (
+                    );
+                })() : lesson.file_url ? (
                     <div className="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
                         <File className="w-8 h-8 text-blue-600" />
                         <div>
@@ -93,24 +113,35 @@ export default function LessonViewer({ lesson, progress, isCompleted, onMarkComp
                     </div>
                 );
             case 'link':
-                return lesson.external_url ? (
-                    <div className="space-y-3">
-                        <div className="w-full aspect-video rounded-lg overflow-hidden border">
-                            <iframe
-                                src={lesson.external_url}
-                                className="w-full h-full"
-                                title={lesson.title}
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                            />
+                return lesson.external_url ? (() => {
+                    const isDrive = isGoogleDriveUrl(lesson.external_url!);
+                    const iframeSrc = isDrive
+                        ? getGoogleDrivePreviewUrl(lesson.external_url!)
+                        : lesson.external_url!;
+                    return (
+                        <div className="space-y-3">
+                            <div className="w-full aspect-video rounded-lg overflow-hidden border">
+                                <iframe
+                                    src={iframeSrc}
+                                    className="w-full h-full"
+                                    title={lesson.title}
+                                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                />
+                            </div>
+                            {isDrive && (
+                                <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-lg">
+                                    Jika dokumen tidak tampil, pastikan file telah diset ke &quot;Siapa pun yang memiliki link&quot; di Google Drive, atau buka langsung melalui tautan di bawah.
+                                </p>
+                            )}
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                                <ExternalLink className="w-4 h-4 text-blue-600" />
+                                <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                    Buka di tab baru &rarr;
+                                </a>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <ExternalLink className="w-4 h-4 text-blue-600" />
-                            <a href={lesson.external_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                Buka di tab baru &rarr;
-                            </a>
-                        </div>
-                    </div>
-                ) : (
+                    );
+                })() : (
                     <div className="flex items-center gap-4 p-6 bg-gray-50 rounded-lg">
                         <ExternalLink className="w-8 h-8 text-blue-600" />
                         <p className="text-gray-500 italic">Tidak ada URL</p>
