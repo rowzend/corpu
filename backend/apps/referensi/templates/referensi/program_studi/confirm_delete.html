@@ -1,0 +1,72 @@
+{% extends 'base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Hapus Program Studi - Referensi{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-6 max-w-2xl">
+    <div class="mb-6">
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-2">
+            <a href="{% url 'referensi:program_studi_list' %}" class="hover:text-blue-600">Program Studi</a>
+            <i class="fas fa-chevron-right text-xs"></i>
+            <span>Hapus</span>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">Hapus Program Studi</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-start gap-4 mb-6">
+            <div class="bg-red-100 p-3 rounded-full">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+            </div>
+            <div class="flex-1">
+                <h2 class="text-lg font-semibold text-gray-800 mb-2">Konfirmasi Penghapusan</h2>
+                <p class="text-gray-600">
+                    Apakah Anda yakin ingin menghapus program studi <strong>"{{ object.nama_prodi }}"</strong>?
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <dl class="space-y-2">
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Kode Prodi:</dt>
+                    <dd class="font-medium text-gray-800">{{ object.kode_prodi|default:'-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Nama:</dt>
+                    <dd class="font-medium text-gray-800">{{ object.nama_prodi }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">Jenjang:</dt>
+                    <dd class="font-medium text-gray-800">{{ object.jenjang|default:'-' }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-600">PT:</dt>
+                    <dd class="font-medium text-gray-800">{{ object.perguruan_tinggi.nama_pt }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p class="text-yellow-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Tindakan ini tidak dapat dibatalkan. Data akan dihapus secara permanen.
+                </p>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit"
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-trash"></i> Ya, Hapus
+                </button>
+                <a href="{% url 'referensi:program_studi_list' %}"
+                   class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-times"></i> Batal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

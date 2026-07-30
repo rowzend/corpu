@@ -1,0 +1,26 @@
+# =============================================================================
+# DEVELOPMENT OVERRIDE — for local development only!
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+# =============================================================================
+
+services:
+  esimpeg-python:
+    # Development: use Django runserver with auto-reload (port 8000)
+    command: python manage.py runserver 0.0.0.0:8000
+    
+    ports:
+      - "8005:8000"
+
+    environment:
+      - DEBUG=1
+      - DJANGO_ENV=development
+    
+    # Remove resource limits for development
+    deploy: {}
+    
+    # Enable code reload via volume mounts
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs

@@ -1,0 +1,330 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Hapus Artikel: {{ article.title }} - Knowledge Base{% endblock %}
+
+{% block page_title %}Hapus Artikel{% endblock %}
+
+{% block extra_css %}
+<style>
+.warning-container {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.warning-header {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 1.5rem;
+}
+
+.warning-body {
+    padding: 2rem;
+}
+
+.breadcrumb {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.article-preview {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.alert-warning {
+    background: #fef3c7;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.alert-danger {
+    background: #fee2e2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <nav class="flex" aria-label="Breadcrumb">
+            <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                <li class="inline-flex items-center">
+                    <a href="{% url 'dashboard:index' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                        <i class="fas fa-home mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <a href="{% url 'knowledge:article_manage_list' %}" class="text-gray-600 hover:text-blue-600 transition-colors">
+                            Manajemen Artikel
+                        </a>
+                    </div>
+                </li>
+                <li aria-current="page">
+                    <div class="flex items-center">
+                        <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                        <span class="text-gray-500">Hapus Artikel</span>
+                    </div>
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="max-w-3xl mx-auto">
+        <!-- Warning Container -->
+        <div class="warning-container">
+            <!-- Header -->
+            <div class="warning-header">
+                <h1 class="text-2xl font-bold mb-2">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Konfirmasi Penghapusan Artikel
+                </h1>
+                <p class="text-red-100">
+                    Anda akan menghapus artikel ini secara permanen
+                </p>
+            </div>
+
+            <!-- Body -->
+            <div class="warning-body">
+                <div class="text-center mb-6">
+                    <p class="text-lg text-gray-700 mb-4">
+                        Yakin ingin menghapus artikel <strong>"{{ article.title }}"</strong>?
+                    </p>
+                    <p class="text-gray-600">
+                        Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data terkait.
+                    </p>
+                </div>
+                
+                <!-- Article Preview -->
+                <div class="article-preview">
+                    <div class="flex items-start space-x-4 mb-4">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 text-lg mb-2">{{ article.title }}</h3>
+                            
+                            <div class="flex items-center space-x-4 text-sm text-gray-600 mb-3">
+                                <span class="flex items-center">
+                                    <i class="fas fa-user mr-1"></i>
+                                    {{ article.author.get_full_name|default:article.author.username }}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    {{ article.created_at|date:"d M Y" }}
+                                </span>
+                                {% if article.category %}
+                                <span class="flex items-center">
+                                    <i class="fas fa-folder mr-1"></i>
+                                    {{ article.category.name }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if article.excerpt %}
+                            <p class="text-gray-700 text-sm mb-3">{{ article.excerpt|truncatewords:20 }}</p>
+                            {% endif %}
+                            
+                            <div class="flex items-center space-x-4 text-sm">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                    {{ article.get_status_display }}
+                                </span>
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs">
+                                    {{ article.get_content_type_display }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Article Statistics -->
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-number">{{ article.view_count }}</div>
+                            <div class="stat-label">Views</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ article.like_count }}</div>
+                            <div class="stat-label">Likes</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">{{ article.comments.count }}</div>
+                            <div class="stat-label">Komentar</div>
+                        </div>
+                        {% if article.rating_count %}
+                        <div class="stat-item">
+                            <div class="stat-number">{{ article.rating_avg|floatformat:1 }}</div>
+                            <div class="stat-label">Rating ({{ article.rating_count }})</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Warning Messages -->
+                <div class="alert-danger">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle mr-2 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium mb-1">Peringatan!</p>
+                            <ul class="text-sm space-y-1">
+                                <li>• Artikel akan dihapus secara permanen</li>
+                                <li>• Semua komentar ({{ article.comments.count }}) akan ikut terhapus</li>
+                                <li>• Semua rating dan like akan hilang</li>
+                                <li>• File media yang terkait mungkin perlu dihapus manual</li>
+                                <li>• Tindakan ini tidak dapat dibatalkan</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {% if article.comments.count > 0 %}
+                <div class="alert-warning">
+                    <div class="flex items-start">
+                        <i class="fas fa-comments mr-2 mt-0.5"></i>
+                        <div>
+                            <p class="font-medium mb-1">Artikel memiliki {{ article.comments.count }} komentar</p>
+                            <p class="text-sm">
+                                Menghapus artikel akan menghilangkan semua komentar dan diskusi yang ada.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Form Actions -->
+                <form method="post" class="mt-6">
+                    {% csrf_token %}
+                    
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                        <a href="{% url 'knowledge:article_manage_list' %}" class="btn-secondary">
+                            <i class="fas fa-arrow-left"></i>
+                            Batal
+                        </a>
+                        
+                        <button type="submit" 
+                                class="btn-danger"
+                                onclick="return confirm('KONFIRMASI TERAKHIR: Yakin ingin menghapus artikel ini? Tindakan ini tidak dapat dibatalkan!')">
+                            <i class="fas fa-trash"></i>
+                            Ya, Hapus Artikel
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Additional Info -->
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-500">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Setelah dihapus, artikel tidak dapat dikembalikan. Pastikan Anda yakin dengan keputusan ini.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus on cancel button for better UX
+    const cancelBtn = document.querySelector('a[href*="article_manage_list"]');
+    if (cancelBtn) {
+        cancelBtn.focus();
+    }
+    
+    // Add extra confirmation for delete button
+    const deleteBtn = document.querySelector('button[type="submit"]');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Double confirmation
+            if (confirm('PERINGATAN: Artikel akan dihapus permanen beserta semua komentar dan data terkait. Lanjutkan?')) {
+                if (confirm('KONFIRMASI TERAKHIR: Apakah Anda benar-benar yakin? Tindakan ini TIDAK DAPAT DIBATALKAN!')) {
+                    this.form.submit();
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

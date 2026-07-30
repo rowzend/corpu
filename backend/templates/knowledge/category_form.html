@@ -1,0 +1,420 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - Knowledge Base{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+.error-text {
+    font-size: 0.75rem;
+    color: #ef4444;
+    margin-top: 0.25rem;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.checkbox-input {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+}
+
+.btn-cancel {
+    background: #6b7280;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+    background: #4b5563;
+    color: white;
+    text-decoration: none;
+}
+
+.slug-preview {
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.parent-info {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.parent-info h4 {
+    font-weight: 600;
+    color: #0369a1;
+    margin-bottom: 0.5rem;
+}
+
+.parent-info p {
+    font-size: 0.875rem;
+    color: #0284c7;
+    margin: 0;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ title }}</h1>
+            <p class="text-gray-600">
+                {% if category %}
+                    Edit informasi kategori yang sudah ada.
+                {% else %}
+                    Buat kategori baru untuk mengorganisir artikel Knowledge Base.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                <!-- Name -->
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}" class="form-label">
+                        {{ form.name.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.help_text %}
+                        <div class="help-text">{{ form.name.help_text }}</div>
+                    {% endif %}
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Slug -->
+                <div class="form-group">
+                    <label for="{{ form.slug.id_for_label }}" class="form-label">
+                        {{ form.slug.label }}
+                    </label>
+                    {{ form.slug }}
+                    {% if form.slug.help_text %}
+                        <div class="help-text">{{ form.slug.help_text }}</div>
+                    {% endif %}
+                    {% if form.slug.errors %}
+                        {% for error in form.slug.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Slug Preview -->
+                    <div class="slug-preview" id="slug-preview">
+                        URL: /knowledge/category/<span id="slug-text">{{ form.slug.value|default:"kategori-baru" }}</span>/
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                        {{ form.description.label }}
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.help_text %}
+                        <div class="help-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+                    {% if form.description.errors %}
+                        {% for error in form.description.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Parent Category -->
+                <div class="form-group">
+                    <label for="{{ form.parent.id_for_label }}" class="form-label">
+                        {{ form.parent.label }}
+                    </label>
+                    {{ form.parent }}
+                    {% if form.parent.help_text %}
+                        <div class="help-text">{{ form.parent.help_text }}</div>
+                    {% endif %}
+                    {% if form.parent.errors %}
+                        {% for error in form.parent.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- Parent Info -->
+                    <div class="parent-info" id="parent-info" style="display: none;">
+                        <h4><i class="fas fa-info-circle mr-2"></i>Informasi Parent Kategori</h4>
+                        <p id="parent-description">Kategori ini akan menjadi sub-kategori dari kategori yang dipilih.</p>
+                    </div>
+                </div>
+
+                <!-- Order Index -->
+                <div class="form-group">
+                    <label for="{{ form.order_index.id_for_label }}" class="form-label">
+                        {{ form.order_index.label }}
+                    </label>
+                    {{ form.order_index }}
+                    {% if form.order_index.help_text %}
+                        <div class="help-text">{{ form.order_index.help_text }}</div>
+                    {% endif %}
+                    {% if form.order_index.errors %}
+                        {% for error in form.order_index.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Is Active -->
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        {{ form.is_active }}
+                        <label for="{{ form.is_active.id_for_label }}" class="form-label mb-0">
+                            {{ form.is_active.label }}
+                        </label>
+                    </div>
+                    {% if form.is_active.help_text %}
+                        <div class="help-text">{{ form.is_active.help_text }}</div>
+                    {% endif %}
+                    {% if form.is_active.errors %}
+                        {% for error in form.is_active.errors %}
+                            <div class="error-text">{{ error }}</div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                    <div>
+                        <a href="{% url 'knowledge:category_list' %}" class="btn-cancel">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Batal
+                        </a>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-submit">
+                            <i class="fas fa-save mr-2"></i>
+                            {{ submit_text|default:"Simpan Kategori" }}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Additional Info -->
+        {% if category %}
+        <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 class="font-semibold text-blue-900 mb-2">
+                <i class="fas fa-info-circle mr-2"></i>
+                Informasi Kategori
+            </h3>
+            <div class="text-sm text-blue-800 space-y-1">
+                <p><strong>Dibuat:</strong> {{ category.created_at|date:"d M Y H:i" }}</p>
+                <p><strong>Terakhir diupdate:</strong> {{ category.updated_at|date:"d M Y H:i" }}</p>
+                <p><strong>Total artikel:</strong> {{ category.get_article_count }} artikel</p>
+                {% if category.children.exists %}
+                <p><strong>Sub-kategori:</strong> {{ category.children.count }} sub-kategori</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-generate slug from name
+    const nameInput = document.querySelector('#id_name');
+    const slugInput = document.querySelector('#id_slug');
+    const slugText = document.getElementById('slug-text');
+    
+    function updateSlugPreview() {
+        const slugValue = slugInput.value || 'kategori-baru';
+        slugText.textContent = slugValue;
+    }
+    
+    if (nameInput && slugInput) {
+        nameInput.addEventListener('input', function() {
+            if (!slugInput.value || slugInput.dataset.autoGenerated === 'true') {
+                const slug = this.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-')
+                    .trim('-');
+                slugInput.value = slug;
+                slugInput.dataset.autoGenerated = 'true';
+                updateSlugPreview();
+            }
+        });
+        
+        slugInput.addEventListener('input', function() {
+            this.dataset.autoGenerated = 'false';
+            updateSlugPreview();
+        });
+        
+        // Initial update
+        updateSlugPreview();
+    }
+    
+    // Parent category info
+    const parentSelect = document.querySelector('#id_parent');
+    const parentInfo = document.getElementById('parent-info');
+    const parentDescription = document.getElementById('parent-description');
+    
+    if (parentSelect && parentInfo) {
+        parentSelect.addEventListener('change', function() {
+            if (this.value) {
+                const selectedOption = this.options[this.selectedIndex];
+                parentInfo.style.display = 'block';
+                parentDescription.textContent = `Kategori ini akan menjadi sub-kategori dari "${selectedOption.text}".`;
+            } else {
+                parentInfo.style.display = 'none';
+            }
+        });
+        
+        // Initial check
+        if (parentSelect.value) {
+            parentSelect.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Form validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const nameValue = nameInput.value.trim();
+            
+            if (!nameValue) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Error',
+                    text: 'Nama kategori wajib diisi!'
+                });
+                nameInput.focus();
+                return false;
+            }
+            
+            if (nameValue.length < 3) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validasi Error',
+                    text: 'Nama kategori minimal 3 karakter!'
+                });
+                nameInput.focus();
+                return false;
+            }
+        });
+    }
+    
+    // Character counter for description
+    const descriptionTextarea = document.querySelector('#id_description');
+    if (descriptionTextarea) {
+        const maxLength = 500;
+        const counter = document.createElement('div');
+        counter.className = 'text-xs text-gray-500 mt-1 text-right';
+        descriptionTextarea.parentNode.appendChild(counter);
+        
+        function updateCounter() {
+            const remaining = maxLength - descriptionTextarea.value.length;
+            counter.textContent = `${descriptionTextarea.value.length}/${maxLength} karakter`;
+            
+            if (remaining < 50) {
+                counter.className = 'text-xs text-red-500 mt-1 text-right';
+            } else if (remaining < 100) {
+                counter.className = 'text-xs text-yellow-500 mt-1 text-right';
+            } else {
+                counter.className = 'text-xs text-gray-500 mt-1 text-right';
+            }
+        }
+        
+        descriptionTextarea.addEventListener('input', updateCounter);
+        updateCounter(); // Initial update
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+services:
+  # Django Application - menggunakan infrastruktur yang sudah ada
+  asncorpu_backend:
+    build: .
+    container_name: asncorpu_backend_app
+    restart: unless-stopped
+    command: gunicorn core.wsgi:application --config gunicorn.conf.py
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - logs_volume:/app/logs
+    expose:
+      - "8000"
+    environment:
+      - DB_ENGINE=django.db.backends.postgresql
+      - DB_HOST=postgres-main  # Menggunakan postgres yang sudah running
+      - DB_NAME=asncorpu_backend_db
+      - DB_USER=asncorpu_user
+      - DB_PASSWORD=asncorpu_secure_password_2026
+      - DB_PORT=5432
+      - REDIS_HOST=redis-main  # Menggunakan redis yang sudah running
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=5406@Pessel!23#
+      - REDIS_DB=4
+      # Memory and Request Size Limits
+      - DJANGO_MAX_REQUEST_SIZE=134217728  # 128MB
+      - GUNICORN_TIMEOUT=300  # 5 minutes
+      - GUNICORN_WORKERS=4
+      - GUNICORN_WORKER_CLASS=sync
+      # Development settings
+      - DEBUG=True
+      - SECURE_SSL_REDIRECT=False
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '1.0'
+    networks:
+      - shared-network  # Menggunakan network yang sudah ada
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  static_volume:
+  media_volume:
+  logs_volume:
+
+networks:
+  shared-network:
+    external: true  # Network sudah ada, tidak perlu dibuat
