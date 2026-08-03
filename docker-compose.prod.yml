@@ -1,7 +1,8 @@
 services:
   # Backend - Django/Python
   asncorpu_backend:
-    build: ./backend
+    image: ghcr.io/profnipu/asncorpu-backend:latest
+    pull_policy: always
     container_name: asncorpu_backend_app
     restart: unless-stopped
     command: gunicorn core.wsgi:application --config gunicorn.conf.py
@@ -56,9 +57,8 @@ services:
 
   # Frontend - Next.js (Production Build)
   asncorpu-frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/profnipu/asncorpu-frontend:latest
+    pull_policy: always
     container_name: asncorpu-frontend-nextjs
     expose:
       - "3004"
