@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import UserProfile, User
-from apps.api_simpeg.models import Pegawai
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -20,24 +19,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
-    # Pegawai fields - from SIMPEG sync
-    nip = serializers.SerializerMethodField()
-    jabatan = serializers.SerializerMethodField()
-
-    def get_nip(self, obj):
-        try:
-            pegawai = obj.user.pegawai
-            return pegawai.nip_baru or pegawai.nip_lama
-        except Exception:
-            return None
-
-    def get_jabatan(self, obj):
-        try:
-            pegawai = obj.user.pegawai
-            return pegawai.nama_jabatan
-        except Exception:
-            return None
-
     # Referensi fields - read-only nama display
     provinsi_nama = serializers.CharField(source='provinsi.nama', read_only=True)
     kabupaten_nama = serializers.CharField(source='kabupaten.nama', read_only=True)
@@ -53,7 +34,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'user', 'user_name', 'user_email', 'user_username', 'user_image',
             'kategori_user', 'kategori_user_nama', 'kategori_user_kode',
 
-            'nip', 'jabatan',
             'nik', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
             'agama', 'no_hp_pribadi', 'bio',
 

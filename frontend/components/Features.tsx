@@ -197,10 +197,10 @@ export default function Features() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="bg-muted p-6 rounded-2xl animate-pulse">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-muted rounded-xl"></div>
+                  <div className="w-12 h-12 bg-gray-300 rounded-xl"></div>
                   <div>
-                    <div className="w-20 h-4 bg-muted rounded mb-2"></div>
-                    <div className="w-16 h-3 bg-muted rounded"></div>
+                    <div className="w-20 h-4 bg-gray-300 rounded mb-2"></div>
+                    <div className="w-16 h-3 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
@@ -262,7 +262,7 @@ export default function Features() {
 
         {/* Main Title with Animated Underline */}
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-primary mb-4 relative inline-block">
+          <h2 className="text-4xl md:text-5xl font-bold text-blue-700 mb-4 relative inline-block">
             Akademi
             <span className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 via-blue-600 to-blue-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></span>
           </h2>
@@ -314,13 +314,13 @@ export default function Features() {
                   <div className="absolute inset-0 rounded-3xl border-4 border-current opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-500"></div>
                 </div>
                 
-                <h3 className="text-lg font-bold text-card-foreground mb-3 leading-tight group-hover:text-primary transition-colors duration-300">
+                <h3 className="text-lg font-bold text-card-foreground mb-3 leading-tight group-hover:text-blue-600 transition-colors duration-300">
                   {akademi.title}
                 </h3>
                 
                 {/* Hover Arrow */}
                 <div className="opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                  <svg className="w-6 h-6 mx-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 mx-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>

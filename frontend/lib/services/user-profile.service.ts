@@ -7,9 +7,6 @@ export interface UserProfile {
     user_username: string;
     user_image: string;
 
-    nip: string | null;
-    jabatan: string | null;
-
     kategori_user: number | null;
     kategori_user_nama: string | null;
     kategori_user_kode: string | null;

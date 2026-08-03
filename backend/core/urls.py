@@ -23,7 +23,6 @@ from django.conf.urls.static import static
 from . import views
 from apps.manajemen.admin_site import permission_admin_site
 from apps.manajemen.views_api import PublicSettingsListAPIView
-from apps.dashboard.views_api import PublicLearningStatsAPIView
 
 # Admin customization (applies to both default and custom admin site)
 admin_brand = getattr(settings, 'APP_NAME', 'ASN CORPU')
@@ -67,7 +66,6 @@ urlpatterns = [
     path('apicorpu/public/1.0/profile/', include('apps.profile.urls_api_public')),
     path('apicorpu/public/1.0/hero/', include('apps.hero.urls_api')),
     path('apicorpu/public/1.0/settings/', PublicSettingsListAPIView.as_view(), name='public_settings'),
-    path('apicorpu/public/1.0/dashboard/stats/', PublicLearningStatsAPIView.as_view(), name='public_learning_stats'),
     
     # Authenticated API v1.0 (JWT Required)
     # ========================================

@@ -28,7 +28,6 @@ function CategoryNode({
   selectedKategori: string;
   onSelect: (name: string, id: number) => void;
 }) {
-  const t = useTranslations();
   const hasChildren = category.children && category.children.length > 0;
   const [isExpanded, setIsExpanded] = useState(true); // Auto-expand by default
   
@@ -63,8 +62,8 @@ function CategoryNode({
         onClick={handleClick}
         className={`w-full text-left rounded-lg transition-all duration-300 flex items-center gap-2 group relative ${
           isSelected
-            ? 'bg-primary text-primary-foreground shadow-lg'
-            : 'text-foreground hover:bg-primary/5 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
+            ? 'bg-indigo-600 text-white shadow-lg'
+            : 'text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'
         } ${level > 0 ? 'text-xs' : 'text-sm font-medium'} ${level > 0 ? 'py-2' : 'py-2.5'}`}
         style={{ paddingLeft: `${level * 16 + 12}px`, paddingRight: '12px' }}
         title={categoryNameDisplay} // Native browser tooltip as fallback
@@ -86,7 +85,7 @@ function CategoryNode({
         
         {/* Tree connector for child categories */}
         {level > 0 && (
-          <span className={`w-2 h-px ${isSelected ? 'bg-white' : 'bg-border'} flex-shrink-0`} />
+          <span className={`w-2 h-px ${isSelected ? 'bg-white' : 'bg-gray-300'} flex-shrink-0`} />
         )}
         
         {/* Category Name with smart wrapping */}
@@ -97,7 +96,7 @@ function CategoryNode({
         {/* Article Count Badge */}
         {category.article_count > 0 && (
           <span className={`ml-auto flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
-            isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            isSelected ? 'bg-indigo-500 text-white' : 'bg-muted text-muted-foreground'
           }`}>
             {category.article_count}
           </span>
@@ -108,14 +107,14 @@ function CategoryNode({
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 hidden group-hover:block lg:block z-50 pointer-events-none animate-fadeIn">
             <div className="relative">
               {/* Tooltip Arrow */}
-              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-popover rotate-45"></div>
+              <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45"></div>
               {/* Tooltip Content */}
-              <div className="bg-card text-card-foreground text-sm rounded-lg px-4 py-2.5 shadow-2xl max-w-xs ml-1">
+              <div className="bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg px-4 py-2.5 shadow-2xl max-w-xs ml-1">
                 <div className="font-semibold mb-1">{categoryNameDisplay}</div>
                 {category.article_count > 0 && (
-                  <div className="text-xs text-muted-foreground/60 flex items-center gap-1">
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/60"></span>
-                    {category.article_count} {t('kms_page.title')}
+                  <div className="text-xs text-gray-300 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
+                    {category.article_count} artikel
                   </div>
                 )}
               </div>
@@ -359,10 +358,10 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
 
   const getContentTypeColor = (contentType: string) => {
     switch (contentType) {
-      case 'video': return 'from-primary to-primary/70';
-      case 'document': return 'from-primary to-primary/70';
-      case 'link': return 'from-primary to-primary/70';
-      default: return 'from-primary/80 to-primary/60';
+      case 'video': return 'from-red-500 to-pink-500';
+      case 'document': return 'from-blue-500 to-indigo-500';
+      case 'link': return 'from-green-500 to-teal-500';
+      default: return 'from-purple-500 to-indigo-500';
     }
   };
 
@@ -370,9 +369,8 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
     return (
       <div className="min-h-screen bg-muted">
         <div className="animate-pulse">
-          <div className="bg-gradient-to-r from-primary to-primary/70 h-96"></div>
-      <div className="bg-gradient-to-b from-muted/20 via-background to-muted/20">
-        <div className="container mx-auto px-4 py-16">
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 h-96"></div>
+          <div className="container mx-auto px-4 py-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="h-64 bg-muted rounded-2xl"></div>
@@ -381,14 +379,13 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
           </div>
         </div>
       </div>
-      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-muted">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 text-primary-foreground relative overflow-hidden">
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full filter blur-3xl animate-float"></div>
@@ -403,7 +400,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('kms_page.hero_title')}</h1>
-            <p className="text-xl text-primary-foreground/80 mb-8">
+            <p className="text-xl text-purple-100 mb-8">
               {t('kms_page.subtitle')}
             </p>
 
@@ -417,7 +414,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-6 py-4 pr-14 rounded-xl text-card-foreground placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-white/30 shadow-lg"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-lg transition-colors">
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg transition-colors">
                   <Search className="w-5 h-5" />
                 </button>
               </div>
@@ -427,19 +424,19 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
             <div className="grid grid-cols-4 gap-4 mt-12 max-w-3xl mx-auto">
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{stats.published_articles}+</div>
-                <div className="text-sm text-primary-foreground/80">{t('kms_page.title')}</div>
+                <div className="text-sm text-purple-100">{t('kms_page.title')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{kmsCategories.length}+</div>
-                <div className="text-sm text-primary-foreground/80">{t('kms_page.categories')}</div>
+                <div className="text-sm text-purple-100">{t('kms_page.categories')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{Math.floor(stats.total_views / 1000)}K+</div>
-                <div className="text-sm text-primary-foreground/80">{t('common.views')}</div>
+                <div className="text-sm text-purple-100">{t('common.views')}</div>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                 <div className="text-3xl font-bold">{stats.total_likes}+</div>
-                <div className="text-sm text-primary-foreground/80">{t('common.likes')}</div>
+                <div className="text-sm text-purple-100">{t('common.likes')}</div>
               </div>
             </div>
           </div>
@@ -447,20 +444,19 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
 
         {/* Wave Decoration */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto text-muted">
-            <path d="M0 80L60 70C120 60 240 40 360 35C480 30 600 40 720 45C840 50 960 50 1080 45C1200 40 1320 30 1380 25L1440 20V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill="currentColor" />
+          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-auto">
+            <path d="M0 80L60 70C120 60 240 40 360 35C480 30 600 40 720 45C840 50 960 50 1080 45C1200 40 1320 30 1380 25L1440 20V80H1380C1320 80 1200 80 1080 80C960 80 840 80 720 80C600 80 480 80 360 80C240 80 120 80 60 80H0Z" fill="#F9FAFB" />
           </svg>
         </div>
       </div>
 
-      <div className="bg-gradient-to-b from-muted/20 via-background to-muted/20">
-        <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 py-12">
         <div className="flex gap-8">
           {/* Sidebar Categories */}
           <div className="w-72 flex-shrink-0">
             <div className="bg-card rounded-xl shadow-md p-6 sticky top-24">
               <div className="flex items-center gap-2 mb-6">
-                <Filter className="w-5 h-5 text-primary dark:text-primary" />
+                <Filter className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <h2 className="text-xl font-bold text-card-foreground">{t('kms_page.filter')}</h2>
               </div>
 
@@ -477,8 +473,8 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                   }}
                   className={`w-full text-left px-4 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium ${
                     selectedKategori === 'semua'
-                      ? 'bg-primary text-primary-foreground shadow-lg'
-                      : 'bg-muted text-foreground hover:bg-primary/5 dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary'
+                      ? 'bg-indigo-600 text-white shadow-lg'
+                      : 'bg-muted text-foreground hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400'
                   }`}
                 >
                   {t('kms_page.all_categories')}
@@ -501,7 +497,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
               <div className="pt-6 border-t border-border">
                 <h3 className="font-semibold text-card-foreground mb-4">{t('kms_page.quick_actions')}</h3>
                 <div className="space-y-2">
-                  <Button className="w-full bg-gradient-to-r from-primary to-primary/70 text-primary-foreground hover:shadow-lg transition-all duration-300">
+                  <Button className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:shadow-lg transition-all duration-300">
                     ➕ {t('kms_page.contribute')}
                   </Button>
                   <Button variant="outline" className="w-full">
@@ -538,7 +534,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-card"
+                  className="px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-card"
                 >
                   <option value="newest">{t('kms_page.newest')}</option>
                   <option value="popular">{t('kms_page.popular')}</option>
@@ -568,7 +564,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {article.category && (
-                            <Badge className="text-xs font-semibold text-primary dark:text-primary bg-primary/5 dark:bg-primary/20">
+                            <Badge className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30">
                               <span dangerouslySetInnerHTML={{ __html: article.category.name }} />
                             </Badge>
                           )}
@@ -576,17 +572,17 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                             {article.content_type}
                           </Badge>
                           {article.is_featured && (
-                            <Badge className="text-xs font-semibold text-accent bg-accent/10">
+                            <Badge className="text-xs font-semibold text-yellow-600 bg-yellow-50">
                               ⭐ {t('kms_page.featured')}
                             </Badge>
                           )}
                         </div>
-                        <button className="text-muted-foreground hover:text-destructive transition-colors">
+                        <button className="text-muted-foreground hover:text-red-500 dark:text-red-400 transition-colors">
                           <Heart className="w-6 h-6" />
                         </button>
                       </div>
 
-                      <h3 className="text-xl font-bold text-card-foreground mb-2 group-hover:text-primary dark:group-hover:text-primary transition-colors line-clamp-2">
+                      <h3 className="text-xl font-bold text-card-foreground mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">
                         {article.title}
                       </h3>
 
@@ -641,7 +637,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
 
                         <Link
                           href={`${basePath}/${article.slug}`}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                         >
                           {t('kms_page.read_more')} →
                         </Link>
@@ -670,7 +666,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                     setSelectedKategori('semua');
                     setSelectedCategoryId(null);
                   }}
-                  className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-semibold transition-colors"
+                  className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
                 >
                   {t('kms_page.reset_filter')}
                 </button>
@@ -712,7 +708,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
                           currentPage === pageNum
-                            ? 'bg-primary text-primary-foreground'
+                            ? 'bg-indigo-600 text-white'
                             : 'border border-border bg-card hover:bg-muted text-card-foreground'
                         }`}
                       >
@@ -733,7 +729,6 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }

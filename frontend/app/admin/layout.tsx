@@ -63,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex h-screen bg-transparent p-4 gap-4">
-      <SessionChecker timeoutMinutes={30} />
+      <SessionChecker timeoutMinutes={30} showWarning />
 
       <AdminSidebar
         isMobileOpen={mobileSidebarOpen}

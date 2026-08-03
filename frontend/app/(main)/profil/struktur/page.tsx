@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProfileSections, photoUrl, type ProfileSection } from '@/lib/api/profilePublic';
-import { useTranslations } from 'next-intl';
 
 export default function StrukturPage() {
-  const t = useTranslations('profile'); const tc = useTranslations('common');
   const [section, setSection] = useState<ProfileSection | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,11 +15,11 @@ export default function StrukturPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">{tc('loading')}</div>;
+  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">Memuat...</div>;
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-card-foreground mb-8">{t('struktur')}</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Struktur Organisasi</h1>
 
       {section ? (
         <Card>
@@ -30,7 +28,7 @@ export default function StrukturPage() {
               <div className="mb-6">
                 <img
                   src={photoUrl(section.image)}
-                  alt={t('struktur')}
+                  alt="Struktur Organisasi"
                   className="w-full h-auto rounded-lg"
                 />
               </div>
@@ -42,7 +40,7 @@ export default function StrukturPage() {
           </CardContent>
         </Card>
       ) : (
-        <p className="text-muted-foreground">{tc('no_data')}</p>
+        <p className="text-muted-foreground">Belum ada data struktur organisasi.</p>
       )}
     </main>
   );

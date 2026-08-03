@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProfileSections, type ProfileSection } from '@/lib/api/profilePublic';
-import { useTranslations } from 'next-intl';
 
 export default function SejarahPage() {
-  const t = useTranslations('profile'); const tc = useTranslations('common');
   const [section, setSection] = useState<ProfileSection | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -17,11 +15,11 @@ export default function SejarahPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">{tc('loading')}</div>;
+  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">Memuat...</div>;
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-card-foreground mb-8">{t('sejarah')}</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Sejarah Corpu</h1>
 
       {section ? (
         <Card>
@@ -33,7 +31,7 @@ export default function SejarahPage() {
           </CardContent>
         </Card>
       ) : (
-        <p className="text-muted-foreground">{tc('no_data')}</p>
+        <p className="text-muted-foreground">Belum ada data sejarah.</p>
       )}
     </main>
   );

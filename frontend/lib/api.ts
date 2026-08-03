@@ -92,7 +92,6 @@ class ApiClient {
   private getHeaders(includeAuth = true): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
     };
 
     if (includeAuth) {
@@ -125,7 +124,7 @@ class ApiClient {
     if (!hasJsonContent && !response.ok) {
       const text = await response.text();
       throw new ApiError(
-        text ? `Server returned ${response.status}: ${text.slice(0, 200)}` : `Request failed with status ${response.status}`,
+        text || 'Request failed',
         response.status,
         'INVALID_RESPONSE'
       );

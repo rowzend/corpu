@@ -5,15 +5,11 @@ import { ReactNode, useEffect, useState } from 'react';
 import idMessages from '../messages/id.json';
 import enMessages from '../messages/en.json';
 import arMessages from '../messages/ar.json';
-import zhMessages from '../messages/zh.json';
-import jaMessages from '../messages/ja.json';
 
 const messagesMap: Record<string, Record<string, unknown>> = {
   id: idMessages as unknown as Record<string, unknown>,
   en: enMessages as unknown as Record<string, unknown>,
   ar: arMessages as unknown as Record<string, unknown>,
-  zh: zhMessages as unknown as Record<string, unknown>,
-  ja: jaMessages as unknown as Record<string, unknown>,
 };
 
 export default function I18nProvider({ children, serverLocale }: { children: ReactNode; serverLocale: string }) {
@@ -28,7 +24,7 @@ export default function I18nProvider({ children, serverLocale }: { children: Rea
 
     const onLocaleChange = () => {
       const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
-      const newLoc = match && ['id', 'en', 'ar', 'zh', 'ja'].includes(match[1]) ? match[1] : 'id';
+      const newLoc = match && ['id', 'en', 'ar'].includes(match[1]) ? match[1] : 'id';
       if (newLoc !== locale) {
         setLocale(newLoc);
         document.documentElement.lang = newLoc;
