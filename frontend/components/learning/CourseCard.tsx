@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Star, Users, Clock } from 'lucide-react';
-import { getLevelColor } from '@/lib/colors';
 
 interface CourseCardProps {
     course: {
@@ -27,12 +26,11 @@ interface CourseCardProps {
 
 export default function CourseCard({ course, showEnroll, onEnroll, isEnrolled }: CourseCardProps) {
     const router = useRouter();
-    const lvlColor = getLevelColor(course.level);
 
     return (
         <Card className="hover:shadow-lg transition cursor-pointer" onClick={() => router.push(`/courses/${course.slug}`)}>
             {course.thumbnail && (
-                <div className="h-40 bg-muted overflow-hidden rounded-t-lg">
+                <div className="h-40 bg-gray-200 overflow-hidden rounded-t-lg">
                     <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 </div>
             )}
@@ -43,13 +41,13 @@ export default function CourseCard({ course, showEnroll, onEnroll, isEnrolled }:
                         <Badge className="bg-yellow-100 text-yellow-800 ml-2">Featured</Badge>
                     )}
                 </div>
-                <Badge className={`w-fit ${lvlColor.bg} ${lvlColor.text}`}>
+                <Badge className={`w-fit ${course.level === 'beginner' ? 'bg-green-100 text-green-800' : course.level === 'intermediate' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}`}>
                     {course.level === 'beginner' ? 'Pemula' : course.level === 'intermediate' ? 'Menengah' : 'Lanjutan'}
                 </Badge>
             </CardHeader>
             <CardContent>
                 {course.short_description && (
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{course.short_description}</p>
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">{course.short_description}</p>
                 )}
                 <div className="flex justify-between text-sm mb-4">
                     <div className="flex items-center gap-1"><Clock className="w-4 h-4" />{course.duration_minutes} menit</div>

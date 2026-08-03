@@ -25,18 +25,18 @@
     "title2": "Corporate University",
     "subtitle": "Platform pembelajaran digital untuk pengembangan kapasitas Aparatur Sipil Negara yang profesional, kompeten, dan berintegritas tinggi.",
     "cta_start": "Mulai Belajar",
-    "cta_video": "Video Profil",
     "cta_courses": "Jelajahi Kursus",
     "badge_platform": "Platform Pembelajaran ASN Modern",
     "desc": "Platform pembelajaran digital untuk pengembangan kapasitas Aparatur Sipil Negara yang profesional dan berintegritas"
   },
   "stats": {
-    "title": "Statistik Platform",
-    "subtitle": "Capaian dan perkembangan platform pembelajaran ASN",
-    "courses": "Kursus",
-    "articles": "Artikel",
-    "experts": "Tenaga Ahli",
-    "views": "Total Dilihat"
+    "title": "ASN Yang sudah Bergabung",
+    "subtitle": "ASN yang sudah mulai Ekplorasi untuk Pengembangan Kompetensinya",
+    "asn": "ASN Terdaftar",
+    "courses": "Kursus Tersedia",
+    "certificates": "Sertifikat Diterbitkan",
+    "rating": "Rating Kepuasan",
+    "students": "peserta"
   },
   "programs": {
     "badge": "Program Unggulan",
@@ -54,8 +54,7 @@
     "mooc": "MOOC",
     "mooc_desc": "Massive Open Online Course yang dapat diakses kapan saja dan dari mana saja.",
     "sertifikasi": "Sertifikasi",
-    "sertifikasi_desc": "Program sertifikasi untuk mengakui dan memvalidasi kompetensi ASN.",
-    "view_all": "Lihat Semua Artikel"
+    "sertifikasi_desc": "Program sertifikasi untuk mengakui dan memvalidasi kompetensi ASN."
   },
   "courses": {
     "badge": "Kursus Populer",
@@ -98,8 +97,7 @@
     "badge": "Testimoni",
     "title": "Apa Kata",
     "title_highlight": "Mereka",
-    "subtitle": "Dengarkan pengalaman dari para ASN yang telah merasakan manfaat belajar di Corpu",
-    "no_testimonials": "Belum ada testimonial"
+    "subtitle": "Dengarkan pengalaman dari para ASN yang telah merasakan manfaat belajar di Corpu"
   },
   "news": {
     "badge": "Berita Terkini",
@@ -107,16 +105,7 @@
     "title_highlight": "Pengumuman",
     "subtitle": "Ikuti perkembangan terbaru dari Corporate University",
     "view_all": "Lihat Semua Berita",
-    "read_more": "Baca Selengkapnya",
-    "no_news": "Belum ada berita",
-    "page_title": "Berita & Informasi",
-    "page_subtitle": "Update terbaru seputar program, kegiatan, dan pengumuman ASN Academy",
-    "search_placeholder": "Cari berita...",
-    "no_news_desc": "Belum ada berita yang dipublikasikan saat ini.",
-    "news_not_found_title": "Berita Tidak Ditemukan",
-    "news_not_found_desc": "Berita yang Anda cari tidak tersedia.",
-    "back_to_news": "Kembali ke Berita",
-    "by_author": "Oleh:"
+    "read_more": "Baca Selengkapnya"
   },
   "cta": {
     "badge": "Siap Meningkatkan Kompetensi?",
@@ -161,11 +150,7 @@
     "no_data": "Tidak ada data",
     "retry": "Coba Lagi",
     "views": "dilihat",
-    "likes": "disukai",
-    "download": "Download",
-    "share": "Bagikan",
-    "like": "Suka",
-    "error_occurred": "Terjadi kesalahan"
+    "likes": "disukai"
   },
   "auth": {
     "login_title": "Masuk",
@@ -176,9 +161,7 @@
     "forgot_password": "Lupa Kata Sandi?",
     "no_account": "Belum punya akun?",
     "has_account": "Sudah punya akun?",
-    "logout": "Keluar",
-    "login_required": "Login Diperlukan",
-    "login_required_desc": "Silakan login terlebih dahulu untuk melanjutkan"
+    "logout": "Keluar"
   },
   "landing": {
     "trust_cert": "Sertifikat Resmi",
@@ -1009,7 +992,6 @@
       "berita": "Berita",
       "pelatihan": "Pelatihan",
       "data_diri": "Data Diri",
-      "data_idp": "Data IDP",
       "setting": "Pengaturan",
       "settings": "Pengaturan",
       "profile": "Profil",
@@ -1049,30 +1031,6 @@
       "jelajahi_kms": "Jelajahi KMS",
       "buka_kms": "Buka KMS",
       "aktif": "Aktif"
-    },
-    "idp": {
-      "title": "Manajemen IDP ASN",
-      "subtitle": "Individual Development Plan — Perencanaan pengembangan kompetensi ASN",
-      "nama_pegawai": "Nama Pegawai",
-      "nip": "NIP",
-      "jabatan": "Jabatan",
-      "cari": "Cari periode IDP...",
-      "semua": "Semua",
-      "draft": "Draft",
-      "proses": "Proses",
-      "disetujui": "Disetujui",
-      "ditolak": "Ditolak",
-      "buat_baru": "Buat IDP Baru",
-      "kolom_no": "No",
-      "kolom_nama": "Nama Pegawai",
-      "kolom_nip": "NIP",
-      "kolom_jabatan": "Jabatan",
-      "kolom_periode": "Periode IDP",
-      "kolom_status": "Status",
-      "kolom_tanggal": "Tanggal Buat",
-      "kolom_aksi": "Aksi",
-      "lihat": "Lihat IDP",
-      "kosong": "Tidak ada data IDP yang ditemukan"
     }
   },
   "courses_page": {
@@ -1108,41 +1066,7 @@
     "stats_participants": "Peserta",
     "stats_rating": "Rating",
     "previous": "Sebelumnya",
-    "next": "Selanjutnya",
-    "load_error": "Gagal Load Kursus",
-    "course_not_found": "Kursus tidak ditemukan",
-    "enroll_success": "Berhasil mendaftar kursus!",
-    "enroll_error": "Gagal Mendaftar",
-    "rating_required": "Pilih rating terlebih dahulu",
-    "rating_success": "Rating berhasil dikirim!",
-    "comment_required": "Komentar tidak boleh kosong",
-    "comment_success": "Komentar berhasil dikirim!",
-    "login_to_enroll": "Login untuk Mendaftar",
-    "browse": "Jelajahi Kursus",
-    "courses_available": "{count} kursus tersedia",
-    "enrolled_badge": "Terdaftar",
-    "continue_learning": "Lanjutkan Belajar",
-    "enroll_now": "Daftar Sekarang",
-    "like_course": "Sukai Kursus",
-    "liked": "Disukai",
-    "featured": "Unggulan",
-    "enrolled_count": "terdaftar",
-    "reviews": "ulasan",
-    "tab_overview": "Gambaran",
-    "tab_modules": "Modul Pelajaran",
-    "tab_reviews": "Ulasan",
-    "tab_comments": "Komentar",
-    "course_description": "Deskripsi Kursus",
-    "learning_modules": "Modul Pembelajaran",
-    "modules": "Modul",
-    "no_modules": "Belum ada modul tersedia.",
-    "give_rating": "Berikan Rating",
-    "comment_optional": "Komentar (Opsional)",
-    "write_experience": "Tulis pengalaman Anda...",
-    "submit_rating": "Kirim Rating",
-    "no_reviews": "Belum ada ulasan.",
-    "follow_course": "Ikuti Kursus Ini",
-    "login_or_register": "Login atau daftar untuk mendaftar kursus ini..."
+    "next": "Selanjutnya"
   },
   "kms_page": {
     "page_title": "Sistem Manajemen Pengetahuan",
@@ -1179,49 +1103,7 @@
     "no_articles_desc": "Artikel sedang dalam pengembangan, silakan kembali lagi nanti",
     "reset_filter": "Reset Filter",
     "per_page": "Per halaman",
-    "page_info": "{start}-{end} dari {total}",
-    "article_not_found": "Artikel tidak ditemukan",
-    "article_not_found_title": "Artikel Tidak Ditemukan",
-    "article_not_found_desc": "Artikel yang Anda cari tidak tersedia atau telah dihapus.",
-    "attached_document": "Dokumen Terlampir",
-    "open_link": "Buka Link",
-    "google_drive": "Google Drive",
-    "google_drive_help": "File ini disimpan di Google Drive. Pastikan Anda memiliki akses untuk membukanya.",
-    "external_link": "Link Eksternal",
-    "view_all_articles": "Lihat Semua Artikel",
-    "view_other_articles": "Lihat Artikel Lainnya",
-    "link_copied": "Link artikel telah disalin ke clipboard!",
-    "like_error": "Gagal Menyukai",
-    "min_read": "{count} min baca"
-  },
-  "hcdp": {
-    "page_title": "Human Capital Development Program",
-    "page_desc": "Program pelatihan dan pengembangan kompetensi ASN untuk meningkatkan kualitas pelayanan publik",
-    "programs_available": "Program Tersedia",
-    "ongoing": "Sedang Berlangsung",
-    "total_participants": "Total Peserta",
-    "search_placeholder": "Cari program...",
-    "all_categories": "Semua Kategori",
-    "participants": "peserta",
-    "no_programs": "Tidak ada program ditemukan",
-    "try_adjust_filter": "Coba ubah filter atau kata kunci pencarian Anda.",
-    "status_upcoming": "Akan Datang",
-    "status_ongoing": "Berlangsung",
-    "status_completed": "Selesai"
-  },
-  "profile": {
-    "page_title": "Profile Instansi",
-    "page_desc": "Informasi tentang Lembaga Manajemen ASN CORPU",
-    "instructors": "Pengajar",
-    "view_all": "Lihat Semua",
-    "sambutan": "Sambutan & Visi Misi",
-    "sejarah": "Sejarah Corpu",
-    "struktur": "Struktur Organisasi",
-    "personalia": "Personalia",
-    "members": "Personalia",
-    "nip_prefix": "NIP. ",
-    "no_assignment": "Belum ada penugasan",
-    "no_data": "Belum ada data personalia."
+    "page_info": "{start}-{end} dari {total}"
   },
   "sudo_prompt": {
     "title": "Pilih Mode Masuk",

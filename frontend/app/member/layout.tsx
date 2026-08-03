@@ -8,11 +8,9 @@ import { getPublicSettings } from '@/lib/api/profilePublic';
 import { api } from '@/lib/api';
 import { authService } from '@/lib/services';
 import SessionChecker from '@/components/providers/SessionChecker';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { ThemeToggleCompact } from '@/components/ThemeToggle';
 import {
     LayoutDashboard, User, BookOpen, FileText, Settings, LogOut,
-    Search, Menu, X, GraduationCap, BookMarked, ChevronDown, Database
+    Search, Menu, X, GraduationCap, BookMarked
 } from 'lucide-react';
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
@@ -26,9 +24,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
     const [showSearch, setShowSearch] = useState(false);
     const [mobileSidebar, setMobileSidebar] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
-    const [userDropdown, setUserDropdown] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
-    const userMenuRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const sidebarItems = [
@@ -37,7 +33,7 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
         { name: t('member.nav.kms'), href: '/member/kms', icon: BookMarked },
         { name: t('member.nav.berita'), href: '/member/berita', icon: FileText },
         { name: t('member.nav.pelatihan'), href: '/member/pelatihan', icon: GraduationCap },
-        { name: t('member.nav.data_idp'), href: '/member/data-idp', icon: Database },
+        { name: t('member.nav.data_diri'), href: '/member/data-diri', icon: User },
         { name: t('member.nav.setting'), href: '/member/setting', icon: Settings },
     ];
 
@@ -60,9 +56,6 @@ router.push('/');
         const handleClickOutside = (e: MouseEvent) => {
             if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
                 setShowSearch(false);
-            }
-            if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
-                setUserDropdown(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -115,18 +108,18 @@ const handleLogout = async () => {
     const appName = settings.app_name || 'ASN CORPU';
 
     return (
-        <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-slate-50 dark:bg-gradient-to-br dark:from-[#0a1f44] dark:via-[#0d2757] dark:to-[#0a1f44]">
-            {/* Animated background blobs - Midnight Blue Theme */}
+        <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950">
+            {/* Animated background blobs */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
                 <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-200/30 dark:bg-blue-500/10 rounded-full blur-3xl animate-float" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-200/30 dark:bg-blue-600/10 rounded-full blur-3xl animate-float animation-delay-2000" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-100/20 dark:bg-blue-400/5 rounded-full blur-3xl animate-float animation-delay-4000" />
+                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-200/30 dark:bg-indigo-500/10 rounded-full blur-3xl animate-float animation-delay-2000" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-100/20 dark:bg-purple-500/5 rounded-full blur-3xl animate-float animation-delay-4000" />
             </div>
 
-            <SessionChecker timeoutMinutes={30} />
+            <SessionChecker timeoutMinutes={30} showWarning={true} />
 
-            {/* Top Navbar - Midnight Blue Theme */}
-            <header className="sticky top-0 z-50 bg-white/70 dark:bg-[#0d2757]/70 backdrop-blur-xl border-b border-white/20 dark:border-blue-900/30 shadow-lg shadow-black/[0.02] dark:shadow-black/[0.08]">
+            {/* Top Navbar */}
+            <header className="sticky top-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/50 shadow-lg shadow-black/[0.02] dark:shadow-black/[0.08]">
                 <div className="px-4 md:px-6">
                     <div className="flex items-center justify-between h-16 gap-4">
                         {/* Left: Logo + Mobile Toggle */}
@@ -152,7 +145,7 @@ const handleLogout = async () => {
 
                         {/* Center: Search */}
                         <div ref={searchRef} className="flex-1 max-w-xl mx-auto hidden sm:block">
-                            <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-ring/50 focus-within:bg-white/80 dark:focus-within:bg-white/10 border border-white/20 dark:border-white/5 transition-all">
+                            <div className="flex items-center bg-white/50 dark:bg-white/5 backdrop-blur-sm rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-blue-500/50 focus-within:bg-white/80 dark:focus-within:bg-white/10 border border-white/20 dark:border-white/5 transition-all">
                                 <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                                 <input
                                     ref={searchInputRef}
@@ -164,7 +157,7 @@ const handleLogout = async () => {
                                 />
                             </div>
                                 {showSearch && (
-                                    <div className="absolute top-full mt-2 left-0 right-0 bg-white/80 dark:bg-[#0f2847]/80 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/30 dark:border-blue-900/30 overflow-hidden z-50">
+                                    <div className="absolute top-full mt-2 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/30 dark:border-gray-800/30 overflow-hidden z-50">
                                         {searchResults.length === 0 ? (
                                             <div className="px-4 py-6 text-center text-sm text-muted-foreground">
                                                 {t('member.search.no_results', { query: searchQuery })}
@@ -176,7 +169,7 @@ const handleLogout = async () => {
                                             onClick={() => { setShowSearch(false); setSearchQuery(''); }}
                                             className="flex items-center gap-3 px-4 py-3 hover:bg-white/50 dark:hover:bg-white/5 transition-colors border-b border-white/20 dark:border-gray-800/30 last:border-0"
                                         >
-                                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-primary/10 text-primary backdrop-blur-sm">
+                                            <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 bg-blue-100/80 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 backdrop-blur-sm">
                                                 {item._type === 'course' ? 'K' : item._type === 'news' ? 'B' : 'P'}
                                             </div>
                                             <div className="min-w-0 flex-1">
@@ -189,61 +182,18 @@ const handleLogout = async () => {
                             )}
                         </div>
 
-                        {/* Right: Lang + User */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                            <div className="hidden sm:block">
-                                <LanguageSwitcher />
-                            </div>
-
-                            <div ref={userMenuRef} className="relative hidden sm:block">
-                                <button
-                                    onClick={() => setUserDropdown(!userDropdown)}
-                                    className="flex items-center gap-2 bg-white/30 dark:bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20 dark:border-white/5 hover:bg-white/50 dark:hover:bg-white/10 transition-all"
-                                >
-                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
-                                        <span className="text-white text-xs font-bold">
-                                            {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
-                                        </span>
-                                    </div>
-                                    <span className="text-sm font-medium text-foreground truncate max-w-[100px] hidden lg:block">
-                                        {user?.name || user?.username}
+                        {/* Right: Avatar + Name */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="hidden sm:flex items-center gap-2.5 bg-white/30 dark:bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20 dark:border-white/5">
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
+                                    <span className="text-white text-xs font-bold">
+                                        {(user?.name || user?.username || 'U').charAt(0).toUpperCase()}
                                     </span>
-                                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${userDropdown ? 'rotate-180' : ''}`} />
-                                </button>
-
-                                {userDropdown && (
-                                    <div className="absolute top-full right-0 mt-2 w-56 bg-white/80 dark:bg-[#0f2847]/80 backdrop-blur-xl rounded-xl shadow-xl shadow-black/5 border border-white/30 dark:border-blue-900/30 overflow-hidden z-50">
-                                        <div className="px-4 py-3 border-b border-white/20 dark:border-blue-900/30">
-                                            <p className="text-sm font-semibold text-foreground truncate">{user?.name || user?.username}</p>
-                                            <p className="text-xs text-muted-foreground truncate">{user?.email || ''}</p>
-                                        </div>
-                                        <Link
-                                            href="/member/data-diri"
-                                            onClick={() => setUserDropdown(false)}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
-                                        >
-                                            <User className="w-4 h-4 text-muted-foreground" />
-                                            {t('member.nav.data_diri')}
-                                        </Link>
-                                        <div className="flex items-center justify-between px-4 py-2.5 text-sm text-foreground">
-                                            <span className="flex items-center gap-3">
-                                                <User className="w-4 h-4 text-muted-foreground" />
-                                                Tema
-                                            </span>
-                                            <ThemeToggleCompact />
-                                        </div>
-                                        <div className="border-t border-white/20 dark:border-blue-900/30" />
-                                        <button
-                                            onClick={handleLogout}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 w-full transition-colors"
-                                        >
-                                            <LogOut className="w-4 h-4" />
-                                            {t('member.nav.logout')}
-                                        </button>
-                                    </div>
-                                )}
+                                </div>
+                                <span className="text-sm font-medium text-foreground truncate max-w-[120px]">
+                                    {user?.name || user?.username}
+                                </span>
                             </div>
-
                             <button
                                 onClick={() => setMobileMenu(true)}
                                 className="sm:hidden p-2 rounded-xl bg-white/50 dark:bg-white/5 text-muted-foreground hover:bg-white/80 dark:hover:bg-white/10 backdrop-blur-sm transition-all"
@@ -255,12 +205,12 @@ const handleLogout = async () => {
                 </div>
             </header>
 
-            {/* Mobile Menu Overlay - Midnight Blue Theme */}
+            {/* Mobile Menu Overlay */}
             {mobileMenu && (
                 <div className="fixed inset-0 z-50 lg:hidden">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileMenu(false)} />
-                    <div className="absolute top-0 left-0 right-0 bg-white/80 dark:bg-[#0f2847]/80 backdrop-blur-xl shadow-xl rounded-b-2xl border-b border-white/20 dark:border-blue-900/30">
-                        <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-blue-900/30">
+                    <div className="absolute top-0 left-0 right-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-xl rounded-b-2xl border-b border-white/20 dark:border-gray-800/30">
+                        <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-gray-800/30">
                             <span className="font-bold text-foreground">{t('member.nav.menu')}</span>
                             <button onClick={() => setMobileMenu(false)} className="p-1.5 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-all">
                                 <X className="w-5 h-5 text-muted-foreground" />
@@ -290,17 +240,14 @@ const handleLogout = async () => {
                                     />
                                 </div>
                             </div>
-                            <div className="pt-2 flex justify-center">
-                                <LanguageSwitcher />
-                            </div>
                         </div>
                     </div>
                 </div>
             )}
 
             <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-                {/* Left Sidebar (Desktop) - Midnight Blue Theme */}
-                <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-white/20 dark:border-blue-900/30 overflow-y-auto bg-white/50 dark:bg-[#0d2757]/50 backdrop-blur-xl">
+                {/* Left Sidebar (Desktop) */}
+                <aside className="hidden lg:block w-64 flex-shrink-0 border-r border-white/20 dark:border-gray-800/30 overflow-y-auto bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl">
                     <nav className="p-4 space-y-1">
                         {sidebarItems.map(item => (
                             <Link
@@ -308,23 +255,31 @@ const handleLogout = async () => {
                                 href={item.href}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                                     isActive(item.href)
-                                        ? 'bg-primary/10 text-primary border-l-2 border-primary backdrop-blur-sm shadow-sm'
+                                        ? 'bg-blue-100/70 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-l-2 border-blue-500 backdrop-blur-sm shadow-sm'
                                         : 'text-muted-foreground hover:bg-white/50 dark:hover:bg-white/5 hover:text-foreground backdrop-blur-sm'
                                 }`}
                             >
-                                <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
                                 {item.name}
                             </Link>
                         ))}
+                        <div className="border-t border-white/20 dark:border-gray-800/30 my-3" />
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 w-full transition-all backdrop-blur-sm"
+                        >
+                            <LogOut className="w-5 h-5" />
+                            {t('member.nav.logout')}
+                        </button>
                     </nav>
                 </aside>
 
-                {/* Mobile Sidebar Drawer - Midnight Blue Theme */}
+                {/* Mobile Sidebar Drawer */}
                 {mobileSidebar && (
                     <div className="fixed inset-0 z-50 lg:hidden">
                         <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setMobileSidebar(false)} />
-                        <div className="absolute top-0 left-0 bottom-0 w-72 bg-white/80 dark:bg-[#0f2847]/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 dark:border-blue-900/30">
-                            <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-blue-900/30">
+                        <div className="absolute top-0 left-0 bottom-0 w-72 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-2xl shadow-black/10 border-r border-white/20 dark:border-gray-800/30">
+                            <div className="flex items-center justify-between p-4 border-b border-white/20 dark:border-gray-800/30">
                                 <span className="font-bold text-foreground">{t('member.nav.menu')}</span>
                                 <button onClick={() => setMobileSidebar(false)} className="p-1.5 rounded-xl bg-white/50 dark:bg-white/5 hover:bg-white/80 dark:hover:bg-white/10 transition-all">
                                     <X className="w-5 h-5 text-muted-foreground" />
@@ -338,14 +293,22 @@ const handleLogout = async () => {
                                         onClick={() => setMobileSidebar(false)}
                                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                                             isActive(item.href)
-                                                ? 'bg-primary/10 text-primary backdrop-blur-sm shadow-sm'
+                                                ? 'bg-blue-100/70 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 backdrop-blur-sm shadow-sm'
                                                 : 'text-muted-foreground hover:bg-white/50 dark:hover:bg-white/5'
                                         }`}
                                     >
-                                        <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-primary' : 'text-muted-foreground'}`} />
+                                        <item.icon className={`w-5 h-5 ${isActive(item.href) ? 'text-blue-600 dark:text-blue-400' : 'text-muted-foreground'}`} />
                                         {item.name}
                                     </Link>
                                 ))}
+                                <div className="border-t border-white/20 dark:border-gray-800/30 my-3" />
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-500/10 w-full backdrop-blur-sm"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    {t('member.nav.logout')}
+                                </button>
                             </nav>
                         </div>
                     </div>

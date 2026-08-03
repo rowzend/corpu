@@ -54,7 +54,7 @@ export default function LatestCourses() {
         <div className="flex justify-between items-center mb-12">
           <div>
             <div className="inline-block mb-2">
-              <span className="text-sm font-semibold text-primary bg-primary/10 px-4 py-1 rounded-full">
+              <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-4 py-1 rounded-full">
                 📚 Pembelajaran Terkini
               </span>
             </div>
@@ -67,7 +67,7 @@ export default function LatestCourses() {
           </div>
           <Link
             href="/courses"
-            className="hidden md:flex items-center gap-2 text-primary hover:text-primary font-semibold group"
+            className="hidden md:flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold group"
           >
             Lihat Semua
             <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,7 +92,7 @@ export default function LatestCourses() {
               </div>
               <div className="p-6">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
                     {course.category}
                   </span>
                   <span className="text-xs text-muted-foreground">{course.level}</span>
@@ -106,7 +106,7 @@ export default function LatestCourses() {
                 </div>
                 <Link
                   href="/courses"
-                  className="group/btn block w-full text-center bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg"
+                  className="group/btn block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg"
                 >
                   <span className="inline-flex items-center">
                     Lihat Detail
@@ -123,7 +123,7 @@ export default function LatestCourses() {
         <div className="text-center mt-8 md:hidden">
           <Link
             href="/courses"
-            className="text-primary hover:text-primary font-semibold"
+            className="text-blue-600 hover:text-blue-700 font-semibold"
           >
             Lihat Semua Kursus →
           </Link>

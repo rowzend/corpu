@@ -71,16 +71,14 @@ export const brandColors = {
     },
   },
 
-  // Dark mode specific - MIDNIGHT BLUE THEME
+  // Dark mode specific
   dark: {
-    navy: '#0a1f44',      // Midnight blue base (dari gambar 2)
-    midnight: '#0a1f44',  // Midnight blue (bukan black)
-    deepMidnight: '#0d2757', // Deeper midnight blue untuk variasi
-    cardMidnight: '#0f2847', // Card background midnight blue
-    glow: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.15), transparent 70%)', // Blue glow untuk midnight theme
+    navy: '#0d1a36',      // Dark mode accent (from dark mode background)
+    midnight: '#000000',  // Pure black base
+    glow: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%)', // X Organizations top glow
     slate: {
-      800: '#16304F',  // Muted midnight blue
-      900: '#0f2847',  // Deep midnight blue
+      800: '#1e293b',
+      900: '#0f172a',
     },
   },
 
@@ -102,65 +100,65 @@ export const brandColors = {
 // ─── SEMANTIC COLORS ──────────────────────────────────────────────────────────
 export const semanticColors = {
   success: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
-    border: 'border-accent/30',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-700',
+    border: 'border-emerald-300',
     hex: '#10B981',
   },
   warning: {
-    bg: 'bg-primary/10',
-    text: 'text-primary',
-    border: 'border-primary/30',
+    bg: 'bg-amber-100',
+    text: 'text-amber-700',
+    border: 'border-amber-300',
     hex: '#F59E0B',
   },
   error: {
-    bg: 'bg-destructive/10',
-    text: 'text-destructive',
-    border: 'border-destructive/30',
+    bg: 'bg-red-100',
+    text: 'text-red-700',
+    border: 'border-red-300',
     hex: '#EF4444',
   },
   info: {
-    bg: 'bg-primary/10',
-    text: 'text-primary',
-    border: 'border-primary/30',
+    bg: 'bg-blue-100',
+    text: 'text-blue-700',
+    border: 'border-blue-300',
     hex: '#3B82F6',
   },
 };
 
 // ─── CATEGORY COLORS (for tags, badges, labels) ──────────────────────────────
 export const categoryColors = {
-  program: 'bg-primary/10 text-primary border-primary/30',
-  kerjasama: 'bg-accent/10 text-accent border-accent/30',
-  berita: 'bg-secondary/10 text-secondary border-secondary/30',
-  pengumuman: 'bg-destructive/10 text-destructive border-destructive/30',
-  event: 'bg-primary/5 text-primary border-primary/20',
-  lainnya: 'bg-muted text-muted-foreground border-border',
+  program: 'bg-blue-100 text-blue-700 border-blue-300',
+  kerjasama: 'bg-green-100 text-green-700 border-green-300',
+  berita: 'bg-purple-100 text-purple-700 border-purple-300',
+  pengumuman: 'bg-orange-100 text-orange-700 border-orange-300',
+  event: 'bg-pink-100 text-pink-700 border-pink-300',
+  lainnya: 'bg-gray-100 text-gray-700 border-gray-300',
 };
 
 // ─── STATUS COLORS ────────────────────────────────────────────────────────────
 export const statusColors = {
   online: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
-    dot: 'bg-accent',
+    bg: 'bg-green-100',
+    text: 'text-green-600',
+    dot: 'bg-green-500',
     hex: '#10B981',
   },
   offline: {
-    bg: 'bg-destructive/10',
-    text: 'text-destructive',
-    dot: 'bg-destructive',
+    bg: 'bg-red-100',
+    text: 'text-red-600',
+    dot: 'bg-red-500',
     hex: '#EF4444',
   },
   idle: {
-    bg: 'bg-primary/10',
-    text: 'text-primary',
-    dot: 'bg-primary',
+    bg: 'bg-yellow-100',
+    text: 'text-yellow-600',
+    dot: 'bg-yellow-500',
     hex: '#F59E0B',
   },
   pending: {
-    bg: 'bg-muted',
-    text: 'text-muted-foreground',
-    dot: 'bg-muted-foreground',
+    bg: 'bg-gray-100',
+    text: 'text-gray-600',
+    dot: 'bg-gray-500',
     hex: '#6B7280',
   },
 };
@@ -202,23 +200,23 @@ export const roleColors = {
 // ─── COURSE LEVEL COLORS ──────────────────────────────────────────────────────
 export const levelColors = {
   beginner: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
+    bg: 'bg-emerald-100',
+    text: 'text-emerald-700',
     hex: '#10B981',
   },
   intermediate: {
-    bg: 'bg-primary/10',
-    text: 'text-primary',
+    bg: 'bg-blue-100',
+    text: 'text-blue-700',
     hex: '#3B82F6',
   },
   advanced: {
-    bg: 'bg-secondary/10',
-    text: 'text-secondary',
+    bg: 'bg-purple-100',
+    text: 'text-purple-700',
     hex: '#8B5CF6',
   },
   expert: {
-    bg: 'bg-destructive/10',
-    text: 'text-destructive',
+    bg: 'bg-red-100',
+    text: 'text-red-700',
     hex: '#DC2626',
   },
 };
@@ -226,28 +224,28 @@ export const levelColors = {
 // ─── CONTENT TYPE COLORS ──────────────────────────────────────────────────────
 export const contentTypeColors = {
   article: {
-    bg: 'bg-primary/10',
-    text: 'text-primary',
+    bg: 'bg-blue-100',
+    text: 'text-blue-800',
     hex: '#3B82F6',
   },
   video: {
-    bg: 'bg-secondary/10',
-    text: 'text-secondary',
+    bg: 'bg-purple-100',
+    text: 'text-purple-800',
     hex: '#8B5CF6',
   },
   document: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
+    bg: 'bg-green-100',
+    text: 'text-green-800',
     hex: '#10B981',
   },
   link: {
-    bg: 'bg-destructive/10',
-    text: 'text-destructive',
+    bg: 'bg-orange-100',
+    text: 'text-orange-800',
     hex: '#F97316',
   },
   quiz: {
-    bg: 'bg-primary/5',
-    text: 'text-primary',
+    bg: 'bg-amber-100',
+    text: 'text-amber-800',
     hex: '#F59E0B',
   },
 };
@@ -280,17 +278,14 @@ export const gradients = {
   // Light mode background - White base
   lightGlow: '#ffffff',
   
-  // Dark mode background - MIDNIGHT BLUE style (bukan X Organizations cyan)
-  darkHorizon: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59, 130, 246, 0.15), transparent 70%)',
+  // Dark mode background - X Organizations style
+  darkHorizon: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.25), transparent 70%)',
 };
 
 // ─── SPECIAL EFFECTS ──────────────────────────────────────────────────────────
 export const effects = {
-  // Light mode blue glow effect (applied as overlay) - disesuaikan dengan midnight blue theme
-  lightGlowOverlay: 'radial-gradient(circle at top center, rgba(37, 99, 235, 0.08), transparent 70%)',
-  
-  // Dark mode midnight blue glow effect
-  darkGlowOverlay: 'radial-gradient(circle at top center, rgba(59, 130, 246, 0.15), transparent 70%)',
+  // Light mode teal glow effect (applied as overlay)
+  lightGlowOverlay: 'radial-gradient(circle at top center, rgba(56, 193, 182, 0.5), transparent 70%)',
   
   // Blur amount for glow effects
   glowBlur: '80px',
@@ -378,19 +373,19 @@ export function getRandomGradient(): string {
 /**
  * Get header background style (for card headers, hero sections, etc.)
  */
-export function getHeaderBackground(_isDark: boolean) {
+export function getHeaderBackground(isDark: boolean) {
   return {
-    background: 'hsl(var(--card))',
+    background: isDark ? brandColors.dark.midnight : gradients.lightGlow,
   };
 }
 
 /**
  * Get glow overlay style (for card headers, hero sections, etc.)
  */
-export function getGlowOverlay(_isDark: boolean) {
+export function getGlowOverlay(isDark: boolean) {
   return {
-    background: 'radial-gradient(ellipse 80% 60% at 50% 0%, hsl(var(--primary) / 0.15), transparent 70%)',
-    filter: 'blur(60px)',
+    background: isDark ? gradients.darkHorizon : effects.lightGlowOverlay,
+    filter: isDark ? 'none' : `blur(${effects.glowBlur})`,
     backgroundRepeat: 'no-repeat',
   };
 }
@@ -398,27 +393,29 @@ export function getGlowOverlay(_isDark: boolean) {
 /**
  * Get icon/badge background color with theme awareness
  */
-export function getIconBackground(_isDark: boolean, opacity: number = 0.15) {
-  return `hsla(var(--primary) / ${opacity})`;
+export function getIconBackground(isDark: boolean, opacity: number = 0.15) {
+  return isDark 
+    ? 'rgba(255, 255, 255, 0.1)' 
+    : `rgba(56, 193, 182, ${opacity})`;
 }
 
 /**
  * Get icon color with theme awareness
  */
-export function getIconColor(_isDark: boolean) {
-  return 'hsl(var(--primary))';
+export function getIconColor(isDark: boolean) {
+  return isDark ? brandColors.primary.blue[400] : brandColors.primary.teal[700];
 }
 
 /**
  * Get heading text color
  */
-export function getHeadingColor(_isDark: boolean) {
-  return 'hsl(var(--foreground))';
+export function getHeadingColor(isDark: boolean) {
+  return isDark ? brandColors.neutral[100] : brandColors.neutral[900];
 }
 
 /**
  * Get body text color
  */
-export function getBodyTextColor(_isDark: boolean) {
-  return 'hsl(var(--muted-foreground))';
+export function getBodyTextColor(isDark: boolean) {
+  return isDark ? brandColors.neutral[400] : brandColors.neutral[600];
 }

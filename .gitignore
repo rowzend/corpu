@@ -1,10 +1,18 @@
-node_modules/
-.next/
+# Environment
 .env
-.env.*
-*.pyc
-__pycache__/
-staticfiles/
-media/
-*.dump
-*.sql.gz
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

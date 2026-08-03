@@ -14,8 +14,6 @@ const locales = [
   { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
 ];
 
 const themes = [
@@ -270,7 +268,7 @@ export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: 
                                                         : 'text-muted-foreground hover:bg-muted'
                                                 }`}>
                                                 <span>{l.flag}</span>
-                                                <span>{l.code === 'id' ? 'Indo' : l.code === 'en' ? 'Eng' : l.code === 'ar' ? 'العربية' : l.code === 'zh' ? '中文' : '日'}</span>
+                                                <span>{l.label === 'العربية' ? 'العربية' : l.label === 'Indonesia' ? 'Indo' : 'Eng'}</span>
                                             </button>
                                         ))}
                                     </div>

@@ -69,7 +69,7 @@ export default function SudoLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100/50">
-      <SessionChecker timeoutMinutes={30} />
+      <SessionChecker timeoutMinutes={30} showWarning />
 
       <AdminSidebar
         isMobileOpen={mobileSidebarOpen}
