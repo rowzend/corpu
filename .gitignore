@@ -7,4 +7,6 @@ __pycache__/
 staticfiles/
 media/
 *.dump
-*.sql.gz
+*.gz
+*.sql
+.vscode/
