@@ -19,6 +19,7 @@ services:
       - DB_USER=asncorpu_user
       - DB_PASSWORD=asncorpu_secure_password_2026
       - DB_PORT=5432
+      - SECRET_KEY=your-super-secret-key-change-this-in-production-use-django-secret-key-generator
       - REDIS_HOST=redis-main
       - REDIS_PORT=6379
       - REDIS_PASSWORD=5406@Pessel!23#
