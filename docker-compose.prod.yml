@@ -1,6 +1,7 @@
 services:
   # Backend - Django/Python
   asncorpu_backend:
+    image: ghcr.io/rowzend/corpu-backend:latest
     build: ./backend
     container_name: asncorpu_backend_app
     restart: unless-stopped
@@ -56,6 +57,7 @@ services:
 
   # Frontend - Next.js (Production Build)
   asncorpu-frontend:
+    image: ghcr.io/rowzend/corpu-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod

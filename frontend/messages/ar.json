@@ -27,16 +27,16 @@
     "cta_start": "ابدأ التعلم",
     "cta_courses": "استعرض الدورات",
     "badge_platform": "منصة تعلم حديثة للجهاز المدني",
-    "desc": "منصة تعليمية رقمية لتطوير الجهاز المدني للدولة بشكل مهني"
+    "desc": "منصة تعليمية رقمية لتطوير الجهاز المدني للدولة بشكل مهني",
+    "cta_video": "فيديو تعريفي"
   },
   "stats": {
-    "title": "الجهاز المدني المنضم",
-    "subtitle": "الموظفون الذين بدأوا استكشاف تطوير كفاءاتهم",
-    "asn": "الموظفون المسجلون",
-    "courses": "الدورات المتاحة",
-    "certificates": "الشهادات الصادرة",
-    "rating": "تقييم الرضا",
-    "students": "مشارك"
+    "title": "إحصائيات المنصة",
+    "subtitle": "إنجازات وتطور منصة التعلم للموظفين",
+    "courses": "الدورات",
+    "articles": "المقالات",
+    "experts": "الخبراء",
+    "views": "إجمالي المشاهدات"
   },
   "programs": {
     "badge": "البرامج المميزة",
@@ -54,7 +54,8 @@
     "mooc": "MOOC",
     "mooc_desc": "دورة مفتوحة عبر الإنترنت يمكن الوصول إليها في أي وقت ومن أي مكان.",
     "sertifikasi": "الشهادة",
-    "sertifikasi_desc": "برامج الشهادات للاعتراف بكفاءات الجهاز المدني والتحقق منها."
+    "sertifikasi_desc": "برامج الشهادات للاعتراف بكفاءات الجهاز المدني والتحقق منها.",
+    "view_all": "عرض جميع المقالات"
   },
   "courses": {
     "badge": "الدورات الشائعة",
@@ -97,7 +98,8 @@
     "badge": "الشهادات",
     "title": "ماذا",
     "title_highlight": "يقولون",
-    "subtitle": "استمع إلى تجارب الجهاز المدني الذين استفادوا من التعلم في كوربو"
+    "subtitle": "استمع إلى تجارب الجهاز المدني الذين استفادوا من التعلم في كوربو",
+    "no_testimonials": "لا توجد شهادات بعد"
   },
   "news": {
     "badge": "آخر الأخبار",
@@ -105,7 +107,16 @@
     "title_highlight": "الإعلانات",
     "subtitle": "تابع آخر التطورات من الجامعة المؤسسية",
     "view_all": "عرض جميع الأخبار",
-    "read_more": "اقرأ المزيد"
+    "read_more": "اقرأ المزيد",
+    "no_news": "لا توجد أخبار بعد",
+    "page_title": "News & Information",
+    "page_subtitle": "Latest updates on ASN Academy programs, activities, and announcements",
+    "search_placeholder": "Search news...",
+    "no_news_desc": "No news has been published yet.",
+    "news_not_found_title": "News Not Found",
+    "news_not_found_desc": "The news you are looking for is not available.",
+    "back_to_news": "Back to News",
+    "by_author": "By:"
   },
   "cta": {
     "badge": "مستعد لتحسين الكفاءة؟",
@@ -150,7 +161,11 @@
     "no_data": "لا توجد بيانات",
     "retry": "إعادة المحاولة",
     "views": "مشاهدة",
-    "likes": "إعجاب"
+    "likes": "إعجاب",
+    "download": "Download",
+    "share": "Share",
+    "like": "Like",
+    "error_occurred": "An error occurred"
   },
   "auth": {
     "login_title": "تسجيل الدخول",
@@ -161,7 +176,9 @@
     "forgot_password": "نسيت كلمة المرور؟",
     "no_account": "ليس لديك حساب؟",
     "has_account": "لديك حساب بالفعل؟",
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "login_required": "Login Required",
+    "login_required_desc": "Please login first to continue"
   },
   "landing": {
     "trust_cert": "شهادة رسمية",
@@ -992,6 +1009,7 @@
       "berita": "أخبار",
       "pelatihan": "تدريب",
       "data_diri": "البيانات الشخصية",
+      "data_idp": "بيانات IDP",
       "setting": "الإعدادات",
       "settings": "الإعدادات",
       "profile": "الملف الشخصي",
@@ -1031,6 +1049,30 @@
       "type_knowledge": "معرفة",
       "type_course": "دورة",
       "type_news": "أخبار"
+    },
+    "idp": {
+      "title": "إدارة IDP للجهاز المدني",
+      "subtitle": "خطة التطوير الفردي — تخطيط تطوير كفاءات الجهاز المدني",
+      "nama_pegawai": "اسم الموظف",
+      "nip": "NIP",
+      "jabatan": "المنصب",
+      "cari": "البحث عن فترة IDP...",
+      "semua": "الكل",
+      "draft": "مسودة",
+      "proses": "قيد التنفيذ",
+      "disetujui": "معتمد",
+      "ditolak": "مرفوض",
+      "buat_baru": "إنشاء IDP جديد",
+      "kolom_no": "رقم",
+      "kolom_nama": "اسم الموظف",
+      "kolom_nip": "NIP",
+      "kolom_jabatan": "المنصب",
+      "kolom_periode": "فترة IDP",
+      "kolom_status": "الحالة",
+      "kolom_tanggal": "تاريخ الإنشاء",
+      "kolom_aksi": "الإجراء",
+      "lihat": "عرض IDP",
+      "kosong": "لا توجد بيانات IDP"
     }
   },
   "courses_page": {
@@ -1066,7 +1108,41 @@
     "stats_participants": "مشارك",
     "stats_rating": "التقييم",
     "previous": "السابق",
-    "next": "التالي"
+    "next": "التالي",
+    "load_error": "Failed to Load Course",
+    "course_not_found": "Course not found",
+    "enroll_success": "Successfully enrolled in course!",
+    "enroll_error": "Failed to Enroll",
+    "rating_required": "Please select a rating first",
+    "rating_success": "Rating submitted successfully!",
+    "comment_required": "Comment cannot be empty",
+    "comment_success": "Comment submitted successfully!",
+    "login_to_enroll": "Login to Enroll",
+    "browse": "Browse Courses",
+    "courses_available": "{count} courses available",
+    "enrolled_badge": "Enrolled",
+    "continue_learning": "Continue Learning",
+    "enroll_now": "Enroll Now",
+    "like_course": "Like Course",
+    "liked": "Liked",
+    "featured": "Featured",
+    "enrolled_count": "enrolled",
+    "reviews": "reviews",
+    "tab_overview": "Overview",
+    "tab_modules": "Lesson Modules",
+    "tab_reviews": "Reviews",
+    "tab_comments": "Comments",
+    "course_description": "Course Description",
+    "learning_modules": "Learning Modules",
+    "modules": "الوحدات",
+    "no_modules": "No modules available yet.",
+    "give_rating": "Give Rating",
+    "comment_optional": "Comment (Optional)",
+    "write_experience": "Write your experience...",
+    "submit_rating": "Submit Rating",
+    "no_reviews": "No reviews yet.",
+    "follow_course": "Follow This Course",
+    "login_or_register": "Login or register to enroll in this course..."
   },
   "kms_page": {
     "page_title": "نظام إدارة المعرفة",
@@ -1103,7 +1179,49 @@
     "no_articles_desc": "المقالات قيد التطوير، يرجى العودة لاحقاً",
     "reset_filter": "إعادة تعيين التصفية",
     "per_page": "لكل صفحة",
-    "page_info": "{start}-{end} من {total}"
+    "page_info": "{start}-{end} من {total}",
+    "article_not_found": "Article not found",
+    "article_not_found_title": "Article Not Found",
+    "article_not_found_desc": "The article you are looking for is not available or has been deleted.",
+    "attached_document": "Attached Document",
+    "open_link": "Open Link",
+    "google_drive": "Google Drive",
+    "google_drive_help": "This file is stored on Google Drive. Make sure you have access to open it.",
+    "external_link": "External Link",
+    "view_all_articles": "View All Articles",
+    "view_other_articles": "View Other Articles",
+    "link_copied": "Article link has been copied to clipboard!",
+    "like_error": "Failed to Like",
+    "min_read": "{count} min read"
+  },
+  "hcdp": {
+    "page_title": "Human Capital Development Program",
+    "page_desc": "Training and competency development program for ASN to improve public service quality",
+    "programs_available": "Available Programs",
+    "ongoing": "Ongoing",
+    "total_participants": "Total Participants",
+    "search_placeholder": "Search programs...",
+    "all_categories": "All Categories",
+    "participants": "participants",
+    "no_programs": "No programs found",
+    "try_adjust_filter": "Try adjusting your filter or search keywords.",
+    "status_upcoming": "Upcoming",
+    "status_ongoing": "Ongoing",
+    "status_completed": "Completed"
+  },
+  "profile": {
+    "page_title": "Institution Profile",
+    "page_desc": "Information about the ASN CORPU Management Institution",
+    "instructors": "Instructors",
+    "view_all": "View All",
+    "sambutan": "Welcome Speech & Vision Mission",
+    "sejarah": "Corpu History",
+    "struktur": "Organization Structure",
+    "personalia": "Personnel",
+    "members": "Personnel",
+    "nip_prefix": "NIP. ",
+    "no_assignment": "No assignment",
+    "no_data": "No personnel data available."
   },
   "sudo_prompt": {
     "title": "اختيار وضع الدخول",

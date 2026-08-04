@@ -2,31 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Users, Clock, Search, BookOpen, GraduationCap, Play, CheckCircle, Filter } from 'lucide-react';
 import { getCourses } from '@/lib/api/learning';
+import { getLevelColor } from '@/lib/colors';
 import { enrollCourse, getMyCourses } from '@/lib/api/learning';
 import { handleApiError } from '@/lib/api';
 import { showToast, showError } from '@/lib/sweetalert';
 import AuthGuard from '@/components/auth/AuthGuard';
 
-const levelLabels: Record<string, string> = {
-    beginner: 'Pemula',
-    intermediate: 'Menengah',
-    advanced: 'Mahir',
-};
-
-const levelColors: Record<string, string> = {
-    beginner: 'bg-emerald-100 text-emerald-700',
-    intermediate: 'bg-blue-100 text-blue-700',
-    advanced: 'bg-purple-100 text-purple-700',
-};
-
 export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?: string }) {
     const router = useRouter();
+    const t = useTranslations('courses_page');
+    const tc = useTranslations('common');
+
+    const levelLabels: Record<string, string> = {
+        beginner: t('beginner'),
+        intermediate: t('intermediate'),
+        advanced: t('advanced'),
+    };
     const [courses, setCourses] = useState<any[]>([]);
     const [myCourseSlugs, setMyCourseSlugs] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState('');
@@ -56,10 +54,10 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
     const handleEnroll = async (slug: string) => {
         try {
             await enrollCourse(slug);
-            showToast('Berhasil mendaftar kursus!', 'success');
+            showToast(t('enroll_success'), 'success');
             setMyCourseSlugs(prev => new Set(prev).add(slug));
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Mendaftar');
+            showError(handleApiError(error), t('enroll_error'));
         }
     };
 
@@ -71,7 +69,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             </div>
         );
     }
@@ -81,14 +79,14 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
             <div className="space-y-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-card-foreground">Jelajahi Kursus</h1>
-                        <p className="text-muted-foreground mt-1">{filtered.length} kursus tersedia</p>
+                        <h1 className="text-2xl font-bold text-card-foreground">{t('browse')}</h1>
+                        <p className="text-muted-foreground mt-1">{t('courses_available', { count: filtered.length })}</p>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
                             <Input
-                                placeholder="Cari kursus..."
+                                placeholder={t('search_placeholder')}
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="pl-9 w-64"
@@ -102,11 +100,11 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                         onClick={() => setLevel('all')}
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                             level === 'all'
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                                 : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                         }`}
                     >
-                        Semua Level
+                        {t('all')}
                     </button>
                     {(['beginner', 'intermediate', 'advanced'] as const).map((l) => (
                         <button
@@ -114,7 +112,7 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                             onClick={() => setLevel(l)}
                             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                                 level === l
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200'
+                                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                                     : 'bg-card text-muted-foreground hover:bg-muted border border-border'
                             }`}
                         >
@@ -128,9 +126,9 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                         {filtered.map((course) => {
                             const enrolled = myCourseSlugs.has(course.slug);
                             return (
-                                <Card key={course.id} className="hover:shadow-lg transition-all overflow-hidden border border-border hover:border-blue-200 dark:hover:border-blue-800">
+                                <Card key={course.id} className="hover:shadow-lg transition-all overflow-hidden border border-border hover:border-primary/30 dark:hover:border-primary/50">
                                     <div
-                                        className="h-40 bg-gradient-to-br from-blue-500 to-indigo-600 relative cursor-pointer"
+                                        className="h-40 bg-gradient-to-br from-primary to-primary/70 relative cursor-pointer"
                                         onClick={() => router.push(`${basePath}/${course.slug}`)}
                                     >
                                         {course.thumbnail ? (
@@ -141,18 +139,18 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                             </div>
                                         )}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                                        <Badge className={`absolute top-3 left-3 border-0 shadow-lg ${levelColors[course.level] || 'bg-muted text-foreground'}`}>
+                                        <Badge className={`absolute top-3 left-3 border-0 shadow-lg ${getLevelColor(course.level).bg} ${getLevelColor(course.level).text}`}>
                                             {levelLabels[course.level] || course.level}
                                         </Badge>
                                         {enrolled && (
-                                            <Badge className="absolute top-3 right-3 bg-green-500 text-white border-0 shadow-lg">
-                                                <CheckCircle className="w-3 h-3 mr-1" />Terdaftar
+                                            <Badge className="absolute top-3 right-3 bg-accent text-accent-foreground border-0 shadow-lg">
+                                                <CheckCircle className="w-3 h-3 mr-1" />{t('enrolled_badge')}
                                             </Badge>
                                         )}
                                     </div>
                                     <CardContent className="p-5">
                                         <h3
-                                            className="font-semibold text-card-foreground mb-2 line-clamp-2 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                            className="font-semibold text-card-foreground mb-2 line-clamp-2 cursor-pointer hover:text-primary transition-colors"
                                             onClick={() => router.push(`${basePath}/${course.slug}`)}
                                         >
                                             {course.title}
@@ -162,12 +160,12 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                         </p>
                                         <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                                             <div className="flex items-center gap-1.5">
-                                                <BookOpen className="w-4 h-4 text-blue-500" />
-                                                <span>{course.lesson_count || 0} pelajaran</span>
+                                                <BookOpen className="w-4 h-4 text-primary" />
+                                                <span>{course.lesson_count || 0} {t('lessons')}</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <Clock className="w-4 h-4" />
-                                                <span>{course.duration_minutes || 0} menit</span>
+                                                <span>{course.duration_minutes || 0} {t('minutes')}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center justify-between pt-4 border-t border-border">
@@ -189,14 +187,14 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                                                     className="w-full"
                                                     onClick={() => router.push(`${basePath}/${course.slug}/learn`)}
                                                 >
-                                                    <Play className="w-4 h-4 mr-2" />Lanjutkan Belajar
+                                                    <Play className="w-4 h-4 mr-2" />{t('continue_learning')}
                                                 </Button>
                                             ) : (
                                                 <Button
-                                                    className="w-full bg-blue-600 hover:bg-blue-700"
+                                                    className="w-full bg-primary hover:bg-primary/90"
                                                     onClick={() => handleEnroll(course.slug)}
                                                 >
-                                                    <GraduationCap className="w-4 h-4 mr-2" />Daftar Sekarang
+                                                    <GraduationCap className="w-4 h-4 mr-2" />{t('enroll_now')}
                                                 </Button>
                                             )}
                                         </div>
@@ -209,10 +207,10 @@ export default function BrowseCoursesPage({ basePath = '/courses' }: { basePath?
                     <Card>
                         <CardContent className="p-12 text-center">
                             <Search className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                            <h3 className="text-xl font-semibold text-card-foreground mb-2">Kursus Tidak Ditemukan</h3>
-                            <p className="text-muted-foreground mb-6">Coba gunakan kata kunci pencarian yang berbeda</p>
+                            <h3 className="text-xl font-semibold text-card-foreground mb-2">{t('no_results')}</h3>
+                            <p className="text-muted-foreground mb-6">{t('no_results_desc')}</p>
                             <Button variant="outline" onClick={() => { setSearch(''); setLevel('all'); }}>
-                                Reset Filter
+                                {t('reset_filter')}
                             </Button>
                         </CardContent>
                     </Card>

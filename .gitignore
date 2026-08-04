@@ -1,29 +1,12 @@
-# Environment
+node_modules/
+.next/
 .env
-.env.local
-.env.*.local
-
-# Logs
-*.log
-logs/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Python/Django
+.env.*
 *.pyc
 __pycache__/
 staticfiles/
 media/
-
-# Backups
 *.dump
 *.gz
 *.sql
+.vscode/

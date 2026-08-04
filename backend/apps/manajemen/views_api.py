@@ -952,10 +952,11 @@ class ApiDocumentationDeleteAPIView(generics.DestroyAPIView):
 # APP SETTINGS
 # ============================================
 
-class AppSettingsListAPIView(generics.ListAPIView):
+class AppSettingsListAPIView(generics.ListCreateAPIView):
     """
     GET /apicorpu/1.0/settings/
-    Get app settings (public only for non-admin)
+    POST /apicorpu/1.0/settings/
+    Get app settings or create a new setting
     """
     permission_classes = [IsAuthenticated]
     serializer_class = AppSettingsSerializer
@@ -976,6 +977,16 @@ class AppSettingsListAPIView(generics.ListAPIView):
             'data': serializer.data,
             'count': queryset.count()
         })
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({
+            'success': True,
+            'message': 'Setting created successfully',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
 
 
 class AppSettingsUpdateAPIView(APIView):

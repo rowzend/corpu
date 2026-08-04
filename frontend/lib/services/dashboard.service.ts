@@ -79,7 +79,11 @@ export const dashboardService = {
     },
 
     async getUserActivities(limit = 10): Promise<UserActivity[]> {
-        const res = await api.get<{ success: boolean; data: UserActivity[] }>('/dashboard/user-activity/', { limit });
-        return res.data || [];
+        try {
+            const res = await api.get<{ success: boolean; data: UserActivity[] }>('/dashboard/user-activity/', { limit });
+            return res.data || [];
+        } catch {
+            return [];
+        }
     },
 };

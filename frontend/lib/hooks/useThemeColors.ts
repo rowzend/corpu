@@ -17,47 +17,39 @@ import {
 } from '@/lib/colors';
 
 export function useThemeColors() {
-  const { actualTheme, getBackground, getBackgroundGradient, getTextColor, getCardBg, getBorderColor } = useTheme();
+  const { actualTheme } = useTheme();
   
   const isDark = actualTheme === 'dark';
 
   return {
-    // Theme state
     isDark,
     actualTheme,
 
-    // Background colors
-    background: getBackground(),
-    backgroundGradient: getBackgroundGradient(),
+    background: 'hsl(var(--background))',
+    backgroundGradient: 'hsl(var(--background))',
     
-    // Card colors
     card: {
-      bg: getCardBg(),
-      border: getBorderColor(),
-      hover: isDark ? brandColors.neutral[800] : brandColors.neutral[100],
-      bgClass: isDark ? 'bg-gray-900 dark:bg-gray-900' : 'bg-white dark:bg-gray-900',
-      borderClass: isDark ? 'border-gray-800 dark:border-gray-800' : 'border-gray-200 dark:border-gray-800',
-      hoverClass: isDark ? 'hover:bg-gray-800 dark:hover:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800',
+      bg: 'hsl(var(--card))',
+      border: 'hsl(var(--border))',
+      hover: 'hsl(var(--accent))',
+      bgClass: 'bg-card',
+      borderClass: 'border-border',
+      hoverClass: 'hover:bg-muted',
     },
 
-    // Text colors
     text: {
-      primary: getTextColor(),
-      secondary: isDark ? brandColors.neutral[400] : brandColors.neutral[600],
-      muted: isDark ? brandColors.neutral[500] : brandColors.neutral[500],
-      primaryClass: isDark ? 'text-gray-100 dark:text-gray-100' : 'text-gray-900 dark:text-gray-100',
-      secondaryClass: isDark ? 'text-gray-300 dark:text-gray-300' : 'text-gray-600 dark:text-gray-300',
-      mutedClass: isDark ? 'text-gray-400 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400',
+      primary: 'hsl(var(--foreground))',
+      secondary: 'hsl(var(--muted-foreground))',
+      muted: 'hsl(var(--muted-foreground))',
+      primaryClass: 'text-foreground',
+      secondaryClass: 'text-muted-foreground',
+      mutedClass: 'text-muted-foreground',
     },
 
-    // Semantic colors (always the same regardless of theme)
     semantic: semanticColors,
     status: statusColors,
-
-    // Brand colors
     brand: brandColors,
 
-    // Helper functions for common patterns
     header: {
       background: getHeaderBackground(isDark),
       glowOverlay: getGlowOverlay(isDark),

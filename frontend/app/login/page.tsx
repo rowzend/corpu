@@ -226,19 +226,29 @@ export default function LoginPage() {
     const isFormValid = formData.username.trim() && formData.password.trim();
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 dark:from-gray-900 dark:via-indigo-950 dark:to-gray-950 flex items-center justify-center px-4 py-12 relative overflow-hidden">
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 dark:bg-purple-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-                <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 dark:bg-blue-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                <div className="absolute top-40 left-40 w-80 h-80 bg-indigo-500 dark:bg-indigo-900/50 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 relative overflow-hidden">
+            {/* Theme-aware Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* Radial gradient glow - mengikuti theme */}
+                <div 
+                    className="absolute inset-0"
+                    style={{
+                        background: 'radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent 70%)',
+                    }}
+                ></div>
+                
+                {/* Animated floating orbs - mengikuti theme colors */}
+                <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ backgroundColor: 'hsl(var(--primary) / 0.15)' }}></div>
+                <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ backgroundColor: 'hsl(var(--primary) / 0.12)', animationDelay: '1s' }}></div>
+                <div className="absolute top-40 left-40 w-80 h-80 rounded-full filter blur-3xl opacity-30 animate-pulse" style={{ backgroundColor: 'hsl(var(--secondary) / 0.12)', animationDelay: '2s' }}></div>
 
-                {/* Floating Particles */}
+                {/* Floating Particles - mengikuti theme */}
                 {particles.map((particle, i) => (
                     <div
                         key={i}
-                        className="absolute w-2 h-2 bg-white rounded-full opacity-20"
+                        className="absolute w-2 h-2 rounded-full opacity-30"
                         style={{
+                            backgroundColor: 'hsl(var(--primary) / 0.4)',
                             left: `${particle.left}%`,
                             top: `${particle.top}%`,
                             animation: `float ${particle.duration}s ease-in-out infinite`,
@@ -253,23 +263,29 @@ export default function LoginPage() {
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center justify-center space-x-3 mb-6 group">
                         {settings.logo ? (
-                            <img src={settings.logo} alt={settings.app_name || 'Logo'} className="h-16 w-auto" />
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl group-hover:bg-primary/30 transition-all duration-300"></div>
+                                <img src={settings.logo} alt={settings.app_name || 'Logo'} className="h-16 w-auto relative z-10 transform group-hover:scale-110 transition-transform duration-300" />
+                            </div>
                         ) : (
-                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                <span className="text-blue-600 font-bold text-3xl">A</span>
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl group-hover:bg-primary/30 transition-all duration-300"></div>
+                                <div className="relative z-10 w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center shadow-2xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                                    <svg className="w-8 h-8 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                    </svg>
+                                </div>
                             </div>
                         )}
-                        <span className="text-3xl font-bold text-white drop-shadow-lg">{settings.app_name || 'ASN Academy'}</span>
                     </Link>
-                    <div className="space-y-2">
-                        <h1 className="text-4xl font-bold text-white drop-shadow-lg">Selamat Datang Kembali</h1>
-                        <p className="text-blue-100 text-lg">Masuk untuk melanjutkan pembelajaran Anda</p>
+                    <div className="space-y-1">
+                        <p className="text-muted-foreground text-sm">{settings.app_name || 'ASN Academy'}</p>
                     </div>
                 </div>
 
                 {/* Hint Message */}
                 {showHint && (
-                    <div className="mb-4 bg-yellow-400 dark:bg-yellow-500/20 text-yellow-900 dark:text-yellow-200 px-4 py-3 rounded-xl shadow-lg animate-bounce-in flex items-center">
+                    <div className="mb-4 bg-accent/20 text-accent px-4 py-3 rounded-xl shadow-lg animate-bounce-in flex items-center">
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
@@ -278,11 +294,51 @@ export default function LoginPage() {
                 )}
 
                 {/* Login Form Card */}
-                <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 dark:bg-gray-800/95 dark:border-gray-700">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Error Message with Animation */}
+                <div className="bg-card/95 backdrop-blur-lg rounded-3xl shadow-2xl overflow-hidden border border-border">
+                    {/* Tab Navigation */}
+                    <div className="flex border-b border-border bg-muted/30">
+                        <button
+                            type="button"
+                            className="flex-1 px-6 py-4 text-sm font-semibold text-primary bg-card border-b-2 border-primary flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                            </svg>
+                            Masuk
+                        </button>
+                        <button
+                            type="button"
+                            disabled
+                            className="flex-1 px-6 py-4 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-not-allowed opacity-50 flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            Daftar
+                        </button>
+                        <button
+                            type="button"
+                            disabled
+                            className="flex-1 px-6 py-4 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-not-allowed opacity-50 flex items-center justify-center gap-2"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Status
+                        </button>
+                    </div>
+
+                    <div className="p-8">
+                        {/* Page Title */}
+                        <div className="mb-8 text-center">
+                            <h2 className="text-2xl font-bold text-foreground mb-2">Masuk ke Sistem Informasi</h2>
+                            <p className="text-sm text-muted-foreground">Masukkan email atau username dan password Anda</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Error Message with Animation */}
                         {error && (
-                            <div className="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg animate-shake">
+                            <div className="bg-destructive/10 border-l-4 border-destructive text-destructive px-4 py-3 rounded-lg animate-shake">
                                 <div className="flex items-center">
                                     <svg className="w-5 h-5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -294,12 +350,15 @@ export default function LoginPage() {
 
                         {/* Username Field with Icon */}
                         <div className="group">
-                            <label htmlFor="username" className="block text-sm font-semibold text-foreground mb-2">
-                                Username
+                            <label htmlFor="username" className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Email atau Username
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                 </div>
@@ -308,7 +367,7 @@ export default function LoginPage() {
                                     id="username"
                                     value={formData.username}
                                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                                    className="w-full pl-12 pr-4 py-3 border-2 border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-muted focus:bg-card placeholder:text-muted-foreground"
+                                    className="w-full pl-12 pr-4 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-card dark:bg-card hover:bg-muted/50 focus:bg-card placeholder:text-muted-foreground text-foreground outline-none"
                                     placeholder="Masukkan username Anda"
                                     required
                                     disabled={isLoading}
@@ -318,12 +377,15 @@ export default function LoginPage() {
 
                         {/* Password Field with Toggle */}
                         <div className="group">
-                            <label htmlFor="password" className="block text-sm font-semibold text-foreground mb-2">
+                            <label htmlFor="password" className="flex items-center gap-2 text-sm font-semibold text-foreground mb-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
                                 Password
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                     </svg>
                                 </div>
@@ -335,7 +397,7 @@ export default function LoginPage() {
                                         setFormData({ ...formData, password: e.target.value });
                                         setError('');
                                     }}
-                                    className="w-full pl-12 pr-12 py-3 border-2 border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-muted focus:bg-card placeholder:text-muted-foreground"
+                                    className="w-full pl-12 pr-12 py-3.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-card dark:bg-card hover:bg-muted/50 focus:bg-card placeholder:text-muted-foreground text-foreground outline-none"
                                     placeholder="Masukkan password Anda"
                                     required
                                     disabled={isLoading}
@@ -343,7 +405,8 @@ export default function LoginPage() {
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-muted-foreground hover:text-primary transition-colors duration-200"
+                                    tabIndex={-1}
                                 >
                                     {showPassword ? (
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,21 +423,21 @@ export default function LoginPage() {
                         </div>
 
                         {/* Remember Me & Forgot Password */}
-                        <div className="flex items-center justify-between">
-                            <label className="flex items-center group cursor-pointer">
+                        <div className="flex items-center justify-between pt-2">
+                            <label className="flex items-center group cursor-pointer select-none">
                                 <input
                                     type="checkbox"
-                                    className="w-4 h-4 text-blue-600 border-border rounded focus:ring-blue-500 cursor-pointer"
+                                    className="w-4 h-4 text-primary bg-background border-input rounded focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all"
                                 />
                                 <span className="ml-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors">Ingat saya</span>
                             </label>
-                            <span className="text-sm text-muted-foreground cursor-not-allowed">
+                            <Link href="#" className="text-sm text-primary hover:text-primary/80 font-medium transition-colors cursor-not-allowed pointer-events-none opacity-50">
                                 Lupa password?
-                            </span>
+                            </Link>
                         </div>
 
                         {/* Submit Button with Running Animation */}
-                        <div className="relative">
+                        <div className="relative pt-2">
                             <button
                                 ref={buttonRef}
                                 type="submit"
@@ -383,8 +446,8 @@ export default function LoginPage() {
                                 onTouchStart={handleButtonHover}
                                 className={`group relative w-full font-semibold py-4 rounded-xl transition-all duration-300 shadow-lg overflow-hidden ${
                                     isFormValid 
-                                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer' 
-                                        : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white cursor-not-allowed'
+                                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-2xl hover:shadow-primary/30 transform hover:-translate-y-0.5 cursor-pointer active:scale-[0.98]' 
+                                        : 'bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60'
                                 } ${isButtonRunning ? 'animate-run-away' : ''}`}
                                 style={{
                                     transform: isButtonRunning ? `translate(${buttonPosition.x}px, ${buttonPosition.y}px)` : 'none',
@@ -393,7 +456,7 @@ export default function LoginPage() {
                                 <span className="relative z-10 flex items-center justify-center">
                                     {isLoading ? (
                                         <>
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary-foreground" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
@@ -413,6 +476,9 @@ export default function LoginPage() {
                                         </>
                                     ) : (
                                         <>
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                            </svg>
                                             Masuk
                                             <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
@@ -420,43 +486,41 @@ export default function LoginPage() {
                                         </>
                                     )}
                                 </span>
-                                {isFormValid && !isLoading && (
-                                    <span className="absolute inset-0 bg-gradient-to-r from-blue-700 to-indigo-700 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
+                                {isFormValid && !isLoading && !isButtonRunning && (
+                                    <span className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
                                 )}
                             </button>
                         </div>
                     </form>
 
-                    {/* Divider */}
-                    <div className="relative my-6">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-border"></div>
-                        </div>
-                        <div className="relative flex justify-center text-sm">
-                            <span className="px-4 bg-card text-muted-foreground">atau</span>
-                        </div>
+                    {/* Footer Actions - Call Center & Back to Home */}
+                    <div className="mt-8 pt-6 border-t border-border flex items-center justify-center gap-6">
+                        <button 
+                            type="button"
+                            disabled
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-not-allowed opacity-50"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            Call Center
+                        </button>
+                        <div className="w-px h-4 bg-border"></div>
+                        <button 
+                            type="button"
+                            disabled
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-not-allowed opacity-50"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            Kembali ke Beranda
+                        </button>
                     </div>
-
-                    {/* Register Link */}
-                    <div className="text-center">
-                        <p className="text-sm text-muted-foreground">
-                            Belum punya akun?{' '}
-                            <span className="text-muted-foreground cursor-not-allowed font-semibold">
-                                Daftar sekarang
-                            </span>
-                        </p>
                     </div>
                 </div>
 
-                {/* Back to Home */}
-                <div className="text-center mt-6">
-                    <Link href="/" className="inline-flex items-center text-sm text-white hover:text-blue-100 transition-colors group">
-                        <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Kembali ke Beranda
-                    </Link>
-                </div>
+                {/* Back to Home - Removed duplicate, now inside card */}
             </div>
 
             {showSudoPrompt && sudoUser && (

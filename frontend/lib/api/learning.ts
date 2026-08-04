@@ -13,6 +13,7 @@ export interface Course {
   duration_minutes: number;
   status: 'draft' | 'published' | 'archived';
   is_featured: boolean;
+  category?: { id: number; name: string; slug: string; parent?: number; parent_name?: string } | null;
   instructor: { id: number; username: string; first_name?: string; last_name?: string };
   enrolled_count: number;
   lesson_count: number;

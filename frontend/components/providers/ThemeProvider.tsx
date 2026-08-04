@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useLayoutEffect, useState, ReactNode } from 'react';
-import { brandColors, gradients } from '@/lib/colors';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -113,23 +112,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Theme-aware helper functions
   const getBackground = () => {
-    return actualTheme === 'dark' ? brandColors.dark.midnight : '#ffffff';
+    return 'hsl(var(--background))';
   };
 
   const getBackgroundGradient = () => {
-    return actualTheme === 'dark' ? gradients.darkHorizon : gradients.lightGlow;
+    return 'hsl(var(--background))';
   };
 
   const getTextColor = () => {
-    return actualTheme === 'dark' ? brandColors.neutral[50] : brandColors.neutral[900];
+    return 'hsl(var(--foreground))';
   };
 
   const getCardBg = () => {
-    return actualTheme === 'dark' ? brandColors.neutral[900] : brandColors.neutral[50];
+    return 'hsl(var(--card))';
   };
 
   const getBorderColor = () => {
-    return actualTheme === 'dark' ? brandColors.neutral[800] : brandColors.neutral[200];
+    return 'hsl(var(--border))';
   };
 
   return (
@@ -143,42 +142,42 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       getCardBg,
       getBorderColor
     }}>
-      {/* Theme Background Container - uses CSS dark: selector to prevent flash */}
+      {/* Theme Background Container */}
       <div className="min-h-screen w-full relative overflow-hidden">
-        {/* Light Mode Background - shown by default, hidden when html.dark exists */}
+        {/* Light Mode Background */}
         <div
           className="absolute inset-0 z-0 transition-opacity duration-500 opacity-100 dark:opacity-0"
           style={{
-            background: gradients.lightGlow,
+            background: 'hsl(var(--background))',
           }}
           suppressHydrationWarning
         >
-          {/* Teal glow overlay */}
+          {/* Primary glow overlay */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'radial-gradient(circle at top center, rgba(56, 193, 182, 0.5), transparent 70%)',
+              background: 'radial-gradient(circle at top center, hsl(var(--accent) / 0.3), transparent 70%)',
               filter: 'blur(80px)',
               backgroundRepeat: 'no-repeat',
             }}
           />
         </div>
 
-        {/* Dark Mode Background - hidden by default, shown when html.dark exists */}
+        {/* Dark Mode Background */}
         <div
           className="absolute inset-0 z-0 transition-opacity duration-500 opacity-0 dark:opacity-100"
           style={{
-            background: '#000000',
+            background: 'hsl(var(--background))',
           }}
           suppressHydrationWarning
         >
-          {/* Blue top glow overlay with blur */}
+          {/* Primary top glow overlay */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(120, 180, 255, 0.45), transparent 70%)',
+              background: 'radial-gradient(ellipse 80% 60% at 50% 0%, hsl(var(--primary) / 0.3), transparent 70%)',
               filter: 'blur(60px)',
               backgroundRepeat: 'no-repeat',
             }}

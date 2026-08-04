@@ -42,6 +42,19 @@ interface BrandItem {
   updated_at: string;
 }
 
+interface PositionItem {
+  id: number;
+  name: string;
+  description: string | null;
+  parent: number | null;
+  parent_name: string | null;
+  order: number;
+  is_active: boolean;
+  children: PositionItem[];
+  created_at: string;
+  updated_at: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -83,6 +96,12 @@ export async function getProfileSections(): Promise<ProfileSection[]> {
 export async function getPersonalia(): Promise<PersonaliaItem[]> {
   const res = await fetch(`${getBaseURL()}/profile/personalia/`);
   const json: ApiResponse<PersonaliaItem[]> = await res.json();
+  return json.data ?? [];
+}
+
+export async function getPositions(): Promise<PositionItem[]> {
+  const res = await fetch(`${getBaseURL()}/profile/positions/`);
+  const json: ApiResponse<PositionItem[]> = await res.json();
   return json.data ?? [];
 }
 
@@ -186,7 +205,7 @@ export async function getBrandById(id: number): Promise<BrandItem> {
 }
 
 export { photoUrl };
-export type { ProfileSection, PersonaliaItem, BrandItem };
+export type { ProfileSection, PersonaliaItem, PositionItem, BrandItem };
 
 // Public Settings (key-value map)
 export async function getPublicSettings(): Promise<Record<string, string>> {

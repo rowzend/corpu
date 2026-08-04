@@ -181,7 +181,7 @@ export default function Instructors() {
       <section className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-blue-700 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-primary mb-4">
               Profil Pengajar
             </h2>
           </div>
@@ -219,7 +219,7 @@ export default function Instructors() {
             <>
               <button
                 onClick={prevSlide}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 -ml-4"
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 -ml-4"
                 aria-label="Previous"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -229,7 +229,7 @@ export default function Instructors() {
 
               <button
                 onClick={nextSlide}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 -mr-4"
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-primary hover:bg-primary/90 text-primary-foreground p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 -mr-4"
                 aria-label="Next"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -285,7 +285,7 @@ export default function Instructors() {
                     {instructor.name}
                   </h3>
                   {(instructor as any).unit_kerja && (
-                    <div className="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-semibold mb-3">
+                    <div className="inline-block bg-primary/10 text-primary px-4 py-1 rounded-full text-sm font-semibold mb-3">
                       {(instructor as any).unit_kerja}
                     </div>
                   )}
@@ -306,7 +306,7 @@ export default function Instructors() {
                   onClick={() => setCurrentIndex(index)}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     index === currentIndex
-                      ? 'bg-blue-600 w-8'
+                      ? 'bg-primary w-8'
                       : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
