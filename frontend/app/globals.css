@@ -4,13 +4,13 @@
 
 @layer base {
   :root {
-    /* Light mode colors */
-    --background: 0 0% 100%; /* white #ffffff */
-    --foreground: 220 13% 13%; /* gray-900 #111827 */
+    /* Light Glow — clean, bright, airy */
+    --background: 0 0% 98%; /* Light gray background #FAFAFA */
+    --foreground: 222 47% 11%; /* Dark navy text #0B1426 */
     --card: 0 0% 100%; /* white */
-    --card-foreground: 220 13% 13%; /* gray-900 */
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover-foreground: 222 47% 11%;
     --primary: 217 91% 60%; /* blue-600 #2563eb */
     --primary-foreground: 0 0% 100%;
     --secondary: 173 64% 41%; /* teal-600 #0d9488 */
@@ -22,33 +22,33 @@
     --destructive: 0 84% 60%; /* red-600 #dc2626 */
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%; /* gray-200 #e5e7eb */
-    --input: 214 32% 91%; /* gray-200 */
+    --input: 214 32% 91%;
     --ring: 217 91% 60%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    /* Dark mode colors - X Organizations style */
-    --background: 225 15% 8%;
-    --foreground: 210 40% 98%; /* gray-50 #f9fafb */
-    --card: 225 15% 12%;
+    /* Dark mode colors - MIDNIGHT BLUE THEME with GLASSMORPHISM */
+    --background: 220 60% 8%;        /* Midnight Blue #0A1F44 */
+    --foreground: 210 40% 98%;       /* Almost white with blue tint */
+    --card: 220 55% 18%;             /* Lighter card for glassmorphism #1E3A5F */
     --card-foreground: 210 40% 98%;
-    --popover: 225 15% 12%;
+    --popover: 220 55% 18%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%; /* blue-600 stays bright */
+    --primary: 217 91% 60%;          /* Bright blue #2563EB */
     --primary-foreground: 0 0% 100%;
-    --secondary: 173 64% 41%; /* teal-600 */
+    --secondary: 173 80% 45%;        /* Vibrant teal */
     --secondary-foreground: 0 0% 100%;
-    --muted: 225 15% 16%;
-    --muted-foreground: 215 14% 64%; /* gray-400 */
-    --accent: 173 80% 40%; /* teal-500 */
+    --muted: 220 50% 22%;            /* Lighter muted for glassmorphism #2A4A6F */
+    --muted-foreground: 215 20% 80%; /* Lighter text */
+    --accent: 142 76% 36%;           /* Green accent #059669 */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%; /* red-700 */
+    --destructive: 0 72% 51%;        /* Vibrant red #E11D48 */
     --destructive-foreground: 0 0% 100%;
-    --border: 225 15% 18%;
-    --input: 225 15% 16%;
+    --border: 220 45% 25%;           /* Lighter border #2F5178 */
+    --input: 220 50% 20%;
     --ring: 217 91% 60%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -69,6 +69,38 @@
   .animation-delay-4000 {
     animation-delay: 4s;
   }
+
+  /* Glassmorphism effect */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Glow effect on hover */
+  .glow-on-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .glow-on-hover:hover {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.4),
+                0 0 40px rgba(37, 99, 235, 0.2);
+  }
+
+  /* Elevated card effect */
+  .card-elevated {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-elevated:hover {
+    transform: translateY(-8px) scale(1.02);
+  }
+}
+
+/* Hero section dark mode gradient */
+.dark .hero-section {
+  background: radial-gradient(circle at 70% 30%, #002c6c 0%, #00143a 50%, #00091d 100%);
 }
 
 /* Custom Animations */
@@ -125,6 +157,78 @@
   }
 }
 
+/* Twinkle animation untuk bintang */
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Sparkle animation untuk bintang kecil */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* New: Pulse glow animation untuk accent elements */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.6),
+                0 0 30px rgba(37, 99, 235, 0.4);
+  }
+}
+
+/* New: Slide up reveal animation */
+@keyframes slideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* New: Scale bounce animation */
+@keyframes scaleBounce {
+  0% {
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* New: Rotate fade animation */
+@keyframes rotateFadeIn {
+  0% {
+    opacity: 0;
+    transform: rotate(-5deg) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -143,6 +247,30 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+.animate-pulseGlow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+.animate-scaleBounce {
+  animation: scaleBounce 0.5s ease-out;
+}
+
+.animate-rotateFadeIn {
+  animation: rotateFadeIn 0.6s ease-out;
 }
 
 /* Smooth Scrolling */
@@ -205,4 +333,106 @@ select {
 input::placeholder,
 textarea::placeholder {
   color: hsl(var(--muted-foreground));
+}
+
+/* ==================== PROFESSIONAL CARD ANIMATIONS ==================== */
+
+/* Gentle floating animation for cards */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Slow floating animation for main/hero cards */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Pulse animation with slower pace */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* Slide up with fade animation */
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Rotate in animation */
+@keyframes rotate-in {
+  0% {
+    opacity: 0;
+    transform: rotate(-10deg) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* Apply animations */
+.animate-float-gentle {
+  animation: float-gentle 4s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s ease-out forwards;
+}
+
+.animate-rotate-in {
+  animation: rotate-in 0.7s ease-out forwards;
+}
+
+/* Hover effects for cards */
+.card-hover-lift {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-lift:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.3);
+}
+
+/* Glassmorphism card effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-card {
+  background: rgba(30, 58, 95, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }

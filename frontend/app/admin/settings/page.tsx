@@ -54,6 +54,10 @@ interface SystemSettings {
     contact_address: string;
     contact_postal_code: string;
     contact_website: string;
+    hero_title1: string;
+    hero_title2: string;
+    hero_title3: string;
+    hero_subtitle: string;
 }
 
 interface SettingMetadata {
@@ -90,7 +94,11 @@ export default function SettingsPage() {
         contact_fax: '',
         contact_address: '',
         contact_postal_code: '',
-        contact_website: ''
+        contact_website: '',
+        hero_title1: 'Pesisir Selatan',
+        hero_title2: 'Corporate University',
+        hero_title3: '',
+        hero_subtitle: 'Digital learning platform for capacity building of professional, competent, and high-integrity State Civil Apparatus.'
     });
 
     const [loading, setLoading] = useState(false);
@@ -225,7 +233,7 @@ export default function SettingsPage() {
         try {
             const settingsToUpdate: Record<string, any> = {};
             Object.entries(settings).forEach(([key, value]) => {
-                if (availableSettings.has(key)) {
+                if (availableSettings.has(key) || key.startsWith('hero_title') || key === 'hero_subtitle') {
                     settingsToUpdate[key] = value;
                 }
             });
@@ -235,8 +243,13 @@ export default function SettingsPage() {
                 return;
             }
 
-            await batchUpdateSettings(settingsToUpdate);
-            showToast(t('save_success'), 'success');
+            const result = await batchUpdateSettings(settingsToUpdate);
+            if (result.failed && result.failed.length > 0) {
+                console.error('Failed settings:', result.failed);
+                showToast(result.message, 'warning');
+            } else {
+                showToast(t('save_success'), 'success');
+            }
             await loadSettings();
         } catch (error: any) {
             showError(error.message || t('save_failed'));
@@ -820,6 +833,34 @@ export default function SettingsPage() {
                                                         <p className="text-xs mt-1">{t('hero_add')}</p>
                                                     </div>
                                                 )}
+                                            </div>
+                                        </div>
+
+                                        {/* Hero Text Settings */}
+                                        <div className="pt-6 border-t border-border">
+                                            <h3 className="text-base font-semibold text-card-foreground mb-1">Hero Title & Subtitle</h3>
+                                            <p className="text-xs text-muted-foreground mb-4">Judul dan deskripsi yang tampil di hero section landing page.</p>
+                                            <div className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-foreground">Hero Title (Baris 1)</Label>
+                                                    <Input value={settings.hero_title1} onChange={e => setSettings(s => ({ ...s, hero_title1: e.target.value }))}
+                                                        placeholder="Pesisir Selatan" className={inputCls} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-foreground">Hero Title (Baris 2 — highlighted)</Label>
+                                                    <Input value={settings.hero_title2} onChange={e => setSettings(s => ({ ...s, hero_title2: e.target.value }))}
+                                                        placeholder="Corporate University" className={inputCls} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-foreground">Hero Title (Baris 3 — optional)</Label>
+                                                    <Input value={settings.hero_title3} onChange={e => setSettings(s => ({ ...s, hero_title3: e.target.value }))}
+                                                        placeholder="(opsional)" className={inputCls} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-sm font-medium text-foreground">Hero Subtitle</Label>
+                                                    <Textarea value={settings.hero_subtitle} onChange={e => setSettings(s => ({ ...s, hero_subtitle: e.target.value }))}
+                                                        placeholder="Digital learning platform..." rows={3} className={inputCls} />
+                                                </div>
                                             </div>
                                         </div>
 

@@ -4,13 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Calendar, Eye, ArrowRight, Newspaper } from 'lucide-react';
 import { newsService } from '@/lib/services';
-
-const categoryColors: Record<string, string> = {
-    Program: 'bg-blue-100 text-blue-700',
-    Kerjasama: 'bg-green-100 text-green-700',
-    Event: 'bg-purple-100 text-purple-700',
-    Pengumuman: 'bg-yellow-100 text-yellow-700',
-};
+import { getCategoryColor } from '@/lib/colors';
 
 const defaultNews = [
     { id: 1, title: 'Peluncuran Program Pelatihan Digital Leadership 2024', excerpt: 'ASN Academy meluncurkan program pelatihan kepemimpinan digital untuk meningkatkan kompetensi ASN di era transformasi digital.', category: 'Program', image: '📢' },
@@ -52,7 +46,7 @@ export default function LatestNews() {
                 <div className="flex justify-between items-center mb-12">
                     <div>
                         <div className="inline-block mb-2">
-                            <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full">
+                            <span className="text-sm font-semibold text-primary bg-primary/10 px-4 py-1 rounded-full">
                                 📰 Informasi Terbaru
                             </span>
                         </div>
@@ -61,7 +55,7 @@ export default function LatestNews() {
                     </div>
                     <Link
                         href="/berita"
-                        className="hidden md:flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold group"
+                        className="hidden md:flex items-center gap-2 text-primary hover:text-primary font-semibold group"
                     >
                         Lihat Semua
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -84,7 +78,7 @@ export default function LatestNews() {
                             </div>
                             <div className="p-6">
                                 <div className="flex items-center justify-between mb-3">
-                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${categoryColors[item.category] || 'bg-muted text-foreground'}`}>
+                                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getCategoryColor(item.category) || 'bg-muted text-foreground'}`}>
                                         {item.category}
                                     </span>
                                     {item.published_at && (
@@ -98,7 +92,7 @@ export default function LatestNews() {
                                 <p className="text-muted-foreground mb-4 line-clamp-3">{item.excerpt || item.content?.substring(0, 200)}</p>
                                 <Link
                                     href={`/berita/${item.slug || item.id}`}
-                                    className="group/link inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                                    className="group/link inline-flex items-center text-primary hover:text-primary font-semibold transition-colors"
                                 >
                                     Baca Selengkapnya
                                     <ArrowRight className="w-4 h-4 ml-1 group-hover/link:translate-x-2 transition-transform duration-300" />
@@ -109,7 +103,7 @@ export default function LatestNews() {
                 </div>
 
                 <div className="text-center mt-8 md:hidden">
-                    <Link href="/berita" className="text-blue-600 hover:text-blue-700 font-semibold">
+                    <Link href="/berita" className="text-primary hover:text-primary font-semibold">
                         Lihat Semua Berita →
                     </Link>
                 </div>

@@ -14,7 +14,7 @@ services:
       - "8000"
     environment:
       - DB_ENGINE=django.db.backends.postgresql
-      - DB_HOST=postgres-shared
+      - DB_HOST=postgres-main
       - DB_NAME=asncorpu_backend_db
       - DB_USER=asncorpu_user
       - DB_PASSWORD=asncorpu_secure_password_2026

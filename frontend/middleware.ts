@@ -84,10 +84,10 @@ export function middleware(request: NextRequest) {
   // Set default locale cookie if not present
   const response = NextResponse.next();
   const locale = request.cookies.get('NEXT_LOCALE')?.value;
-  if (!locale || !['id', 'en', 'ar'].includes(locale)) {
+  if (!locale || !['id', 'en', 'ar', 'zh', 'ja'].includes(locale)) {
     const acceptLang = request.headers.get('Accept-Language') || '';
     const preferred = acceptLang.split(',')[0]?.split('-')[0];
-    const detected = preferred && ['id', 'en', 'ar'].includes(preferred) ? preferred : 'id';
+    const detected = preferred && ['id', 'en', 'ar', 'zh', 'ja'].includes(preferred) ? preferred : 'id';
     response.cookies.set('NEXT_LOCALE', detected, { path: '/', maxAge: 365 * 24 * 60 * 60 });
   }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,9 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
     const [userRating, setUserRating] = useState(0);
     const [userComment, setUserComment] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const t = useTranslations('courses_page');
+    const tc = useTranslations('common');
+    const ta = useTranslations('auth');
 
     useEffect(() => {
         setIsAuthenticated(authService.isAuthenticated());
@@ -56,7 +60,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
             const commentsData = await getComments({ course_slug: slug }).catch(() => ({ results: [] }));
             setComments(commentsData?.results || []);
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Load Kursus');
+            showError(handleApiError(error), t('load_error'));
         } finally {
             setLoading(false);
         }
@@ -65,10 +69,10 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
     const requireAuth = () => {
         if (!authService.isAuthenticated()) {
             showConfirm(
-                'Silakan login terlebih dahulu untuk menggunakan fitur ini.',
-                'Login Diperlukan',
-                'Login',
-                'Batal'
+                ta('login_required_desc'),
+                ta('login_required'),
+                ta('login_submit'),
+                tc('cancel')
             ).then((confirmed) => {
                 if (confirmed) {
                     router.push('/login');
@@ -83,10 +87,10 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
         if (!requireAuth()) return;
         try {
             await enrollCourse(slug);
-            showToast('Berhasil mendaftar kursus!', 'success');
+            showToast(t('enroll_success'), 'success');
             setIsEnrolled(true);
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Mendaftar');
+            showError(handleApiError(error), t('enroll_error'));
         }
     };
 
@@ -100,40 +104,40 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
             }
             setIsLiked(!isLiked);
         } catch (error) {
-            showError(handleApiError(error), 'Gagal');
+            showError(handleApiError(error), tc('error_occurred'));
         }
     };
 
     const handleSubmitRating = async () => {
         if (!requireAuth()) return;
         if (userRating === 0) {
-            showError('Pilih rating terlebih dahulu', 'Error');
+            showError(t('rating_required'), tc('error_occurred'));
             return;
         }
         try {
             await createRating({ course: course.id, rating: userRating, comment: userComment });
-            showToast('Rating berhasil dikirim!', 'success');
+            showToast(t('rating_success'), 'success');
             setUserRating(0);
             setUserComment('');
             fetchData();
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Kirim Rating');
+            showError(handleApiError(error), tc('error_occurred'));
         }
     };
 
     const handleSubmitComment = async () => {
         if (!requireAuth()) return;
         if (!userComment.trim()) {
-            showError('Komentar tidak boleh kosong', 'Error');
+            showError(t('comment_required'), tc('error_occurred'));
             return;
         }
         try {
             await createComment({ course: course.id, comment: userComment });
-            showToast('Komentar berhasil dikirim!', 'success');
+            showToast(t('comment_success'), 'success');
             setUserComment('');
             fetchData();
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Kirim Komentar');
+            showError(handleApiError(error), tc('error_occurred'));
         }
     };
 
@@ -150,7 +154,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-32">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
             </div>
         );
     }
@@ -159,8 +163,8 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
         return (
             <div className="flex items-center justify-center py-32">
                 <div className="text-center">
-                    <p className="text-muted-foreground">Kursus tidak ditemukan</p>
-                    <Button variant="outline" className="mt-4" onClick={() => router.push(basePath || '/courses')}>Kembali</Button>
+                    <p className="text-muted-foreground">{t('course_not_found')}</p>
+                    <Button variant="outline" className="mt-4" onClick={() => router.push(basePath || '/courses')}>{tc('back')}</Button>
                 </div>
             </div>
         );
@@ -169,46 +173,46 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
     return (
         <div>
             {/* Hero Section */}
-            <section className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white relative overflow-hidden">
+            <section className="bg-gradient-to-br from-primary via-primary/80 to-primary/60 text-primary-foreground relative overflow-hidden">
                 <div className="absolute inset-0">
                     <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl"></div>
                 </div>
 
                 <div className="relative container mx-auto px-6 py-12">
                     <button
                         onClick={() => router.back()}
-                        className="flex items-center gap-2 text-blue-200 hover:text-white transition-colors mb-6"
+                        className="flex items-center gap-2 text-primary-foreground/60 hover:text-primary-foreground transition-colors mb-6"
                     >
-                        <ArrowLeft className="w-4 h-4" /> Kembali
+                        <ArrowLeft className="w-4 h-4" /> {tc('back')}
                     </button>
 
                     <div className="grid md:grid-cols-3 gap-8">
                         <div className="md:col-span-2">
                             <div className="flex flex-wrap gap-2 mb-4">
                                 <Badge className="bg-white/20 text-white border-0">
-                                    {course.level === 'beginner' ? 'Pemula' : course.level === 'intermediate' ? 'Menengah' : 'Mahir'}
+                                    {course.level === 'beginner' ? t('beginner') : course.level === 'intermediate' ? t('intermediate') : t('advanced')}
                                 </Badge>
                                 <Badge className="bg-white/20 text-white border-0">
                                     {course.status === 'published' ? 'Published' : course.status}
                                 </Badge>
                                 {course.is_featured && (
-                                    <Badge className="bg-yellow-400 text-yellow-900 border-0">Unggulan</Badge>
+                                    <Badge className="bg-accent text-accent-foreground border-0">{t('featured')}</Badge>
                                 )}
                             </div>
 
                             <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">{course.title}</h1>
-                            <p className="text-lg text-blue-100 mb-6">{course.short_description}</p>
+                            <p className="text-lg text-primary-foreground/80 mb-6">{course.short_description}</p>
 
-                            <div className="flex flex-wrap items-center gap-6 text-sm text-blue-200">
-                                <div className="flex items-center gap-2"><Clock className="w-4 h-4" />{course.duration_minutes} menit</div>
-                                <div className="flex items-center gap-2"><Users className="w-4 h-4" />{course.enrolled_count} terdaftar</div>
+                            <div className="flex flex-wrap items-center gap-6 text-sm text-primary-foreground/60">
+                                <div className="flex items-center gap-2"><Clock className="w-4 h-4" />{course.duration_minutes} {t('minutes')}</div>
+                                <div className="flex items-center gap-2"><Users className="w-4 h-4" />{course.enrolled_count} {t('enrolled_count')}</div>
                                 <div className="flex items-center gap-2">
                                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                                     {course.rating_avg ? course.rating_avg.toFixed(1) : '0.0'}
-                                    <span className="text-blue-300">({course.rating_count || 0} ulasan)</span>
+                                    <span className="text-primary-foreground/40">({course.rating_count || 0} {t('reviews')})</span>
                                 </div>
-                                <div className="flex items-center gap-2"><BookOpen className="w-4 h-4" />{course.lesson_count || 0} pelajaran</div>
+                                <div className="flex items-center gap-2"><BookOpen className="w-4 h-4" />{course.lesson_count || 0} {t('lessons')}</div>
                             </div>
                         </div>
 
@@ -226,48 +230,48 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                         <div className="space-y-4">
                                             {isEnrolled ? (
                                                 <Button
-                                                    className="w-full bg-card text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                                                    className="w-full bg-card text-primary hover:bg-primary/5"
                                                     onClick={() => router.push(`${basePath || '/courses'}/${slug}/learn`)}
                                                 >
-                                                    <Play className="w-4 h-4 mr-2" />Lanjutkan Belajar
+                                                    <Play className="w-4 h-4 mr-2" />{t('continue_learning')}
                                                 </Button>
                                             ) : (
                                                 <Button
-                                                    className="w-full bg-card text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 shadow-xl"
+                                                    className="w-full bg-card text-primary hover:bg-primary/5 shadow-xl"
                                                     onClick={handleEnroll}
                                                 >
-                                                    <GraduationCap className="w-4 h-4 mr-2" />Daftar Sekarang
+                                                    <GraduationCap className="w-4 h-4 mr-2" />{t('enroll_now')}
                                                 </Button>
                                             )}
                                             <Button
                                                 variant="outline"
-                                                className="w-full border-white/30 text-white hover:bg-white/10 dark:hover:bg-gray-800/10"
+                                                className="w-full border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
                                                 onClick={handleLike}
                                             >
-                                                <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-red-400 text-red-400' : ''}`} />
-                                                {isLiked ? 'Disukai' : 'Sukai Kursus'}
+                                                <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-destructive text-destructive' : ''}`} />
+                                                {isLiked ? t('liked') : t('like_course')}
                                             </Button>
                                         </div>
                                     ) : (
                                         <div className="space-y-4">
                                             <Button
-                                                className="w-full bg-card text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 shadow-xl"
+                                                className="w-full bg-card text-primary hover:bg-primary/5 shadow-xl"
                                                 onClick={() => router.push('/login')}
                                             >
-                                                <LogIn className="w-4 h-4 mr-2" />Login untuk Mendaftar
+                                                <LogIn className="w-4 h-4 mr-2" />{t('login_to_enroll')}
                                             </Button>
                                             <Button
                                                 variant="outline"
-                                                className="w-full border-white/30 text-white hover:bg-white/10 dark:hover:bg-gray-800/10"
+                                                className="w-full border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
                                                 onClick={() => router.push('/register')}
                                             >
-                                                Belum punya akun? Daftar
+                                                {ta('no_account')}
                                             </Button>
                                         </div>
                                     )}
 
-                                    <div className="mt-4 pt-4 border-t border-white/10 space-y-2 text-sm text-blue-200">
-                                        <div className="flex items-center gap-2"><Layers className="w-4 h-4" />{course.modules?.length || 0} modul</div>
+                                    <div className="mt-4 pt-4 border-t border-primary-foreground/10 space-y-2 text-sm text-primary-foreground/60">
+                                        <div className="flex items-center gap-2"><Layers className="w-4 h-4" />{course.modules?.length || 0} {t('modules')}</div>
                                         <div className="flex items-center gap-2"><Shield className="w-4 h-4" />Sertifikat kelulusan</div>
                                         <div className="flex items-center gap-2"><CheckCircle className="w-4 h-4" />Akses seumur hidup</div>
                                     </div>
@@ -279,22 +283,22 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
             </section>
 
             {/* Content Section */}
-            <section className="bg-muted">
-                <div className="container mx-auto px-6 py-12">
+            <section className="bg-gradient-to-b from-muted/20 via-background to-muted/20">
+                <div className="container mx-auto px-4 py-16">
                     {isAuthenticated ? (
                         <Tabs defaultValue="overview" className="w-full">
                             <TabsList className="bg-card border border-border p-1 rounded-xl">
-                                <TabsTrigger value="overview" className="rounded-lg">Gambaran</TabsTrigger>
-                                <TabsTrigger value="modules" className="rounded-lg">Modul Pelajaran</TabsTrigger>
-                                <TabsTrigger value="ratings" className="rounded-lg">Ulasan ({ratings.length})</TabsTrigger>
-                                <TabsTrigger value="comments" className="rounded-lg">Komentar ({comments.length})</TabsTrigger>
+                                <TabsTrigger value="overview" className="rounded-lg">{t('tab_overview')}</TabsTrigger>
+                                <TabsTrigger value="modules" className="rounded-lg">{t('tab_modules')}</TabsTrigger>
+                                <TabsTrigger value="ratings" className="rounded-lg">{t('tab_reviews')} ({ratings.length})</TabsTrigger>
+                                <TabsTrigger value="comments" className="rounded-lg">{t('tab_comments')} ({comments.length})</TabsTrigger>
                             </TabsList>
 
                             <div className="mt-8">
                                 <TabsContent value="overview">
                                     <Card className="border-0 shadow-sm">
                                         <CardContent className="p-8">
-                                            <h3 className="text-xl font-bold text-card-foreground mb-4">Deskripsi Kursus</h3>
+                                            <h3 className="text-xl font-bold text-card-foreground mb-4">{t('course_description')}</h3>
                                             <div className="prose prose-gray max-w-none whitespace-pre-wrap text-muted-foreground leading-relaxed"
                                                 dangerouslySetInnerHTML={{ __html: course.description }}>
                                             </div>
@@ -305,24 +309,24 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                 <TabsContent value="modules">
                                     <Card className="border-0 shadow-sm">
                                         <CardContent className="p-8">
-                                            <h3 className="text-xl font-bold text-card-foreground mb-6">Modul Pembelajaran</h3>
+                                            <h3 className="text-xl font-bold text-card-foreground mb-6">{t('learning_modules')}</h3>
                                             {course.modules && course.modules.length > 0 ? (
                                                 <div className="space-y-4">
                                                     {course.modules.map((mod: any, i: number) => (
                                                         <div key={mod.id} className="flex items-start gap-4 p-4 bg-muted rounded-xl">
-                                                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                            <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
                                                                 {i + 1}
                                                             </div>
                                                             <div>
                                                                 <h4 className="font-semibold text-card-foreground">{mod.title}</h4>
                                                                 {mod.description && <p className="text-sm text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: mod.description }}></p>}
-                                                                <span className="text-xs text-muted-foreground mt-2 block">{mod.lessons?.length || 0} pelajaran</span>
+                                                                <span className="text-xs text-muted-foreground mt-2 block">{mod.lessons?.length || 0} {t('lessons')}</span>
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <p className="text-muted-foreground">Belum ada modul tersedia.</p>
+                                                <p className="text-muted-foreground">{t('no_modules')}</p>
                                             )}
                                         </CardContent>
                                     </Card>
@@ -332,12 +336,12 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                     <div className="space-y-6">
                                         <Card className="border-0 shadow-sm">
                                             <CardHeader>
-                                                <CardTitle className="text-lg">Berikan Rating</CardTitle>
+                                                <CardTitle className="text-lg">{t('give_rating')}</CardTitle>
                                             </CardHeader>
                                             <CardContent>
                                                 <div className="space-y-4">
                                                     <div>
-                                                        <label className="text-sm font-medium text-foreground">Rating</label>
+                                                        <label className="text-sm font-medium text-foreground">{t('rating')}</label>
                                                         <div className="flex gap-2 mt-2">
                                                             {[1, 2, 3, 4, 5].map((i) => (
                                                                 <button
@@ -351,17 +355,17 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <label className="text-sm font-medium text-foreground">Komentar (Opsional)</label>
+                                                        <label className="text-sm font-medium text-foreground">{t('comment_optional')}</label>
                                                         <textarea
                                                             value={userComment}
                                                             onChange={(e) => setUserComment(e.target.value)}
-                                                            placeholder="Tulis pengalaman Anda..."
-                                                            className="w-full mt-2 p-3 border border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                                                            placeholder={t('write_experience')}
+                                                            className="w-full mt-2 p-3 border border-border rounded-xl focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
                                                             rows={3}
                                                         />
                                                     </div>
                                                     <Button onClick={handleSubmitRating} className="w-full rounded-xl">
-                                                        Kirim Rating
+                                                        {t('submit_rating')}
                                                     </Button>
                                                 </div>
                                             </CardContent>
@@ -373,8 +377,8 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                                     <CardContent className="p-6">
                                                         <div className="flex items-start justify-between mb-3">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                                                                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{rating.user_name?.charAt(0) || 'U'}</span>
+                                                                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                                                        <span className="text-sm font-bold text-primary">{rating.user_name?.charAt(0) || 'U'}</span>
                                                                 </div>
                                                                 <div>
                                                                     <div className="font-medium text-card-foreground">{rating.user_name}</div>
@@ -392,7 +396,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                                 </Card>
                                             ))}
                                             {ratings.length === 0 && (
-                                                <p className="text-center text-muted-foreground py-8">Belum ada ulasan.</p>
+                                                <p className="text-center text-muted-foreground py-8">{t('no_reviews')}</p>
                                             )}
                                         </div>
                                     </div>
@@ -413,7 +417,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                         <div className="max-w-4xl mx-auto space-y-8">
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-8">
-                                    <h3 className="text-xl font-bold text-card-foreground mb-4">Deskripsi Kursus</h3>
+                                    <h3 className="text-xl font-bold text-card-foreground mb-4">{t('course_description')}</h3>
                                     <div className="prose prose-gray max-w-none whitespace-pre-wrap text-muted-foreground leading-relaxed"
                                         dangerouslySetInnerHTML={{ __html: course.description }}>
                                     </div>
@@ -422,24 +426,24 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
 
                             <Card className="border-0 shadow-sm">
                                 <CardContent className="p-8">
-                                    <h3 className="text-xl font-bold text-card-foreground mb-6">Modul Pembelajaran</h3>
+                                    <h3 className="text-xl font-bold text-card-foreground mb-6">{t('learning_modules')}</h3>
                                     {course.modules && course.modules.length > 0 ? (
                                         <div className="space-y-4">
                                             {course.modules.map((mod: any, i: number) => (
                                                 <div key={mod.id} className="flex items-start gap-4 p-4 bg-muted rounded-xl">
-                                                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0">
                                                         {i + 1}
                                                     </div>
                                                     <div>
                                                         <h4 className="font-semibold text-card-foreground">{mod.title}</h4>
                                                         {mod.description && <p className="text-sm text-muted-foreground mt-1" dangerouslySetInnerHTML={{ __html: mod.description }}></p>}
-                                                        <span className="text-xs text-muted-foreground mt-2 block">{mod.lessons?.length || 0} pelajaran</span>
+                                                        <span className="text-xs text-muted-foreground mt-2 block">{mod.lessons?.length || 0} {t('lessons')}</span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-muted-foreground">Belum ada modul tersedia.</p>
+                                        <p className="text-muted-foreground">{t('no_modules')}</p>
                                     )}
                                 </CardContent>
                             </Card>
@@ -447,12 +451,12 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                             {ratings.length > 0 && (
                                 <Card className="border-0 shadow-sm">
                                     <CardContent className="p-8">
-                                        <h3 className="text-xl font-bold text-card-foreground mb-6">Ulasan ({ratings.length})</h3>
+                                        <h3 className="text-xl font-bold text-card-foreground mb-6">{t('tab_reviews')} ({ratings.length})</h3>
                                         <div className="space-y-4">
                                             {ratings.map((rating) => (
                                                 <div key={rating.id} className="flex items-start gap-3 p-4 bg-muted rounded-xl">
-                                                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{rating.user_name?.charAt(0) || 'U'}</span>
+                                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-sm font-bold text-primary">{rating.user_name?.charAt(0) || 'U'}</span>
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-3">
@@ -472,25 +476,25 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                 </Card>
                             )}
 
-                            <div className="bg-gradient-to-r from-blue-50 dark:from-blue-900/30 to-indigo-50 dark:to-indigo-900/30 rounded-2xl p-8 text-center border border-blue-100 dark:border-blue-800">
-                                <LogIn className="w-12 h-12 text-blue-600 dark:text-blue-400 mx-auto mb-4" />
-                                <h3 className="text-2xl font-bold text-card-foreground mb-2">Ikuti Kursus Ini</h3>
+                            <div className="bg-gradient-to-r from-primary/5 to-primary/5 rounded-2xl p-8 text-center border border-primary/10">
+                                <LogIn className="w-12 h-12 text-primary mx-auto mb-4" />
+                                <h3 className="text-2xl font-bold text-card-foreground mb-2">{t('follow_course')}</h3>
                                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                                    Login atau daftar untuk mendaftar kursus ini dan mulai perjalanan belajar Anda
+                                    {t('login_or_register')}
                                 </p>
                                 <div className="flex gap-3 justify-center">
                                     <Button
                                         className="rounded-xl px-8"
                                         onClick={() => router.push('/login')}
                                     >
-                                        Login
+                                        {ta('login_submit')}
                                     </Button>
                                     <Button
                                         variant="outline"
                                         className="rounded-xl px-8"
                                         onClick={() => router.push('/register')}
                                     >
-                                        Daftar
+                                        {ta('register')}
                                     </Button>
                                 </div>
                             </div>

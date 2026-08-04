@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Eye, Pencil, Trash2, Mail, Calendar, Shield, Users, CheckCircle, XCircle } from 'lucide-react';
 import { User } from '@/lib/services';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
+import { getRoleColor } from '@/lib/colors';
 
 interface UserTableProps {
     users: User[];
@@ -12,13 +13,6 @@ interface UserTableProps {
     onEdit: (user: User) => void;
     onDelete: (user: User) => void;
 }
-
-const roleColors: Record<string, string> = {
-    admin: 'from-purple-500 to-indigo-600',
-    superadmin: 'from-red-500 to-pink-600',
-    user: 'from-blue-500 to-cyan-500',
-    operator: 'from-green-500 to-emerald-600',
-};
 
 export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTableProps) {
     const { card, text } = useThemeColors();
@@ -80,8 +74,8 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
         <div className={`${card.bgClass} ${card.borderClass} border rounded-xl shadow-sm overflow-hidden`}>
             {/* Bulk Actions Bar */}
             {selectedUsers.length > 0 && (
-                <div className="px-5 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-700">
+                <div className="px-5 py-3 bg-muted/30 border-b border-border flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">
                         {selectedUsers.length} pengguna dipilih
                     </span>
                     <button className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1.5">
@@ -97,7 +91,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                         type="checkbox"
                         checked={selectedUsers.length === users.length && users.length > 0}
                         onChange={toggleSelectAll}
-                        className="w-4 h-4 text-blue-600 border-border rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                     />
                 </div>
                 <div className="flex-1 min-w-0">Pengguna</div>
@@ -113,7 +107,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                     <div
                         key={user.id}
                         className={`group relative flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-5 py-4 transition-all duration-200 ${
-                            selectedUsers.includes(user.id) ? 'bg-blue-50/50' : card.hoverClass
+                            selectedUsers.includes(user.id) ? 'bg-primary/5' : card.hoverClass
                         }`}
                     >
                         {/* Checkbox */}
@@ -122,7 +116,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                                 type="checkbox"
                                 checked={selectedUsers.includes(user.id)}
                                 onChange={() => toggleSelectUser(user.id)}
-                                className="w-4 h-4 text-blue-600 border-border rounded focus:ring-blue-500"
+className="w-4 h-4 text-primary border-border rounded focus:ring-ring"
                             />
                             <div className={`md:hidden text-xs ${text.mutedClass}`}>#{user.id}</div>
                         </div>
@@ -130,7 +124,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                         {/* User Info */}
                         <div className="flex-1 min-w-0 flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${
-                                roleColors[user.roles?.[0]?.name?.toLowerCase() || ''] || 'from-gray-500 to-gray-600'
+                                getRoleColor(user.roles?.[0]?.name || '').gradient
                             } flex items-center justify-center flex-shrink-0 shadow-sm`}>
                                 <span className="text-white text-sm font-bold">
                                     {user.name.charAt(0).toUpperCase()}
@@ -139,7 +133,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                             <div className="min-w-0">
                                 <Link
                                     href={`/admin/users/${user.id}`}
-                                    className={`text-sm font-semibold ${text.primaryClass} hover:text-blue-600 transition-colors truncate block`}
+                                    className={`text-sm font-semibold ${text.primaryClass} hover:text-primary transition-colors truncate block`}
                                 >
                                     {user.name}
                                 </Link>
@@ -199,7 +193,7 @@ export default function UserTable({ users, isLoading, onEdit, onDelete }: UserTa
                         <div className="md:w-28 flex items-center justify-end gap-1">
                             <Link
                                 href={`/admin/users/${user.id}`}
-                                className={`p-2 ${text.mutedClass} hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all`}
+                                className={`p-2 ${text.mutedClass} hover:text-primary hover:bg-primary/10 rounded-lg transition-all`}
                                 title="Lihat Detail"
                             >
                                 <Eye className="w-4 h-4" />

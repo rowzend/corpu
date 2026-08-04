@@ -1,6 +1,7 @@
 export interface HeroImageItem {
   id: number;
   name: string;
+  title?: string;
   description: string | null;
   image: string | null;
   image_url: string | null;
