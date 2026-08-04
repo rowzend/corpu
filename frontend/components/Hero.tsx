@@ -78,14 +78,6 @@ export default function Hero() {
 
       <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Badge with Shimmer Effect */}
-          <div className={`inline-block mb-6 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-            <span className="relative bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-medium overflow-hidden group">
-              <span className="relative z-10">✨ Platform Pembelajaran ASN Modern</span>
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
-            </span>
-          </div>
-
           {/* Heading with Gradient Animation */}
           <h1 className={`text-4xl md:text-6xl font-bold mb-6 leading-tight transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <span className="block">Pesisir Selatan</span>
