@@ -16,3 +16,14 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Python/Django
+*.pyc
+__pycache__/
+staticfiles/
+media/
+
+# Backups
+*.dump
+*.gz
+*.sql
