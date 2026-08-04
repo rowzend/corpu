@@ -43,14 +43,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        ascorpu: {
-          darkest: '#000c24',
-          navy: '#00163b',
-          card: '#021a44',
-          yellow: '#ffb703',
-          blueAccent: '#0056b3',
-          mutedBlue: '#8fa0dd',
-        },
       },
       animation: {
         'blob': 'blob 7s infinite',

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,15 +25,11 @@ import { getPublicArticle, likeArticle, shareArticle, type Article } from '@/lib
 import { handleApiError } from '@/lib/api';
 import CommentSection from '@/components/CommentSection';
 import { authService } from '@/lib/services';
-import { getCategoryColor } from '@/lib/colors';
 import { showConfirm, showError } from '@/lib/sweetalert';
 
 export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string }) {
     const params = useParams();
     const router = useRouter();
-    const t = useTranslations('kms_page');
-    const tc = useTranslations('common');
-    const ta = useTranslations('auth');
     const slug = params.slug as string;
 
     const [article, setArticle] = useState<Article | null>(null);
@@ -56,7 +51,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
             setLoading(true);
             const response = await getPublicArticle(slug);
             const articleData: Article = response?.data || response as Article;
-            if (!articleData) throw new Error(t('article_not_found'));
+            if (!articleData) throw new Error('Artikel tidak ditemukan');
             setArticle(articleData);
         } catch (err) {
             setError(handleApiError(err));
@@ -68,10 +63,10 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
     const requireAuth = () => {
         if (!authService.isAuthenticated()) {
             showConfirm(
-                ta('login_required_desc'),
-                ta('login_required'),
-                ta('login_submit'),
-                tc('cancel')
+                'Silakan login terlebih dahulu untuk menggunakan fitur ini.',
+                'Login Diperlukan',
+                'Login',
+                'Batal'
             ).then((confirmed) => {
                 if (confirmed) router.push('/login');
             });
@@ -89,7 +84,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
             await likeArticle(article.id, true);
             setArticle(prev => prev ? { ...prev, like_count: prev.like_count + 1 } : null);
         } catch (error) {
-            showError(handleApiError(error), t('like_error'));
+            showError(handleApiError(error), 'Gagal Menyukai');
         } finally {
             setLiking(false);
         }
@@ -112,7 +107,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 });
             } else {
                 await navigator.clipboard.writeText(window.location.href);
-                alert(t('link_copied'));
+                alert('Link artikel telah disalin ke clipboard!');
             }
         } catch (error) {
             console.error('Failed to share article:', handleApiError(error));
@@ -162,14 +157,14 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 if (article.file_url) {
                     return (
                         <div className="mb-8">
-                            <Card className="border-primary/20 bg-primary/5">
+                            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30">
                                 <CardContent className="p-6">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                                            <Download className="w-6 h-6 text-primary-foreground" />
+                                        <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                                            <Download className="w-6 h-6 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-card-foreground">{t('attached_document')}</h3>
+                                            <h3 className="font-semibold text-card-foreground">Dokumen Terlampir</h3>
                                             <p className="text-sm text-muted-foreground">
                                                 {article.file_type && `Format: ${article.file_type}`}
                                                 {article.file_size && ` • Ukuran: ${Math.round(article.file_size / 1024)} KB`}
@@ -177,7 +172,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                         </div>
                                         <Button asChild>
                                             <a href={article.file_url} target="_blank" rel="noopener noreferrer">
-                                                <Download className="w-4 h-4 mr-2" /> {tc('download')}
+                                                <Download className="w-4 h-4 mr-2" /> Download
                                             </a>
                                         </Button>
                                     </div>
@@ -193,51 +188,51 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                     return (
                         <div className="mb-8">
                             {driveEmbedUrl ? (
-                                <Card className="border-primary/20 bg-primary/5">
+                                <Card className="border-green-200 bg-green-50">
                                     <CardContent className="p-6 space-y-4">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                                                <ExternalLink className="w-6 h-6 text-primary-foreground" />
+                                            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                                <ExternalLink className="w-6 h-6 text-white" />
                                             </div>
                                             <div className="flex-1">
-<h3 className="font-semibold text-card-foreground">{t('google_drive')}</h3>
-                                                 <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
-                                             </div>
-                                             <Button asChild>
-                                                 <a href={article.external_url} target="_blank" rel="noopener noreferrer">
-                                                     <ExternalLink className="w-4 h-4 mr-2" /> {t('open_link')}
-                                                 </a>
-                                             </Button>
-                                         </div>
-                                         <div className="aspect-video rounded-lg overflow-hidden border border-border bg-card">
-                                             <iframe
-                                                 src={driveEmbedUrl}
-                                                 className="w-full h-full"
-                                                 title={article.title}
-                                                 allowFullScreen
-                                             />
-                                         </div>
-                                         <p className="text-xs text-muted-foreground">
-                                             {t('google_drive_help')}
-                                         </p>
+                                                <h3 className="font-semibold text-card-foreground">Google Drive</h3>
+                                                <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
+                                            </div>
+                                            <Button asChild>
+                                                <a href={article.external_url} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="w-4 h-4 mr-2" /> Buka Link
+                                                </a>
+                                            </Button>
+                                        </div>
+                                        <div className="aspect-video rounded-lg overflow-hidden border border-green-300 bg-white">
+                                            <iframe
+                                                src={driveEmbedUrl}
+                                                className="w-full h-full"
+                                                title={article.title}
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            * Jika dokumen tidak tampil, pastikan file Google Drive telah diatur ke "Siapa pun yang memiliki link" atau buka langsung melalui tombol "Buka Link".
+                                        </p>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <Card className="border-primary/20 bg-primary/5">
+                                <Card className="border-green-200 bg-green-50">
                                     <CardContent className="p-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                                                <ExternalLink className="w-6 h-6 text-primary-foreground" />
+                                            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
+                                                <ExternalLink className="w-6 h-6 text-white" />
                                             </div>
                                             <div className="flex-1">
-<h3 className="font-semibold text-card-foreground">{t('external_link')}</h3>
-                                                 <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
-                                             </div>
-                                             <Button asChild>
-                                                 <a href={article.external_url} target="_blank" rel="noopener noreferrer">
-                                                     <ExternalLink className="w-4 h-4 mr-2" /> {t('open_link')}
-                                                 </a>
-                                             </Button>
+                                                <h3 className="font-semibold text-card-foreground">Link Eksternal</h3>
+                                                <p className="text-sm text-muted-foreground break-all">{article.external_url}</p>
+                                            </div>
+                                            <Button asChild>
+                                                <a href={article.external_url} target="_blank" rel="noopener noreferrer">
+                                                    <ExternalLink className="w-4 h-4 mr-2" /> Buka Link
+                                                </a>
+                                            </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -252,7 +247,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-muted py-16">
+            <div className="min-h-screen bg-muted py-12">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="animate-pulse space-y-6">
                         <div className="h-8 bg-muted rounded w-1/4"></div>
@@ -271,19 +266,19 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
     if (error || !article) {
         return (
-            <div className="min-h-screen bg-muted py-16">
+            <div className="min-h-screen bg-muted py-12">
                 <div className="container mx-auto px-4 max-w-4xl">
-                    <Card className="border-destructive/20 bg-destructive/5">
+                    <Card className="border-red-200 bg-red-50">
                         <CardContent className="p-12 text-center">
                             <div className="text-6xl mb-4">😞</div>
-                            <h2 className="text-2xl font-bold text-card-foreground mb-2">{t('article_not_found_title')}</h2>
-                            <p className="text-muted-foreground mb-6">{error || t('article_not_found_desc')}</p>
+                            <h2 className="text-2xl font-bold text-card-foreground mb-2">Artikel Tidak Ditemukan</h2>
+                            <p className="text-muted-foreground mb-6">{error || 'Artikel yang Anda cari tidak tersedia atau telah dihapus.'}</p>
                             <div className="flex gap-4 justify-center">
                                 <Button onClick={() => router.back()}>
-                                    <ArrowLeft className="w-4 h-4 mr-2" /> {tc('back')}
+                                    <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
                                 </Button>
                                 <Button variant="outline" asChild>
-                                    <Link href={basePath}>{t('view_all_articles')}</Link>
+                                    <Link href={basePath}>Lihat Semua Artikel</Link>
                                 </Button>
                             </div>
                         </CardContent>
@@ -294,28 +289,27 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
     }
 
     return (
-        <div className="min-h-screen bg-muted py-16">
-            <div className="container mx-auto px-4">
-                <div className="mx-auto max-w-4xl">
+        <div className="min-h-screen bg-muted py-12">
+            <div className="container mx-auto px-4 max-w-4xl">
                 <div className="mb-6">
                     <Button variant="outline" onClick={() => router.back()}>
-                        <ArrowLeft className="w-4 h-4 mr-2" /> {tc('back')}
+                        <ArrowLeft className="w-4 h-4 mr-2" /> Kembali
                     </Button>
                 </div>
 
                 <Card className="mb-8">
                     <CardContent className="p-8">
                         <div className="flex items-center gap-2 mb-4">
-                            {article.category && (() => {
-                                const c = article.category!;
-                                const catColor = getCategoryColor(c.name);
-                                return <Badge className={`${catColor.bg} ${catColor.text}`}><span dangerouslySetInnerHTML={{ __html: c.name }} /></Badge>;
-                            })()}
+                            {article.category && (
+                                <Badge className="bg-indigo-100 text-indigo-800">
+                                    <span dangerouslySetInnerHTML={{ __html: article.category.name }} />
+                                </Badge>
+                            )}
                             <Badge variant="secondary" className="flex items-center gap-1">
                                 {getContentTypeIcon(article.content_type)} {article.content_type}
                             </Badge>
                             {article.is_featured && (
-                                <Badge className="bg-accent/10 text-accent">⭐ {t('featured')}</Badge>
+                                <Badge className="bg-yellow-100 text-yellow-800">⭐ Featured</Badge>
                             )}
                         </div>
 
@@ -339,7 +333,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4" />
-                                    <span>{t('min_read', { count: Math.ceil(article.content.length / 1000) })}</span>
+                                    <span>{Math.ceil(article.content.length / 1000)} min read</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4">
@@ -360,9 +354,9 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                         size="sm"
                                         onClick={handleLike}
                                         disabled={liking}
-                                        className="text-destructive hover:bg-destructive/10"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
                                     >
-                                        <Heart className="w-4 h-4 mr-1" /> {tc('like')}
+                                        <Heart className="w-4 h-4 mr-1" /> Like
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -370,7 +364,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                                         onClick={handleShare}
                                         disabled={sharing}
                                     >
-                                        <Share2 className="w-4 h-4 mr-1" /> {t('share')}
+                                        <Share2 className="w-4 h-4 mr-1" /> Share
                                     </Button>
                                 </div>
                             </div>
@@ -382,7 +376,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
                 <Card className="mb-8">
                     <CardContent className="p-8">
-                        <div className="prose prose-lg max-w-none prose-headings:text-card-foreground prose-a:text-primary prose-img:rounded-xl">
+                        <div className="prose prose-lg max-w-none prose-headings:text-card-foreground prose-a:text-indigo-600 prose-img:rounded-xl">
                             <div className="leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
                         </div>
                     </CardContent>
@@ -391,7 +385,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 {article.tags && article.tags.length > 0 && (
                     <Card className="mb-8">
                         <CardContent className="p-6">
-                            <h3 className="font-semibold text-card-foreground mb-4">{t('tags')}</h3>
+                            <h3 className="font-semibold text-card-foreground mb-4">Tags</h3>
                             <div className="flex flex-wrap gap-2">
                                 {article.tags.map((tag) => (
                                     <Badge
@@ -426,10 +420,9 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                 <div className="text-center">
                     <Button asChild size="lg">
                         <Link href={basePath}>
-                            <BookOpen className="w-4 h-4 mr-2" /> {t('view_other_articles')}
+                            <BookOpen className="w-4 h-4 mr-2" /> Lihat Artikel Lainnya
                         </Link>
                     </Button>
-                </div>
                 </div>
             </div>
         </div>

@@ -25,18 +25,18 @@
     "title2": "Corporate University",
     "subtitle": "Digital learning platform for capacity building of professional, competent, and high-integrity State Civil Apparatus.",
     "cta_start": "Start Learning",
-    "cta_video": "Video Profile",
     "cta_courses": "Explore Courses",
     "badge_platform": "Modern ASN Learning Platform",
     "desc": "Digital learning platform for professional and integrity-driven State Civil Apparatus development"
   },
   "stats": {
-    "title": "Platform Statistics",
-    "subtitle": "Achievements and development of the ASN learning platform",
-    "courses": "Courses",
-    "articles": "Articles",
-    "experts": "Experts",
-    "views": "Total Views"
+    "title": "ASN Who Have Joined",
+    "subtitle": "ASN who have started exploring for competency development",
+    "asn": "Registered ASN",
+    "courses": "Available Courses",
+    "certificates": "Certificates Issued",
+    "rating": "Satisfaction Rating",
+    "students": "students"
   },
   "programs": {
     "badge": "Featured Programs",
@@ -54,8 +54,7 @@
     "mooc": "MOOC",
     "mooc_desc": "Massive Open Online Course accessible anytime and anywhere.",
     "sertifikasi": "Certification",
-    "sertifikasi_desc": "Certification programs to recognize and validate ASN competencies.",
-    "view_all": "View All Articles"
+    "sertifikasi_desc": "Certification programs to recognize and validate ASN competencies."
   },
   "courses": {
     "badge": "Popular Courses",
@@ -96,10 +95,9 @@
   },
   "testimonials": {
     "badge": "Testimonials",
-    "title": "What",
-    "title_highlight": "They Say",
-    "subtitle": "Hear the experiences of ASN who have felt the benefits of learning at Corpu",
-    "no_testimonials": "No testimonials yet"
+    "title": "What They",
+    "title_highlight": "Say",
+    "subtitle": "Hear experiences from ASN who have benefited from learning at Corpu"
   },
   "news": {
     "badge": "Latest News",
@@ -107,16 +105,7 @@
     "title_highlight": "Announcements",
     "subtitle": "Follow the latest developments from Corporate University",
     "view_all": "View All News",
-    "read_more": "Read More",
-    "no_news": "No news yet",
-    "page_title": "News & Information",
-    "page_subtitle": "Latest updates on ASN Academy programs, activities, and announcements",
-    "search_placeholder": "Search news...",
-    "no_news_desc": "No news has been published yet.",
-    "news_not_found_title": "News Not Found",
-    "news_not_found_desc": "The news you are looking for is not available.",
-    "back_to_news": "Back to News",
-    "by_author": "By:"
+    "read_more": "Read More"
   },
   "cta": {
     "badge": "Ready to Improve Competence?",
@@ -161,11 +150,7 @@
     "no_data": "No data",
     "retry": "Retry",
     "views": "views",
-    "likes": "likes",
-    "download": "Download",
-    "share": "Share",
-    "like": "Like",
-    "error_occurred": "An error occurred"
+    "likes": "likes"
   },
   "auth": {
     "login_title": "Sign In",
@@ -176,9 +161,7 @@
     "forgot_password": "Forgot Password?",
     "no_account": "Don't have an account?",
     "has_account": "Already have an account?",
-    "logout": "Logout",
-    "login_required": "Login Required",
-    "login_required_desc": "Please login first to continue"
+    "logout": "Logout"
   },
   "landing": {
     "trust_cert": "Official Certificate",
@@ -1009,7 +992,6 @@
       "berita": "News",
       "pelatihan": "Training",
       "data_diri": "Personal Data",
-      "data_idp": "Data IDP",
       "setting": "Settings",
       "settings": "Settings",
       "profile": "Profile",
@@ -1049,30 +1031,6 @@
       "jelajahi_kms": "Explore KMS",
       "buka_kms": "Open KMS",
       "aktif": "Active"
-    },
-    "idp": {
-      "title": "ASN IDP Management",
-      "subtitle": "Individual Development Plan — ASN competency development planning",
-      "nama_pegawai": "Employee Name",
-      "nip": "NIP",
-      "jabatan": "Position",
-      "cari": "Search IDP period...",
-      "semua": "All",
-      "draft": "Draft",
-      "proses": "In Progress",
-      "disetujui": "Approved",
-      "ditolak": "Rejected",
-      "buat_baru": "Create New IDP",
-      "kolom_no": "No",
-      "kolom_nama": "Employee Name",
-      "kolom_nip": "NIP",
-      "kolom_jabatan": "Position",
-      "kolom_periode": "IDP Period",
-      "kolom_status": "Status",
-      "kolom_tanggal": "Created Date",
-      "kolom_aksi": "Action",
-      "lihat": "View IDP",
-      "kosong": "No IDP data found"
     }
   },
   "courses_page": {
@@ -1108,41 +1066,7 @@
     "stats_participants": "Students",
     "stats_rating": "Rating",
     "previous": "Previous",
-    "next": "Next",
-    "load_error": "Failed to Load Course",
-    "course_not_found": "Course not found",
-    "enroll_success": "Successfully enrolled in course!",
-    "enroll_error": "Failed to Enroll",
-    "rating_required": "Please select a rating first",
-    "rating_success": "Rating submitted successfully!",
-    "comment_required": "Comment cannot be empty",
-    "comment_success": "Comment submitted successfully!",
-    "login_to_enroll": "Login to Enroll",
-    "browse": "Browse Courses",
-    "courses_available": "{count} courses available",
-    "enrolled_badge": "Enrolled",
-    "continue_learning": "Continue Learning",
-    "enroll_now": "Enroll Now",
-    "like_course": "Like Course",
-    "liked": "Liked",
-    "featured": "Featured",
-    "enrolled_count": "enrolled",
-    "reviews": "reviews",
-    "tab_overview": "Overview",
-    "tab_modules": "Lesson Modules",
-    "tab_reviews": "Reviews",
-    "tab_comments": "Comments",
-    "course_description": "Course Description",
-    "learning_modules": "Learning Modules",
-    "modules": "Modules",
-    "no_modules": "No modules available yet.",
-    "give_rating": "Give Rating",
-    "comment_optional": "Comment (Optional)",
-    "write_experience": "Write your experience...",
-    "submit_rating": "Submit Rating",
-    "no_reviews": "No reviews yet.",
-    "follow_course": "Follow This Course",
-    "login_or_register": "Login or register to enroll in this course..."
+    "next": "Next"
   },
   "kms_page": {
     "page_title": "Knowledge Management System",
@@ -1179,49 +1103,7 @@
     "no_articles_desc": "Articles are under development, please check back later",
     "reset_filter": "Reset Filter",
     "per_page": "Per page",
-    "page_info": "{start}-{end} of {total}",
-    "article_not_found": "Article not found",
-    "article_not_found_title": "Article Not Found",
-    "article_not_found_desc": "The article you are looking for is not available or has been deleted.",
-    "attached_document": "Attached Document",
-    "open_link": "Open Link",
-    "google_drive": "Google Drive",
-    "google_drive_help": "This file is stored on Google Drive. Make sure you have access to open it.",
-    "external_link": "External Link",
-    "view_all_articles": "View All Articles",
-    "view_other_articles": "View Other Articles",
-    "link_copied": "Article link has been copied to clipboard!",
-    "like_error": "Failed to Like",
-    "min_read": "{count} min read"
-  },
-  "hcdp": {
-    "page_title": "Human Capital Development Program",
-    "page_desc": "Training and competency development program for ASN to improve public service quality",
-    "programs_available": "Available Programs",
-    "ongoing": "Ongoing",
-    "total_participants": "Total Participants",
-    "search_placeholder": "Search programs...",
-    "all_categories": "All Categories",
-    "participants": "participants",
-    "no_programs": "No programs found",
-    "try_adjust_filter": "Try adjusting your filter or search keywords.",
-    "status_upcoming": "Upcoming",
-    "status_ongoing": "Ongoing",
-    "status_completed": "Completed"
-  },
-  "profile": {
-    "page_title": "Institution Profile",
-    "page_desc": "Information about the ASN CORPU Management Institution",
-    "instructors": "Instructors",
-    "view_all": "View All",
-    "sambutan": "Welcome Speech & Vision Mission",
-    "sejarah": "Corpu History",
-    "struktur": "Organization Structure",
-    "personalia": "Personnel",
-    "members": "Personnel",
-    "nip_prefix": "NIP. ",
-    "no_assignment": "No assignment",
-    "no_data": "No personnel data available."
+    "page_info": "{start}-{end} of {total}"
   },
   "sudo_prompt": {
     "title": "Choose Access Mode",

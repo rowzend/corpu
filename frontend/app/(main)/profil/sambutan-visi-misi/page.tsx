@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProfileSections, type ProfileSection } from '@/lib/api/profilePublic';
-import { useTranslations } from 'next-intl';
 
 export default function SambutanVisiMisiPage() {
-  const t = useTranslations('profile'); const tc = useTranslations('common');
   const [sections, setSections] = useState<ProfileSection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,14 +15,14 @@ export default function SambutanVisiMisiPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">{tc('loading')}</div>;
+  if (loading) return <div className="container mx-auto px-4 py-12 text-center py-12">Memuat...</div>;
 
   const sambutan = sections.find(s => s.key === 'sambutan');
   const visiMisi = sections.find(s => s.key === 'visi_misi');
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-card-foreground mb-8">{t('sambutan')}</h1>
+      <h1 className="text-3xl font-bold text-card-foreground mb-8">Sambutan & Visi Misi</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {sambutan && (

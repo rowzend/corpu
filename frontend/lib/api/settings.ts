@@ -46,32 +46,21 @@ export async function updateSetting(key: string, value: any): Promise<{ success:
 }
 
 /**
- * Create a new setting
+ * Batch update multiple settings
+ * Silently skips settings that don't exist in backend
  */
-export async function createSetting(key: string, value: any): Promise<{ success: boolean; data: AppSetting }> {
-    return api.post('management/settings/', { key, value, is_public: true, category: 'appearance' });
-}
-
-/**
- * Batch update multiple settings (upsert — creates if not exists)
- */
-export async function batchUpdateSettings(settings: Record<string, any>): Promise<{ success: boolean; message: string; failed: { key: string; error: string }[] }> {
-    const results: string[] = [];
-    const errors: { key: string; error: string }[] = [];
+export async function batchUpdateSettings(settings: Record<string, any>): Promise<{ success: boolean; message: string }> {
+    const results = [];
+    const errors = [];
 
     for (const [key, value] of Object.entries(settings)) {
         try {
             await updateSetting(key, value);
             results.push(key);
         } catch (error: any) {
-            // If setting not found, try creating it
-            try {
-                await createSetting(key, value);
-                results.push(key);
-            } catch (createError: any) {
-                console.warn(`Setting '${key}' could not be created:`, createError.message);
-                errors.push({ key, error: createError.message });
-            }
+            // If setting not found, skip it silently
+            console.warn(`Setting '${key}' not found in backend, skipping...`);
+            errors.push({ key, error: error.message });
         }
     }
 
@@ -79,15 +68,9 @@ export async function batchUpdateSettings(settings: Record<string, any>): Promis
         throw new Error('No settings were updated. Please create settings in backend first.');
     }
 
-    let message = `${results.length} settings updated successfully`;
-    if (errors.length > 0) {
-        message += `. ${errors.length} setting(s) failed: ${errors.map(e => e.key).join(', ')}`;
-    }
-
     return {
         success: results.length > 0,
-        message,
-        failed: errors
+        message: `${results.length} settings updated successfully`
     };
 }
 

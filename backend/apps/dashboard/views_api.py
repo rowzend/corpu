@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import Group
@@ -9,31 +9,7 @@ from apps.accounts.models import User
 from apps.learning.models import Course, Enrollment, Certificate
 from apps.hcdp.models import HcdpProgram
 from apps.news.models import News
-from apps.api_simpeg.models import Pegawai
 from core.models import Notification, MsLogData
-
-
-class PublicLearningStatsAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        total_pegawai = Pegawai.objects.count()
-        total_courses = Course.objects.filter(status='published').count()
-        total_enrollments = Enrollment.objects.count()
-        completed_enrollments = Enrollment.objects.filter(status='completed').count()
-        certificates_issued = Certificate.objects.count()
-
-        return Response({
-            'success': True,
-            'data': {
-                'total_pegawai': total_pegawai,
-                'total_courses': total_courses,
-                'total_enrollments': total_enrollments,
-                'completed_enrollments': completed_enrollments,
-                'certificates_issued': certificates_issued,
-            },
-            'timestamp': timezone.now().isoformat()
-        })
 
 
 class DashboardStatsAPIView(APIView):
