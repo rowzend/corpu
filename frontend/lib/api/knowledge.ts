@@ -432,6 +432,7 @@ export async function getPublicArticles(params?: {
 export async function getPublicCategories(params?: {
     search?: string;
     is_active?: boolean;
+    per_page?: number;
 }): Promise<CategoryListResponse> {
     return api.getKnowledgeCategories(params) as Promise<CategoryListResponse>;
 }

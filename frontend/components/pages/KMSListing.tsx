@@ -172,7 +172,7 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
       // Load ALL articles without pagination
       const [articlesResponse, categoriesResponse, statsResponse] = await Promise.all([
         getPublicArticles({ status: 'published', per_page: 1000, ordering: '-id' }),  // Load all, order by newest
-        getPublicCategories(),
+        getPublicCategories({ per_page: 100 }),
         getPublicKnowledgeStats().catch(() => null) // Don't fail if stats unavailable
       ]);
 
