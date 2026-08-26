@@ -323,7 +323,11 @@ def lesson_post_delete(sender, instance, **kwargs):
         return
     try:
         course = instance.module.course
-    except Module.DoesNotExist:
+    except (Module.DoesNotExist, Course.DoesNotExist):
+        return
+    # Skip sync if the parent course is being deleted (course row already gone
+    # or about to be removed) to avoid writing a dangling source_course FK.
+    if not Course.objects.filter(pk=course.pk).exists():
         return
     with sync_context():
         sync_course_to_article(course)
@@ -336,6 +340,10 @@ def module_post_delete(sender, instance, **kwargs):
     try:
         course = instance.course
     except Course.DoesNotExist:
+        return
+    # Skip sync if the parent course is being deleted (course row already gone
+    # or about to be removed) to avoid writing a dangling source_course FK.
+    if not Course.objects.filter(pk=course.pk).exists():
         return
     with sync_context():
         sync_course_to_article(course)
