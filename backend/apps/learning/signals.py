@@ -1,7 +1,7 @@
 import os
 import threading
 from contextlib import contextmanager
-from django.db.models.signals import post_save, pre_save, post_delete
+from django.db.models.signals import post_save, pre_save, post_delete, pre_delete
 from django.dispatch import receiver
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
@@ -11,6 +11,7 @@ from apps.knowledge.models import Article, ArticleDocument, Category
 from .models import Course, Module, Lesson
 
 _sync_in_progress = threading.local()
+_deleting_courses = set()
 
 
 def is_syncing():
@@ -289,6 +290,19 @@ def course_post_save(sender, instance, **kwargs):
         sync_course_to_article(instance)
 
 
+@receiver(pre_delete, sender=Course)
+def course_pre_delete(sender, instance, **kwargs):
+    # Mark the course as being deleted so that cascading Module/Lesson
+    # post_delete signals skip re-syncing (which would otherwise write a
+    # dangling source_course FK and fail at COMMIT time).
+    _deleting_courses.add(instance.pk)
+
+
+@receiver(post_delete, sender=Course)
+def course_post_delete(sender, instance, **kwargs):
+    _deleting_courses.discard(instance.pk)
+
+
 @receiver(post_save, sender=Module)
 def module_post_save(sender, instance, **kwargs):
     if is_syncing():
@@ -327,6 +341,8 @@ def lesson_post_delete(sender, instance, **kwargs):
         return
     # Skip sync if the parent course is being deleted (course row already gone
     # or about to be removed) to avoid writing a dangling source_course FK.
+    if course.pk in _deleting_courses:
+        return
     if not Course.objects.filter(pk=course.pk).exists():
         return
     with sync_context():
@@ -343,6 +359,8 @@ def module_post_delete(sender, instance, **kwargs):
         return
     # Skip sync if the parent course is being deleted (course row already gone
     # or about to be removed) to avoid writing a dangling source_course FK.
+    if course.pk in _deleting_courses:
+        return
     if not Course.objects.filter(pk=course.pk).exists():
         return
     with sync_context():
