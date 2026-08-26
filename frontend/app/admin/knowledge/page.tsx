@@ -20,7 +20,8 @@ import {
     BookMarked,
     EyeOff,
     Clock,
-    Star
+    Star,
+    Loader2
 } from 'lucide-react';
 import { getArticles, getKnowledgeStats, deleteArticle, getCategories, type Article, type Category } from '@/lib/api/knowledge';
 import { handleApiError } from '@/lib/api';
@@ -75,6 +76,9 @@ export default function KnowledgePage() {
     const t = useTranslations('admin.knowledge');
     const [articles, setArticles] = useState<Article[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [totalArticles, setTotalArticles] = useState(0);
+    const [page, setPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
@@ -101,7 +105,7 @@ export default function KnowledgePage() {
         try {
             setLoading(true);
             const [articlesResponse, statsResponse, categoriesResponse] = await Promise.all([
-                getArticles({ page: 1, per_page: 100 }),
+                getArticles({ page: 1, per_page: 12 }),
                 getKnowledgeStats().catch(() => null),
                 getCategories({ is_active: true }).catch(() => null)
             ]);
@@ -109,6 +113,8 @@ export default function KnowledgePage() {
             const articlesData: Article[] = articlesResponse?.results || [];
             const articlesList = Array.isArray(articlesData) ? articlesData : [];
             setArticles(articlesList);
+            setTotalArticles(articlesResponse?.count ?? articlesList.length);
+            setPage(1);
 
             if (statsResponse && statsResponse.total_articles !== undefined) {
                 setStats(statsResponse);
@@ -162,6 +168,27 @@ export default function KnowledgePage() {
             }),
         ];
     }, [categoryOptions]);
+
+    const loadMore = async () => {
+        if (loadingMore) return;
+        try {
+            setLoadingMore(true);
+            const nextPage = page + 1;
+            const response = await getArticles({ page: nextPage, per_page: 12 });
+            const more = Array.isArray(response?.results) ? response.results : [];
+            setArticles(prev => [...prev, ...more]);
+            setPage(nextPage);
+            if (response?.count !== undefined) {
+                setTotalArticles(response.count);
+            }
+        } catch (error) {
+            console.error('Failed to load more articles:', handleApiError(error));
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const hasMore = articles.length < totalArticles;
 
     const handleDelete = async (id: number, title: string) => {
         const confirmed = await showDeleteConfirm(title, t('delete_confirm_item'));
@@ -310,6 +337,7 @@ export default function KnowledgePage() {
 
             {/* Articles Grid */}
             {filteredArticles.length > 0 ? (
+                <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredArticles.map((article) => (
                         <div
@@ -397,6 +425,26 @@ export default function KnowledgePage() {
                         </div>
                     ))}
                 </div>
+
+                {hasMore && (
+                    <div className="flex flex-col items-center gap-2 pt-6">
+                        <button
+                            onClick={loadMore}
+                            disabled={loadingMore}
+                            className="inline-flex items-center gap-2 border border-border bg-card hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed px-5 py-2.5 rounded-xl font-medium text-sm transition-all"
+                        >
+                            {loadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {t('load_more')}
+                        </button>
+                    </div>
+                )}
+
+                <div className="flex items-center justify-center pt-4">
+                    <p className="text-xs text-muted-foreground">
+                        {t('showing_articles', { shown: articles.length, total: totalArticles })}
+                    </p>
+                </div>
+                </>
             ) : (
                 <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
                     <div className="w-16 h-16 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">

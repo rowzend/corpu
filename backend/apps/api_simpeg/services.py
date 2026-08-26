@@ -128,6 +128,31 @@ class EsimpegAPIService:
             logger.error(f"ESIMPEG API get bupati list error: {str(e)}")
             return None
 
+    def get_unit_kerja_list(self, token, page=1, per_page=200, search=None, status=None):
+        url = f"{self.base_url}/apisimpeg/5.0/unit-kerja/list"
+        params = {'page': page, 'per_page': per_page}
+        if search:
+            params['search'] = search
+        if status is not None:
+            params['status'] = status
+
+        headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+        if self.host_header:
+            headers['Host'] = self.host_header
+
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=self.timeout)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return data.get('data')
+                if 'data' in data and isinstance(data.get('data'), dict) and 'items' in data['data']:
+                    return data['data']
+            return None
+        except Exception as e:
+            logger.error(f"ESIMPEG API get unit kerja list error: {str(e)}")
+            return None
+
     def is_api_available(self):
         cache_key = 'esimpeg_api_available'
         cached = cache.get(cache_key)

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { ArrowLeft, Save, LayoutList, Clock, Camera, X, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { profileService, type ProfileSection } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useTranslations } from 'next-intl';
 
@@ -24,6 +25,7 @@ export default function StrukturPage() {
     const [saving, setSaving] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [removeImage, setRemoveImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => { loadSection(); }, []);
@@ -41,7 +43,7 @@ export default function StrukturPage() {
             }
         } catch (err) {
             console.error(err);
-            showError(t('load_error'));
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -52,7 +54,9 @@ export default function StrukturPage() {
         setSaving(true);
         showLoading(t('saving'));
         try {
-            if (imageFile) {
+            if (removeImage) {
+                await profileService.updateSection(section.id, { content, title: sectionTitle, image: null });
+            } else if (imageFile) {
                 await profileService.updateSectionWithImage(section.id, { content, title: sectionTitle }, imageFile);
             } else {
                 await profileService.updateSection(section.id, { content, title: sectionTitle });
@@ -62,10 +66,17 @@ export default function StrukturPage() {
             showSuccess(t('save_success'));
         } catch (err) {
             closeLoading();
-            showError(t('save_error'));
+            showError(handleApiError(err));
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleRemoveImage = () => {
+        setRemoveImage(true);
+        setImageFile(null);
+        setImagePreview(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,6 +84,7 @@ export default function StrukturPage() {
         if (file) {
             setImageFile(file);
             setImagePreview(URL.createObjectURL(file));
+            setRemoveImage(false);
         }
     };
 
@@ -101,7 +113,7 @@ export default function StrukturPage() {
         );
     }
 
-    const hasChanges = content !== section.content || sectionTitle !== section.title || imageFile !== null;
+    const hasChanges = content !== section.content || sectionTitle !== section.title || imageFile !== null || removeImage;
 
     return (
         <div className="space-y-6">
@@ -182,7 +194,7 @@ export default function StrukturPage() {
                                 {imagePreview && (
                                     <button
                                         type="button"
-                                        onClick={() => { setImagePreview(section.image ? sectionImageUrl(section.image) : null); setImageFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                        onClick={handleRemoveImage}
                                         className="block text-xs text-red-500 hover:text-red-600 font-medium"
                                     >
                                         {t('remove_image')}

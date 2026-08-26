@@ -68,5 +68,22 @@ class Command(BaseCommand):
         if created:
             self.stdout.write(self.style.SUCCESS(f'Created: Pegawai'))
 
+        unit_kerja_menu, created = MenuItem.objects.get_or_create(
+            name='Unit Kerja',
+            parent=parent_menu,
+            platform='frontend',
+            defaults={
+                'icon': '🏢',
+                'type': 'module',
+                'external_url': '/admin/simpeg/unit-kerja',
+                'order': 3,
+                'category': 2,
+                'is_active': True,
+                'permission_key': 'api_simpeg.unit_kerja.view',
+            }
+        )
+        if created:
+            self.stdout.write(self.style.SUCCESS(f'Created: Unit Kerja'))
+
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('API SIMPEG Menu Seeding Complete'))

@@ -22,6 +22,7 @@ import {
     ChevronRight
 } from 'lucide-react';
 import { showError, showToast } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 import { getSettings, batchUpdateSettings, type AppSetting } from '@/lib/api/settings';
 import { getAdminHeroImages, createHeroImage, updateHeroImage, deleteHeroImage, type HeroImageItem } from '@/lib/api/hero';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -172,7 +173,7 @@ export default function SettingsPage() {
             setHeroModalOpen(false);
             loadHeroImages();
         } catch (error: any) {
-            showError(error.message || t('hero_save_error'));
+            showError(handleApiError(error));
         } finally {
             setHeroLoading(false);
         }
@@ -185,7 +186,7 @@ export default function SettingsPage() {
             showToast(t('hero_delete_success'), 'success');
             loadHeroImages();
         } catch (error: any) {
-            showError(error.message || t('hero_delete_error'));
+            showError(handleApiError(error));
         }
     };
 
@@ -222,7 +223,7 @@ export default function SettingsPage() {
             }
         } catch (error) {
             console.error('Failed to load settings:', error);
-            showError(t('load_error'));
+            showError(handleApiError(error));
         } finally {
             setInitialLoading(false);
         }
@@ -252,7 +253,7 @@ export default function SettingsPage() {
             }
             await loadSettings();
         } catch (error: any) {
-            showError(error.message || t('save_failed'));
+            showError(handleApiError(error));
         } finally {
             setLoading(false);
         }

@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
@@ -14,6 +15,11 @@ def knowledge_thumbnail_upload_to(instance, filename):
 def knowledge_file_upload_to(instance, filename):
     date_path = timezone.now().strftime('%Y/%m')
     return f'knowledge/files/{date_path}/{clean_filename(filename)}'
+
+
+def knowledge_document_upload_to(instance, filename):
+    date_path = timezone.now().strftime('%Y/%m')
+    return f'knowledge/documents/{date_path}/{clean_filename(filename)}'
 
 
 class Category(models.Model):
@@ -237,14 +243,31 @@ class Article(models.Model):
         related_name='articles',
         verbose_name='Kategori'
     )
-    source_module = models.OneToOneField(
+    source_lesson = models.OneToOneField(
+        'learning.Lesson',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='knowledge_article',
+        verbose_name='Sumber Lesson LMS',
+    )
+    source_module = models.ForeignKey(
         'learning.Module',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='synced_article',
+        related_name='knowledge_articles',
         verbose_name='Sumber Modul LMS',
     )
+    source_course = models.OneToOneField(
+        'learning.Course',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='knowledge_article',
+        verbose_name='Sumber Course LMS',
+    )
+    order = models.IntegerField(default=0, verbose_name='Urutan (dari LMS)')
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -622,6 +645,77 @@ class Article(models.Model):
     def can_publish(self):
         """Check if article can be published"""
         return self.status == 'approved'
+
+
+class ArticleDocument(models.Model):
+    """
+    Additional file attachment for an Article.
+    An article can have multiple documents (PDF, DOC, PPT, etc).
+    Documents pulled from LMS lessons keep a reference to the source lesson.
+    """
+    article = models.ForeignKey(
+        Article,
+        on_delete=models.CASCADE,
+        related_name='documents',
+        verbose_name='Artikel'
+    )
+    file = models.FileField(
+        upload_to=knowledge_document_upload_to,
+        verbose_name='File'
+    )
+    file_name = models.CharField(max_length=255, blank=True, verbose_name='Nama File')
+    file_size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        verbose_name='Ukuran File (bytes)'
+    )
+    file_type = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name='Tipe File'
+    )
+    source_lesson = models.ForeignKey(
+        'learning.Lesson',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='article_documents',
+        verbose_name='Sumber Lesson LMS',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Dibuat Pada')
+
+    class Meta:
+        db_table = 'knowledge_article_documents'
+        verbose_name = 'Dokumen Artikel'
+        verbose_name_plural = 'Dokumen Artikel'
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['article']),
+            models.Index(fields=['source_lesson']),
+        ]
+
+    def __str__(self):
+        return self.file_name or self.file.name
+
+    def save(self, *args, **kwargs):
+        if not self.file_name and self.file:
+            self.file_name = os.path.basename(self.file.name)
+        if not self.file_size and self.file:
+            self.file_size = self.file.size
+        if not self.file_type and self.file:
+            self.file_type = self.file.name.split('.')[-1].upper()
+        super().save(*args, **kwargs)
+
+    def get_file_size_display(self):
+        """Human readable file size"""
+        if not self.file_size:
+            return ''
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024 or unit == 'GB':
+                return f"{size:.1f} {unit}"
+            size /= 1024
 
 
 class ArticleTag(models.Model):

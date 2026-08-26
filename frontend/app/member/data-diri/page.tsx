@@ -6,6 +6,7 @@ import { userProfileService, type UserProfile } from '@/lib/services/user-profil
 import { referensiService, type KategoriUser } from '@/lib/services/referensi.service';
 import { LazySearchSelect } from '@/components/ui/lazy-search-select';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 
 export default function DataDiriPage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -51,7 +52,7 @@ export default function DataDiriPage() {
             });
         } catch (err) {
             console.error(err);
-            showError('Gagal memuat data diri');
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -111,7 +112,7 @@ export default function DataDiriPage() {
             showSuccess('Data diri berhasil diperbarui');
         } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan data diri');
+            showError(handleApiError(err));
         } finally {
             setSaving(false);
         }

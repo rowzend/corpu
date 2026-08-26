@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
-    ArrowLeft, Save, Loader2, GraduationCap, Upload,
+    ArrowLeft, Save, Loader2, GraduationCap, Upload, X,
     Clock, MapPin, Users
 } from 'lucide-react';
 import { createHCDPProgram } from '@/lib/api/hcdp';
@@ -17,6 +17,8 @@ import { handleApiError } from '@/lib/api';
 export default function CreateHCDPPage() {
     const router = useRouter();
     const [saving, setSaving] = useState(false);
+    const [gambarFile, setGambarFile] = useState<File | null>(null);
+    const [gambarPreview, setGambarPreview] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -73,6 +75,7 @@ export default function CreateHCDPPage() {
                 tags: tagsArray,
                 is_active: formData.is_active,
                 is_published: formData.is_published,
+                gambar: gambarFile,
             });
             showToast('Program berhasil dibuat!', 'success');
             router.push('/admin/dashboard/hcdp');
@@ -241,12 +244,33 @@ export default function CreateHCDPPage() {
                         <h2 className="text-lg font-semibold text-card-foreground">Thumbnail (Opsional)</h2>
                     </div>
                     <div className="p-6">
-                        <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors">
-                            <Upload className="w-6 h-6 text-muted-foreground mb-1" />
-                            <span className="text-sm text-muted-foreground">Upload gambar program</span>
-                            <span className="text-xs text-muted-foreground">PNG, JPG, WebP</span>
-                            <input type="file" accept="image/*" className="hidden" />
-                        </label>
+                        {gambarPreview ? (
+                            <div className="relative inline-block">
+                                <img src={gambarPreview} alt="Thumbnail preview"
+                                    className="h-40 rounded-xl object-cover border border-border" />
+                                <button
+                                    type="button"
+                                    onClick={() => { setGambarFile(null); setGambarPreview(null); }}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors">
+                                <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                                <span className="text-sm text-muted-foreground">Upload gambar program</span>
+                                <span className="text-xs text-muted-foreground">PNG, JPG, WebP</span>
+                                <input type="file" accept="image/*" className="hidden"
+                                    onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setGambarFile(file);
+                                            setGambarPreview(URL.createObjectURL(file));
+                                        }
+                                    }} />
+                            </label>
+                        )}
                     </div>
                 </div>
 

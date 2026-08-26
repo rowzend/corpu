@@ -8,6 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
     ArrowLeft,
     Eye,
     Heart,
@@ -20,7 +27,10 @@ import {
     ExternalLink,
     Play,
     Download,
-    LogIn
+    LogIn,
+    ChevronLeft,
+    ChevronRight,
+    List
 } from 'lucide-react';
 import { getPublicArticle, likeArticle, shareArticle, type Article } from '@/lib/api/knowledge';
 import { handleApiError } from '@/lib/api';
@@ -28,6 +38,7 @@ import CommentSection from '@/components/CommentSection';
 import { authService } from '@/lib/services';
 import { getCategoryColor } from '@/lib/colors';
 import { showConfirm, showError } from '@/lib/sweetalert';
+import { enhanceContentEmbeds } from '@/lib/utils';
 
 export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string }) {
     const params = useParams();
@@ -128,6 +139,12 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
             case 'link': return <ExternalLink className="w-5 h-5" />;
             default: return <BookOpen className="w-5 h-5" />;
         }
+    };
+
+    const isPreviewable = (doc: Article['documents'][number]) => {
+        if (!doc.file_type) return false;
+        const type = doc.file_type.toLowerCase();
+        return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(type);
     };
 
     const isGoogleDriveUrl = (url: string) =>
@@ -303,6 +320,66 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                     </Button>
                 </div>
 
+                {article.course_title && article.toc && article.toc.length > 0 && (() => {
+                    const scrollToAnchor = (anchor: string) => {
+                        const el = document.getElementById(anchor);
+                        if (el) {
+                            const y = el.getBoundingClientRect().top + window.pageYOffset - 90;
+                            window.scrollTo({ top: y, behavior: 'smooth' });
+                        }
+                    };
+                    return (
+                        <Card className="mb-8">
+                            <CardContent className="p-6">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 flex-wrap">
+                                    <Link href={`${basePath}?search=&category=`} className="hover:text-primary transition-colors">
+                                        {t('knowledge_base')}
+                                    </Link>
+                                    <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                                    <span className="font-semibold text-card-foreground">{article.course_title}</span>
+                                </div>
+                                <h3 className="font-semibold text-card-foreground mb-3 flex items-center gap-2">
+                                    <List className="w-4 h-4" /> {t('materi_list')}
+                                </h3>
+                                <div className="space-y-1">
+                                    {article.toc.map((item, i) => {
+                                        if (item.type === 'module') {
+                                            if (!item.shown) {
+                                                return null;
+                                            }
+                                            return (
+                                                <button
+                                                    key={`m-${i}`}
+                                                    onClick={() => scrollToAnchor(item.anchor)}
+                                                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted text-muted-foreground hover:text-card-foreground transition-colors w-full text-left"
+                                                >
+                                                    <span className="inline-flex w-4 justify-center flex-shrink-0 font-semibold text-xs opacity-70">
+                                                        {item.module_title ? 'M' : ''}
+                                                    </span>
+                                                    <span className="truncate">{item.module_title}</span>
+                                                </button>
+                                            );
+                                        }
+                                        const lessonNo = article.toc.slice(0, i + 1).filter(x => x.type === 'lesson').length;
+                                        return (
+                                            <button
+                                                key={i}
+                                                onClick={() => scrollToAnchor(item.anchor)}
+                                                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted text-muted-foreground hover:text-card-foreground transition-colors w-full text-left"
+                                            >
+                                                <span className="inline-flex w-4 justify-center flex-shrink-0 font-semibold text-xs opacity-70">
+                                                    {lessonNo}
+                                                </span>
+                                                <span className="truncate">{item.lesson_title}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })()}
+
                 <Card className="mb-8">
                     <CardContent className="p-8">
                         <div className="flex items-center gap-2 mb-4">
@@ -380,10 +457,81 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
 
                 {renderMediaContent()}
 
+                {article.documents && article.documents.length > 0 && (
+                    <Card className="mb-8">
+                        <CardContent className="p-6 space-y-3">
+                            <h3 className="font-semibold text-card-foreground flex items-center gap-2">
+                                <Download className="w-4 h-4" /> {t('attached_documents')} ({article.documents.length})
+                            </h3>
+                            <div className="space-y-2">
+                                {article.documents.map(doc => {
+                                    const previewable = isPreviewable(doc);
+                                    const isImage = ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes((doc.file_type || '').toLowerCase());
+                                    return (
+                                        <div key={doc.id} className="flex items-center justify-between gap-3 border border-border rounded-xl bg-primary/5 px-4 py-3">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <Download className="w-5 h-5 text-primary-foreground" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-medium text-card-foreground truncate">{doc.file_name}</p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {doc.file_type && `Format: ${doc.file_type}`}
+                                                        {doc.file_size_display && ` • ${doc.file_size_display}`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-shrink-0">
+                                                {previewable && (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" size="sm">
+                                                                <Eye className="w-4 h-4 mr-1" /> {t('preview')}
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent className="max-w-4xl w-[calc(100vw-2rem)]">
+                                                            <DialogHeader>
+                                                                <DialogTitle className="pr-6 truncate">{doc.file_name}</DialogTitle>
+                                                            </DialogHeader>
+                                                            {isImage ? (
+                                                                <div className="overflow-auto max-h-[70vh]">
+                                                                    <img src={doc.url} alt={doc.file_name} className="w-full h-auto rounded-lg border border-border" />
+                                                                </div>
+                                                            ) : (
+                                                                <iframe
+                                                                    src={doc.url}
+                                                                    title={doc.file_name}
+                                                                    className="w-full h-[70vh] rounded-lg border border-border"
+                                                                />
+                                                            )}
+                                                            <div className="flex justify-end">
+                                                                <Button asChild size="sm">
+                                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                                        <Download className="w-4 h-4 mr-2" /> {tc('download')}
+                                                                    </a>
+                                                                </Button>
+                                                            </div>
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
+                                                <Button asChild size="sm">
+                                                    <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                                        <Download className="w-4 h-4 mr-2" /> {tc('download')}
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 <Card className="mb-8">
                     <CardContent className="p-8">
                         <div className="prose prose-lg max-w-none prose-headings:text-card-foreground prose-a:text-primary prose-img:rounded-xl">
-                            <div className="leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
+                            <div className="leading-relaxed" dangerouslySetInnerHTML={{ __html: enhanceContentEmbeds(article.content) }} />
                         </div>
                     </CardContent>
                 </Card>
@@ -430,6 +578,7 @@ export default function KMSDetailPage({ basePath = '/kms' }: { basePath?: string
                         </Link>
                     </Button>
                 </div>
+
                 </div>
             </div>
         </div>

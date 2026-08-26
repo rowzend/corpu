@@ -16,58 +16,58 @@ class KnowledgeBasePermission(permissions.BasePermission):
     PERMISSION_MAP = {
         # Articles
         'articles': {
-            'list': ('knowledge', 'articles', 'view'),
-            'retrieve': ('knowledge', 'articles', 'view'),
-            'create': ('knowledge', 'articles', 'create'),
-            'update': ('knowledge', 'articles', 'edit'),
-            'partial_update': ('knowledge', 'articles', 'edit'),
-            'destroy': ('knowledge', 'articles', 'delete'),
-            'submit_for_approval': ('knowledge', 'articles', 'create'),
-            'approve': ('knowledge', 'articles', 'approve'),
-            'reject': ('knowledge', 'articles', 'reject'),
-            'publish': ('knowledge', 'articles', 'publish'),
-            'pending_approval': ('knowledge', 'articles', 'approve'),
-            'my_articles': ('knowledge', 'articles', 'view'),
+            'list': ('knowledge', 'knowledge_article', 'view'),
+            'retrieve': ('knowledge', 'knowledge_article', 'view'),
+            'create': ('knowledge', 'knowledge_article', 'create'),
+            'update': ('knowledge', 'knowledge_article', 'edit'),
+            'partial_update': ('knowledge', 'knowledge_article', 'edit'),
+            'destroy': ('knowledge', 'knowledge_article', 'delete'),
+            'submit_for_approval': ('knowledge', 'knowledge_article', 'create'),
+            'approve': ('knowledge', 'knowledge_article', 'edit'),
+            'reject': ('knowledge', 'knowledge_article', 'edit'),
+            'publish': ('knowledge', 'knowledge_article', 'publish'),
+            'pending_approval': ('knowledge', 'knowledge_article', 'view'),
+            'my_articles': ('knowledge', 'knowledge_article', 'view'),
         },
         
         # Categories
         'categories': {
-            'list': ('knowledge', 'categories', 'view'),
-            'retrieve': ('knowledge', 'categories', 'view'),
-            'create': ('knowledge', 'categories', 'create'),
-            'update': ('knowledge', 'categories', 'edit'),
-            'partial_update': ('knowledge', 'categories', 'edit'),
-            'destroy': ('knowledge', 'categories', 'delete'),
+            'list': ('knowledge', 'knowledge_category', 'view'),
+            'retrieve': ('knowledge', 'knowledge_category', 'view'),
+            'create': ('knowledge', 'knowledge_category', 'create'),
+            'update': ('knowledge', 'knowledge_category', 'edit'),
+            'partial_update': ('knowledge', 'knowledge_category', 'edit'),
+            'destroy': ('knowledge', 'knowledge_category', 'delete'),
         },
         
         # Tags
         'tags': {
-            'list': ('knowledge', 'tags', 'view'),
-            'retrieve': ('knowledge', 'tags', 'view'),
-            'create': ('knowledge', 'tags', 'create'),
-            'update': ('knowledge', 'tags', 'edit'),
-            'partial_update': ('knowledge', 'tags', 'edit'),
-            'destroy': ('knowledge', 'tags', 'delete'),
+            'list': ('knowledge', 'knowledge_tag', 'view'),
+            'retrieve': ('knowledge', 'knowledge_tag', 'view'),
+            'create': ('knowledge', 'knowledge_tag', 'create'),
+            'update': ('knowledge', 'knowledge_tag', 'edit'),
+            'partial_update': ('knowledge', 'knowledge_tag', 'edit'),
+            'destroy': ('knowledge', 'knowledge_tag', 'delete'),
         },
         
         # Comments
         'comments': {
-            'list': ('knowledge', 'comments', 'view'),
-            'retrieve': ('knowledge', 'comments', 'view'),
-            'create': ('knowledge', 'comments', 'create'),
-            'update': ('knowledge', 'comments', 'edit'),
-            'partial_update': ('knowledge', 'comments', 'edit'),
-            'destroy': ('knowledge', 'comments', 'delete'),
+            'list': ('knowledge', 'knowledge_comment', 'view'),
+            'retrieve': ('knowledge', 'knowledge_comment', 'view'),
+            'create': ('knowledge', 'knowledge_comment', 'create'),
+            'update': ('knowledge', 'knowledge_comment', 'edit'),
+            'partial_update': ('knowledge', 'knowledge_comment', 'edit'),
+            'destroy': ('knowledge', 'knowledge_comment', 'delete'),
         },
         
         # Ratings
         'ratings': {
-            'list': ('knowledge', 'ratings', 'view'),
-            'retrieve': ('knowledge', 'ratings', 'view'),
-            'create': ('knowledge', 'ratings', 'create'),
-            'update': ('knowledge', 'ratings', 'edit'),
-            'partial_update': ('knowledge', 'ratings', 'edit'),
-            'destroy': ('knowledge', 'ratings', 'delete'),
+            'list': ('knowledge', 'knowledge_rating', 'view'),
+            'retrieve': ('knowledge', 'knowledge_rating', 'view'),
+            'create': ('knowledge', 'knowledge_rating', 'create'),
+            'update': ('knowledge', 'knowledge_rating', 'edit'),
+            'partial_update': ('knowledge', 'knowledge_rating', 'edit'),
+            'destroy': ('knowledge', 'knowledge_rating', 'delete'),
         },
     }
     
@@ -137,15 +137,10 @@ class KnowledgeBasePermission(permissions.BasePermission):
             return False
         
         module, control, function = permission_tuple
-        
-        # TEMPORARY: Allow all authenticated users for knowledge base
-        # TODO: Setup proper permissions in database
+
+        # Check granular permission from RoleRule (module.control.function)
         logger.info(f"Checking permission: {module}.{control}.{function}")
-        logger.info("TEMPORARY: Allowing all authenticated users")
-        return True
-        
-        # Check permission (commented out for now)
-        # return check_permission(request.user, module, control, function)
+        return check_permission(request.user, module, control, function)
     
     def has_object_permission(self, request, view, obj):
         """
@@ -169,7 +164,7 @@ class KnowledgeBasePermission(permissions.BasePermission):
         
         # Staff can delete any comment
         if hasattr(obj, 'user') and view.action == 'destroy' and view.basename == 'comment':
-            if check_permission(request.user, 'knowledge', 'comments', 'delete'):
+            if check_permission(request.user, 'knowledge', 'knowledge_comment', 'delete'):
                 return True
         
         # Check general permission
@@ -211,7 +206,7 @@ class IsStaffOrReadOnly(permissions.BasePermission):
             return False
         
         # Check if user has any write permission for knowledge base
-        return check_permission(request.user, 'knowledge', 'articles', 'create')
+        return check_permission(request.user, 'knowledge', 'knowledge_article', 'create')
 
 
 class ApprovalPermission(permissions.BasePermission):
@@ -225,6 +220,6 @@ class ApprovalPermission(permissions.BasePermission):
         
         # Check if user has approval permission
         if view.action in ['approve', 'reject']:
-            return check_permission(request.user, 'knowledge', 'articles', 'approve')
+            return check_permission(request.user, 'knowledge', 'knowledge_article', 'approve')
         
         return True

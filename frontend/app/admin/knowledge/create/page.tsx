@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RemoteSearchSelect } from '@/components/ui/remote-search-select';
-import { ArrowLeft, Save, Loader2, Upload, Link, Video, FileText, BookOpen, ChevronDown, AlertCircle, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, Link, Video, FileText, BookOpen, ChevronDown, AlertCircle, X, Link as LinkIcon } from 'lucide-react';
 import { createArticle, getCategories, getTags, type Category, type Tag } from '@/lib/api/knowledge';
 import { api, handleApiError } from '@/lib/api';
 import { showToast, showError } from '@/lib/sweetalert';
@@ -75,6 +75,10 @@ export default function CreateArticlePage() {
         external_url: '',
         file_url: '',
     });
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+    const [fileUpload, setFileUpload] = useState<File | null>(null);
+    const [documents, setDocuments] = useState<File[]>([]);
 
     useEffect(() => {
         fetchTagsData();
@@ -168,12 +172,48 @@ export default function CreateArticlePage() {
 
     const selectedTagObjects = tags.filter(t => selectedTags.includes(t.id));
 
+    const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setThumbnailFile(file);
+            setThumbnailPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeThumbnail = () => {
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
+    };
+
+    const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) setFileUpload(file);
+    };
+
+    const removeFileUpload = () => setFileUpload(null);
+
+    const handleDocumentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length) setDocuments(prev => [...prev, ...files]);
+        e.target.value = '';
+    };
+
+    const removeDocument = (index: number) => {
+        setDocuments(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            const payload = { ...formData, tags: selectedTags };
-            await createArticle(payload as any);
+            const payload: any = {
+                ...formData,
+                tags: selectedTags,
+                thumbnail: thumbnailFile || undefined,
+                file_upload: fileUpload || undefined,
+                documents: documents.length ? documents : undefined,
+            };
+            await createArticle(payload);
             showToast(t('create_success'), 'success');
             router.push('/admin/knowledge');
         } catch (err) {
@@ -323,6 +363,7 @@ export default function CreateArticlePage() {
                                         </div>
                                     )}
                                     {formData.content_type === 'document' && (
+                                        <>
                                         <div className="space-y-2">
                                             <Label htmlFor="file_url" className="text-sm font-medium text-card-foreground">{t('label_file_url')}</Label>
                                             <Input
@@ -334,6 +375,7 @@ export default function CreateArticlePage() {
                                                 className="border-border focus:border-emerald-500 focus:ring-emerald-500"
                                             />
                                         </div>
+                                        </>
                                     )}
                                     {formData.content_type === 'link' && (
                                         <div className="space-y-2">
@@ -405,6 +447,83 @@ export default function CreateArticlePage() {
                                         className="w-4 h-4 text-emerald-600 border-border rounded focus:ring-emerald-500"
                                     />
                                     <span className="text-sm font-medium text-card-foreground">{t('label_featured')}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Thumbnail */}
+                        <div className="bg-card rounded-xl shadow-sm border border-border">
+                            <div className="px-6 py-4 border-b border-border">
+                                <h2 className="text-lg font-semibold text-card-foreground">{t('section_thumbnail')}</h2>
+                            </div>
+                            <div className="p-6">
+                                {thumbnailPreview ? (
+                                    <div className="relative inline-block">
+                                        <img
+                                            src={thumbnailPreview}
+                                            alt="Thumbnail preview"
+                                            className="h-36 w-full rounded-xl object-cover border border-border"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={removeThumbnail}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                                            title={t('remove_file')}
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
+                                        <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                                        <span className="text-sm text-muted-foreground">{t('upload_thumbnail')}</span>
+                                        <span className="text-xs text-muted-foreground">{t('upload_image_hint')}</span>
+                                        <input type="file" accept="image/*" onChange={handleThumbnailChange} className="hidden" />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Dokumen Lampiran */}
+                        <div className="bg-card rounded-xl shadow-sm border border-border">
+                            <div className="px-6 py-4 border-b border-border">
+                                <h2 className="text-lg font-semibold text-card-foreground">{t('section_documents')}</h2>
+                            </div>
+                            <div className="p-6 space-y-3">
+                                {documents.length > 0 && (
+                                    <div className="space-y-2">
+                                        {documents.map((doc, index) => (
+                                            <div key={index} className="flex items-center justify-between border border-border rounded-xl bg-muted px-3 py-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-card-foreground truncate">{doc.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{(doc.size / 1024).toFixed(1)} KB</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeDocument(index)}
+                                                    className="text-red-500 hover:text-red-600 p-1"
+                                                    title={t('remove_document')}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
+                                    <Upload className="w-5 h-5 text-muted-foreground mb-1" />
+                                    <span className="text-sm text-muted-foreground">{t('upload_documents')}</span>
+                                    <span className="text-xs text-muted-foreground">{t('documents_hint')}</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.jpeg"
+                                        onChange={handleDocumentsChange}
+                                        className="hidden"
+                                    />
                                 </label>
                             </div>
                         </div>

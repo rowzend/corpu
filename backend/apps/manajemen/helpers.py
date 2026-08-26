@@ -3,9 +3,39 @@ Permission Helper Functions
 For checking permissions and getting user access
 """
 
+import threading
 from django.contrib.auth.models import User
 from django.conf import settings
 from .models import PermissionModule, PermissionRule, RoleRule
+
+# ============================================================
+# Active Role Context (thread-local)
+# Set by ActiveRoleMiddleware from the active_group_id cookie/header.
+# When set, permission checks are scoped to that role ONLY
+# (no superadmin override, no union of all groups).
+# ============================================================
+_active_role = threading.local()
+
+
+def set_active_group_id(group_id):
+    _active_role.group_id = group_id
+
+
+def get_active_group_id():
+    return getattr(_active_role, 'group_id', None)
+
+
+def clear_active_group_id():
+    if hasattr(_active_role, 'group_id'):
+        del _active_role.group_id
+
+
+def _role_groups(user):
+    """Groups used for permission checks, scoped to the active role if set."""
+    active_group_id = get_active_group_id()
+    if active_group_id:
+        return user.groups.filter(id=active_group_id)
+    return user.groups.all()
 
 
 def is_superadmin(user):
@@ -43,12 +73,14 @@ def check_permission(user, module_name, control_name, function_name):
         if check_permission(request.user, 'pegawai', 'ms_pegawai', 'view'):
             # User can view ms_pegawai
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         return True
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         return False
@@ -79,12 +111,14 @@ def get_user_modules(user):
         for module in modules:
             print(module.label_module, module.icon)
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         return PermissionModule.objects.filter(is_active=True)
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         return PermissionModule.objects.none()
@@ -115,8 +149,10 @@ def get_user_controls(user, module_name):
         for control in controls:
             print(control.label_kontrol)
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         from .models import PermissionControl
         control_ids = PermissionRule.objects.filter(
             module__nama_module=module_name,
@@ -124,8 +160,8 @@ def get_user_controls(user, module_name):
         ).values_list('control_id', flat=True).distinct()
         return PermissionControl.objects.filter(id__in=control_ids)
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         from .models import PermissionControl
@@ -159,8 +195,10 @@ def get_user_functions(user, module_name, control_name):
         if 'view' in [f.nama_fungsi for f in functions]:
             # User can view
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         from .models import PermissionFunction
         function_ids = PermissionRule.objects.filter(
             module__nama_module=module_name,
@@ -169,8 +207,8 @@ def get_user_functions(user, module_name, control_name):
         ).values_list('function_id', flat=True).distinct()
         return PermissionFunction.objects.filter(id__in=function_ids)
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         from .models import PermissionFunction
@@ -203,12 +241,14 @@ def get_user_rules(user):
         for rule in rules:
             print(rule.permission_string)
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         return PermissionRule.objects.filter(is_active=True)
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         return PermissionRule.objects.none()
@@ -237,12 +277,14 @@ def has_any_permission(user, module_name):
         if has_any_permission(request.user, 'pegawai'):
             # Show Pegawai menu in sidebar
     """
-    # Superuser/group override (only if enabled)
-    if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+    # Superuser/group override (only if enabled, and only when no specific role is active)
+    if (not get_active_group_id()
+            and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+            and is_superadmin(user)):
         return True
     
-    # Get user's roles (groups)
-    user_roles = user.groups.all()
+    # Get user's roles (groups) - scoped to the active role if selected
+    user_roles = _role_groups(user)
     
     if not user_roles.exists():
         return False

@@ -2,7 +2,7 @@
 Serializers for Knowledge Base API
 """
 from rest_framework import serializers
-from .models import Category, Article, Tag, ArticleTag, Rating, ArticleView, ArticleLike, Comment, CommentLike, ApprovalHistory
+from .models import Category, Article, ArticleDocument, Tag, ArticleTag, Rating, ArticleView, ArticleLike, Comment, CommentLike, ApprovalHistory
 
 
 # Simple author serializer for article list
@@ -51,6 +51,10 @@ class ArticleListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     like_percentage = serializers.FloatField(source='get_like_percentage', read_only=True)
     comment_count = serializers.IntegerField(source='get_comment_count', read_only=True)
+    document_count = serializers.IntegerField(source='documents.count', read_only=True)
+    order = serializers.IntegerField(read_only=True)
+    course_title = serializers.SerializerMethodField()
+    module_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
@@ -59,8 +63,33 @@ class ArticleListSerializer(serializers.ModelSerializer):
             'content_type', 'author', 'author_name', 'category', 'category_name',
             'is_featured', 'view_count', 'like_count', 'dislike_count',
             'like_percentage', 'rating_avg', 'rating_count', 'comment_count',
+            'document_count', 'order', 'course_title', 'module_title',
             'published_at', 'created_at', 'status'
         ]
+
+    def get_course_title(self, obj):
+        return obj.source_course.title if obj.source_course_id else None
+
+    def get_module_title(self, obj):
+        return obj.source_module.title if obj.source_module_id else None
+
+
+class ArticleDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for ArticleDocument (multiple file attachments per article)"""
+    file_size_display = serializers.CharField(source='get_file_size_display', read_only=True)
+    url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ArticleDocument
+        fields = [
+            'id', 'article', 'file', 'url', 'file_name',
+            'file_size', 'file_size_display', 'file_type',
+            'source_lesson', 'created_at'
+        ]
+        read_only_fields = ['article', 'created_at']
+
+    def get_url(self, obj):
+        return obj.file.url
 
 
 class ArticleDetailSerializer(serializers.ModelSerializer):
@@ -82,6 +111,12 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
     youtube_thumbnail = serializers.CharField(source='get_youtube_thumbnail', read_only=True)
     file_icon = serializers.CharField(source='get_file_icon', read_only=True)
     file_size_display = serializers.CharField(source='get_file_size_display', read_only=True)
+    documents = ArticleDocumentSerializer(many=True, read_only=True)
+    
+    # LMS structure
+    course_title = serializers.SerializerMethodField()
+    course_slug = serializers.SerializerMethodField()
+    toc = serializers.SerializerMethodField()
     
     # Stats
     like_percentage = serializers.FloatField(source='get_like_percentage', read_only=True)
@@ -105,6 +140,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
             'thumbnail', 'content_type',
             'file_url', 'file_upload', 'file_size', 'file_type',
             'file_size_display', 'file_icon',
+            'documents',
             'youtube_url', 'youtube_embed_id', 'youtube_embed_url',
             'youtube_thumbnail', 'video_duration',
             'external_url',
@@ -114,6 +150,8 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
             'category', 'tags',
             # Status
             'status', 'is_featured',
+            # LMS structure
+            'course_title', 'course_slug', 'toc',
             # Stats
             'view_count', 'like_count', 'dislike_count', 'like_percentage', 'share_count',
             'rating_avg', 'rating_count', 'comment_count',
@@ -143,6 +181,22 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         if obj.approved_by:
             return obj.approved_by.get_full_name() or obj.approved_by.username
         return None
+
+    def get_course_title(self, obj):
+        return obj.source_course.title if obj.source_course_id else None
+
+    def get_module_title(self, obj):
+        return obj.source_module.title if obj.source_module_id else None
+
+    def get_course_slug(self, obj):
+        return obj.source_course.slug if obj.source_course_id else None
+
+    def get_toc(self, obj):
+        """Table of contents of the compiled course article (modules & lessons with anchors)."""
+        if not obj.source_course_id:
+            return []
+        from apps.learning.signals import article_toc
+        return article_toc(obj.source_course)
     
     def _handle_tags(self, article, tags_data):
         """Handle tag relationships from list of tag IDs"""
@@ -154,10 +208,46 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
                     ArticleTag.objects.get_or_create(article=article, tag=tag)
                 except Tag.DoesNotExist:
                     pass
-    
+
+    def _get_tags_data(self):
+        """Read tags list from JSON or multipart/form-data request."""
+        initial_data = self.initial_data
+        if hasattr(initial_data, 'getlist'):
+            # multipart/form-data (QueryDict) - repeated 'tags' keys
+            if 'tags' in initial_data:
+                return initial_data.getlist('tags')
+            return None
+        return initial_data.get('tags', None)
+
+    def _get_documents_data(self):
+        """Read uploaded documents list from JSON or multipart/form-data request."""
+        initial_data = self.initial_data
+        if hasattr(initial_data, 'getlist'):
+            # multipart/form-data (QueryDict) - repeated 'documents' keys
+            return initial_data.getlist('documents') or None
+        documents = initial_data.get('documents', None)
+        if isinstance(documents, list):
+            return documents
+        if documents is None or documents == '':
+            return None
+        return [documents]
+
+    def _handle_documents(self, article, documents_data):
+        """Create ArticleDocument entries from uploaded files."""
+        if not documents_data:
+            return
+        for doc in documents_data:
+            if not hasattr(doc, 'size'):
+                continue
+            try:
+                ArticleDocument.objects.create(article=article, file=doc)
+            except Exception:
+                continue
+
     def create(self, validated_data):
-        """Create article with category and tags support"""
-        tags_data = self.initial_data.get('tags', None)
+        """Create article with category, tags and documents support"""
+        tags_data = self._get_tags_data()
+        documents_data = self._get_documents_data()
         article = Article.objects.create(**validated_data)
         category_val = self.initial_data.get('category')
         if category_val is not None and category_val != '':
@@ -167,6 +257,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
             except (ValueError, TypeError, Category.DoesNotExist):
                 pass
         self._handle_tags(article, tags_data)
+        self._handle_documents(article, documents_data)
         return article
     
     def update(self, instance, validated_data):
@@ -177,7 +268,8 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
         logger.info(f"Initial data: {self.initial_data}")
         logger.info(f"Validated data: {validated_data}")
         
-        tags_data = self.initial_data.get('tags', None)
+        tags_data = self._get_tags_data()
+        documents_data = self._get_documents_data()
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if 'category' in self.initial_data:
@@ -192,6 +284,7 @@ class ArticleDetailSerializer(serializers.ModelSerializer):
                 instance.category = None
         instance.save()
         self._handle_tags(instance, tags_data)
+        self._handle_documents(instance, documents_data)
         logger.info(f"=== UPDATE ARTICLE END ===")
         return instance
 

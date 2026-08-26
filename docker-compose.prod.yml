@@ -2,7 +2,7 @@ services:
   # Backend - Django/Python
   asncorpu_backend:
     image: ghcr.io/profnipu/asncorpu-backend:latest
-    pull_policy: always
+    pull_policy: missing
     container_name: asncorpu_backend_app
     restart: unless-stopped
     command: gunicorn core.wsgi:application --config gunicorn.conf.py
@@ -35,9 +35,17 @@ services:
       - USE_X_FORWARDED_PORT=True
       - RUN_MIGRATIONS=0
       - RUN_COLLECTSTATIC=0
+      # MinIO Configuration (External - same as ESIMPEG)
+      - MINIO_ENDPOINT=http://172.16.7.66:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=5406@Pessel123
+      - MINIO_BUCKET=asncorpu-media
+      - MINIO_REGION=us-east-1
+      - MINIO_USE_PROXY=True
+      - MINIO_PROXY_URL=/media/minio/
       - ESIMPEG_API_URL=http://host.docker.internal:8005
       - ESIMPEG_FALLBACK_ENABLED=True
-      - PERMISSIONS_SUPERADMIN_OVERRIDE=True
+      - PERMISSIONS_SUPERADMIN_OVERRIDE=False
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:
@@ -59,12 +67,14 @@ services:
   # Frontend - Next.js (Production Build)
   asncorpu-frontend:
     image: ghcr.io/profnipu/asncorpu-frontend:latest
-    pull_policy: always
+    pull_policy: missing
     container_name: asncorpu-frontend-nextjs
     expose:
       - "3004"
     environment:
       - NODE_ENV=production
+      - PORT=3004
+      - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_API_URL=http://172.16.30.139:3000/apicorpu/1.0
       - NEXT_PUBLIC_BACKEND_URL=http://172.16.30.139:3000
       - NEXT_PUBLIC_API_TIMEOUT=30000

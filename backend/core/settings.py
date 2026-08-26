@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'apps.knowledge',  # Knowledge Base (KMS) - Articles, Categories, Tags
     'apps.integrations',  # Password Sync Pipeline - Compatible with ESIMPEG
     'apps.hcdp',  # HCDP (Human Capital Development Program)
+    'apps.idp',  # IDP ASN (Individual Development Plan)
     'apps.profile',  # Profile Instansi
     'apps.learning',  # Learning Management System (LMS)
     'apps.news',  # News/Berita
@@ -134,6 +135,7 @@ MIDDLEWARE = [
     'core.middleware.csrf_exempt.CSRFExemptMiddleware',  # CSRF exempt for API endpoints
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core.middleware.ActiveRoleMiddleware',  # Scope permissions to the active role (active_group_id)
     'core.middleware.SessionInactivityMiddleware',  # From middleware.py - Auto-logout on inactivity
     # 'core.middleware.ForceChangePasswordMiddleware',  # DISABLED - Force change default password
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -265,6 +267,19 @@ MINIO_PROXY_URL = config('MINIO_PROXY_URL', default='/media/minio/')
 
 # Use MinIO storage backend if available (falls back to local filesystem)
 DEFAULT_FILE_STORAGE = config('DEFAULT_FILE_STORAGE', default='apps.manajemen.s3_storage.MinioStorage')
+
+# Django 5.2 uses STORAGES (DEFAULT_FILE_STORAGE is deprecated/ignored).
+# Keep 'default' in sync with DEFAULT_FILE_STORAGE so uploads use MinIO.
+STORAGES = {
+    'default': {
+        'BACKEND': DEFAULT_FILE_STORAGE,
+        'OPTIONS': {},
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'OPTIONS': {},
+    },
+}
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -127,6 +127,51 @@ class SyncLog(models.Model):
         return f"Sync {self.synced_at.strftime('%Y-%m-%d %H:%M')} - {self.total_records} records"
 
 
+class UnitKerja(models.Model):
+    id_opd = models.BigIntegerField(unique=True, verbose_name='ID OPD', db_index=True)
+    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, db_index=True, related_name='children', verbose_name='Parent OPD')
+    nm_opd = models.CharField(max_length=255, verbose_name='Nama OPD', db_index=True)
+    id_opd_urut = models.IntegerField(null=True, blank=True, verbose_name='Urutan OPD', db_index=True)
+    level = models.PositiveIntegerField(default=0, verbose_name='Level Hierarki')
+    is_opd_induk = models.BooleanField(default=False, verbose_name='Is OPD Induk', db_index=True)
+    status = models.IntegerField(default=1, verbose_name='Status (1=Aktif, 0=Non Aktif)', db_index=True)
+    id_jenis_organisasi = models.BigIntegerField(null=True, blank=True, verbose_name='ID Jenis Organisasi', db_index=True)
+    nama_jenis_organisasi = models.CharField(max_length=191, null=True, blank=True, verbose_name='Nama Jenis Organisasi')
+    path = models.JSONField(default=list, blank=True, verbose_name='Path Hierarki', help_text='[{id_opd, nama}, ...] dari root')
+    raw_data = models.JSONField(verbose_name='Raw Data dari API')
+    synced_at = models.DateTimeField(auto_now=True, verbose_name='Terakhir Sync')
+    synced_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Di-sync oleh')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Dibuat')
+
+    class Meta:
+        db_table = 'api_simpeg_unit_kerja'
+        verbose_name = 'Unit Kerja ESIMPEG'
+        verbose_name_plural = 'Unit Kerja ESIMPEG'
+        ordering = ['id_opd_urut', 'nm_opd', 'id_opd']
+        indexes = [
+            models.Index(fields=['id_opd']),
+            models.Index(fields=['parent']),
+            models.Index(fields=['id_opd_urut']),
+            models.Index(fields=['is_opd_induk']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.nm_opd} (OPD #{self.id_opd})"
+
+    def get_full_path_names(self):
+        if self.path:
+            return ' > '.join(p.get('nama', '') for p in self.path)
+        names = []
+        current = self
+        seen = set()
+        while current and current.pk not in seen:
+            seen.add(current.pk)
+            names.append(current.nm_opd)
+            current = current.parent
+        return ' > '.join(reversed(names))
+
+
 class Bupati(models.Model):
     id_bupati = models.BigIntegerField(unique=True, verbose_name='ID Bupati', db_index=True)
     nama = models.CharField(max_length=255, verbose_name='Nama')
@@ -154,3 +199,103 @@ class Bupati(models.Model):
 
     def __str__(self):
         return self.nama or f'Bupati #{self.id_bupati}'
+
+
+class DesainPembelajaranUnit(models.Model):
+    """
+    Desain pembelajaran untuk satu unit kerja (1:1).
+
+    Berisi daftar kompetensi teknis dan tujuan pembelajaran (masing-masing
+    bisa lebih dari satu, disimpan per baris pada tabel anak).
+    """
+
+    unit_kerja = models.OneToOneField(
+        UnitKerja,
+        related_name='desain_pembelajaran',
+        on_delete=models.CASCADE,
+        verbose_name='Unit Kerja',
+        help_text='Unit kerja pemilik desain pembelajaran ini'
+    )
+
+    keterangan = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Keterangan',
+        help_text='Catatan tambahan desain pembelajaran unit kerja'
+    )
+
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='desain_unit_dibuat', verbose_name='Dibuat oleh'
+    )
+    updated_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='desain_unit_diubah', verbose_name='Diubah oleh'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Dibuat')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Diubah')
+
+    class Meta:
+        db_table = 'api_simpeg_desain_pembelajaran_unit'
+        verbose_name = 'Desain Pembelajaran Unit Kerja'
+        verbose_name_plural = 'Desain Pembelajaran Unit Kerja'
+
+    def __str__(self):
+        return f'Desain Pembelajaran — {self.unit_kerja.nm_opd}'
+
+
+class KompetensiTeknisUnit(models.Model):
+    """
+    Kompetensi teknis unit kerja (input bebas, bisa lebih dari satu)
+    untuk desain pembelajaran sebuah unit kerja. Tiap kompetensi teknis
+    memiliki daftar tujuan pembelajarannya sendiri.
+    """
+
+    desain = models.ForeignKey(
+        DesainPembelajaranUnit,
+        related_name='kompetensi_teknis',
+        on_delete=models.CASCADE,
+        verbose_name='Desain Pembelajaran'
+    )
+
+    uraian = models.TextField(verbose_name='Uraian Kompetensi Teknis')
+
+    urutan = models.PositiveIntegerField(default=1, verbose_name='Urutan')
+
+    class Meta:
+        db_table = 'api_simpeg_kompetensi_teknis_unit'
+        verbose_name = 'Kompetensi Teknis Unit Kerja'
+        verbose_name_plural = 'Kompetensi Teknis Unit Kerja'
+        ordering = ['urutan', 'id']
+
+    def __str__(self):
+        return f'{self.urutan}. {self.uraian[:60]}'
+
+
+class TujuanPembelajaranUnit(models.Model):
+    """
+    Tujuan pembelajaran (bisa lebih dari satu) yang melekat pada SATU
+    kompetensi teknis unit kerja. Tujuan milik kompetensi #1 tidak akan
+    muncul pada kompetensi #2 karena relasinya per kompetensi.
+    """
+
+    kompetensi = models.ForeignKey(
+        KompetensiTeknisUnit,
+        related_name='tujuan',
+        on_delete=models.CASCADE,
+        verbose_name='Kompetensi Teknis',
+        help_text='Kompetensi teknis pemilik tujuan pembelajaran ini'
+    )
+
+    uraian = models.TextField(verbose_name='Uraian Tujuan Pembelajaran')
+
+    urutan = models.PositiveIntegerField(default=1, verbose_name='Urutan')
+
+    class Meta:
+        db_table = 'api_simpeg_tujuan_pembelajaran_unit'
+        verbose_name = 'Tujuan Pembelajaran Unit Kerja'
+        verbose_name_plural = 'Tujuan Pembelajaran Unit Kerja'
+        ordering = ['urutan', 'id']
+
+    def __str__(self):
+        return f'{self.urutan}. {self.uraian[:60]}'

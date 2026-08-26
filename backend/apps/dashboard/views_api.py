@@ -1,16 +1,28 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import BasePermission, IsAuthenticated, AllowAny
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import Group
 from django.db.models import Count, Q
 from apps.accounts.models import User
+from apps.manajemen.helpers import check_permission
 from apps.learning.models import Course, Enrollment, Certificate
 from apps.hcdp.models import HcdpProgram
 from apps.news.models import News
 from apps.api_simpeg.models import Pegawai
 from core.models import Notification, MsLogData
+
+
+class DashboardPermission(BasePermission):
+    """
+    Granular permission for the admin dashboard (module 'dashboard').
+    The whole dashboard is gated behind 'dashboard_main/view' since the
+    dashboard page loads stats/activities/system-status/charts together.
+    """
+
+    def has_permission(self, request, view):
+        return check_permission(request.user, 'dashboard', 'dashboard_main', 'view')
 
 
 class PublicLearningStatsAPIView(APIView):
@@ -37,7 +49,7 @@ class PublicLearningStatsAPIView(APIView):
 
 
 class DashboardStatsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DashboardPermission]
 
     def get(self, request):
         today = timezone.now().date()
@@ -94,7 +106,7 @@ class DashboardStatsAPIView(APIView):
 
 
 class RecentActivitiesAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DashboardPermission]
 
     def get(self, request):
         limit = int(request.query_params.get('limit', 10))
@@ -156,7 +168,7 @@ class RecentActivitiesAPIView(APIView):
 
 
 class UserActivityAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DashboardPermission]
 
     def get(self, request):
         limit = int(request.query_params.get('limit', 10))
@@ -216,7 +228,7 @@ class UserActivityAPIView(APIView):
 
 
 class SystemStatusAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DashboardPermission]
 
     def get(self, request):
         database_status = self._check_database()
@@ -264,7 +276,7 @@ class SystemStatusAPIView(APIView):
 
 
 class DashboardChartsAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DashboardPermission]
 
     def get(self, request):
         today = timezone.now().date()

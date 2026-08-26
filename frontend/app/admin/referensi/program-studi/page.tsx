@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Search, BookOpen, RefreshCw, GraduationCap } from 'lucide-react';
 import { referensiService, type ProgramStudi, type PerguruanTinggi } from '@/lib/services/referensi.service';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -35,8 +36,8 @@ export default function ProgramStudiPage() {
             const res = await referensiService.getProgramStudiList(params);
             setItems(res.data || []);
             if (res.pagination) setPagination(res.pagination);
-        } catch {
-            showError('Gagal memuat data program studi');
+        } catch (err) {
+            showError(handleApiError(err));
         } finally { setIsLoading(false); }
     };
 
@@ -56,7 +57,7 @@ export default function ProgramStudiPage() {
                 loadData();
                 loadUniversities();
             } else showError(res.message);
-        } catch { showError('Sinkronisasi gagal'); }
+        } catch (err) { showError(handleApiError(err)); }
         finally { setIsSyncing(false); }
     };
 
@@ -79,7 +80,7 @@ export default function ProgramStudiPage() {
             showLoading('Menghapus...');
             await referensiService.deleteProgramStudi(item.id);
             closeLoading(); showSuccess('Berhasil dihapus'); loadData();
-        } catch { closeLoading(); showError('Gagal menghapus'); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
     };
 
     const handleSubmit = async () => {
@@ -91,7 +92,7 @@ export default function ProgramStudiPage() {
             setShowForm(false); closeLoading();
             showSuccess(editingItem ? 'Berhasil diperbarui' : 'Berhasil dibuat');
             loadData();
-        } catch { closeLoading(); showError('Gagal menyimpan'); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
         finally { setIsSubmitting(false); }
     };
 

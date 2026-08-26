@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Gavel, Plus, Trash2, X, Search } from 'lucide-react';
 import { managementService, type PermissionRule, type PermissionFunction, type PermissionControl, type PermissionModule } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -34,7 +35,7 @@ export default function RulesPage() {
             setControls(cres.data || []);
             const fres = await managementService.getFunctions({ page_size: 999 });
             setFunctions(fres.data || []);
-        } catch { setError(t('load_error')); showError(t('load_error')); }
+        } catch (err) { const msg = handleApiError(err); setError(msg); showError(msg); }
         finally { setIsLoading(false); }
     };
 
@@ -48,7 +49,7 @@ export default function RulesPage() {
             await managementService.createRule({ module: parseInt(form.module_id), control: parseInt(form.control_id), function: parseInt(form.function_id) });
             setShowForm(false); await loadData(); closeLoading();
             showSuccess(t('create_success'));
-        } catch { closeLoading(); showError(t('save_error')); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
         finally { setSaving(false); }
     };
 
@@ -56,7 +57,7 @@ export default function RulesPage() {
         const confirmed = await showDeleteConfirm(item.permission_string, 'rule');
         if (!confirmed) return;
         try { showLoading(t('deleting')); await managementService.deleteRule(item.id); await loadData(); closeLoading(); showSuccess(t('delete_success')); }
-        catch { closeLoading(); showError(t('delete_error')); }
+        catch (err) { closeLoading(); showError(handleApiError(err)); }
     };
 
     const filtered = items.filter(i => {

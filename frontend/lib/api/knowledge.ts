@@ -31,6 +31,27 @@ export interface Tag {
     created_at: string;
 }
 
+export interface ArticleDocument {
+    id: number;
+    article: number;
+    file: string;
+    url: string;
+    file_name: string;
+    file_size: number | null;
+    file_size_display: string;
+    file_type: string | null;
+    source_lesson: number | null;
+    created_at: string;
+}
+
+export interface TocItem {
+    type: 'module' | 'lesson';
+    anchor: string;
+    module_title: string | null;
+    lesson_title: string | null;
+    shown?: boolean;
+}
+
 export interface Article {
     id: number;
     title: string;
@@ -49,6 +70,12 @@ export interface Article {
     youtube_embed_id: string | null;
     video_duration: string | null;
     external_url: string | null;
+    documents: ArticleDocument[];
+
+    // LMS structure (1 course = 1 compiled article)
+    course_title: string | null;
+    course_slug: string | null;
+    toc: TocItem[];
 
     // Relations
     author: {
@@ -304,6 +331,41 @@ export async function getArticle(idOrSlug: string | number): Promise<ArticleDeta
     return api.get(`/knowledge/articles/${idOrSlug}/`, undefined, false);
 }
 
+function buildArticleFormData(data: Record<string, any>): FormData {
+    const fd = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+        if (value === undefined || value === null) return;
+        if (key === 'tags') {
+            if (Array.isArray(value)) value.forEach(id => fd.append('tags', String(id)));
+            return;
+        }
+        if (key === 'documents') {
+            if (Array.isArray(value)) value.forEach((file: File) => {
+                if (file instanceof File) fd.append('documents', file);
+            });
+            return;
+        }
+        if (key === 'thumbnail' || key === 'file_upload') {
+            if (value instanceof File) fd.append(key, value);
+            return;
+        }
+        if (typeof value === 'boolean') {
+            fd.append(key, String(value));
+        } else if (typeof value === 'object') {
+            fd.append(key, JSON.stringify(value));
+        } else {
+            fd.append(key, String(value));
+        }
+    });
+    return fd;
+}
+
+function hasArticleFile(data: Record<string, any>): boolean {
+    if (data.thumbnail instanceof File || data.file_upload instanceof File) return true;
+    if (Array.isArray(data.documents) && data.documents.some((f: any) => f instanceof File)) return true;
+    return false;
+}
+
 /**
  * Create new article
  */
@@ -321,10 +383,14 @@ export async function createArticle(data: {
     thumbnail?: File | string;
     file_url?: string;
     file_upload?: File;
+    documents?: File[];
     youtube_url?: string;
     external_url?: string;
 }): Promise<ArticleDetailResponse> {
-    return api.post('/knowledge/articles/', data, true);
+    const payload = hasArticleFile(data as Record<string, any>)
+        ? buildArticleFormData(data as Record<string, any>)
+        : data;
+    return api.post('/knowledge/articles/', payload, true);
 }
 
 /**
@@ -344,10 +410,21 @@ export async function updateArticle(idOrSlug: string | number, data: Partial<{
     thumbnail: File | string;
     file_url: string;
     file_upload: File;
+    documents?: File[];
     youtube_url: string;
     external_url: string;
 }>): Promise<ArticleDetailResponse> {
-    return api.put(`/knowledge/articles/${idOrSlug}/`, data);
+    const payload = hasArticleFile(data as Record<string, any>)
+        ? buildArticleFormData(data as Record<string, any>)
+        : data;
+    return api.put(`/knowledge/articles/${idOrSlug}/`, payload);
+}
+
+/**
+ * Delete a document attachment from an article
+ */
+export async function deleteArticleDocument(articleSlug: string, docId: number): Promise<{ status: string; message: string }> {
+    return api.delete(`/knowledge/articles/${articleSlug}/documents/${docId}/`);
 }
 
 /**

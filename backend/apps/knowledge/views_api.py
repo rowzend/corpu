@@ -10,11 +10,12 @@ from django.utils import timezone
 from django.db.models import Q, Count
 from datetime import timedelta
 
-from .models import Category, Article, Tag, Rating, ArticleView, ArticleLike, Comment, CommentLike, ApprovalHistory
+from .models import Category, Article, ArticleDocument, Tag, Rating, ArticleView, ArticleLike, Comment, CommentLike, ApprovalHistory
 from .serializers import (
     CategorySerializer,
     ArticleListSerializer,
     ArticleDetailSerializer,
+    ArticleDocumentSerializer,
     TagSerializer,
     RatingSerializer,
     ArticleViewSerializer,
@@ -121,7 +122,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Allow users with permission to see all categories including inactive"""
         from apps.manajemen.helpers import check_permission
-        if self.request.user.is_authenticated and check_permission(self.request.user, 'knowledge', 'categories', 'view'):
+        if self.request.user.is_authenticated and check_permission(self.request.user, 'knowledge', 'knowledge_category', 'view'):
             return Category.objects.all()
         return Category.objects.filter(is_active=True)
     
@@ -143,7 +144,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # Check permission
-        if not check_permission(user, 'knowledge', 'categories', 'delete'):
+        if not check_permission(user, 'knowledge', 'knowledge_category', 'delete'):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('You do not have permission to delete categories')
         
@@ -187,7 +188,7 @@ class TagViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Allow users with permission to see all tags including inactive"""
         from apps.manajemen.helpers import check_permission
-        if self.request.user.is_authenticated and check_permission(self.request.user, 'knowledge', 'tags', 'view'):
+        if self.request.user.is_authenticated and check_permission(self.request.user, 'knowledge', 'knowledge_tag', 'view'):
             return Tag.objects.all()
         return Tag.objects.filter(is_active=True)
     
@@ -208,7 +209,7 @@ class TagViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # Check permission
-        if not check_permission(user, 'knowledge', 'tags', 'delete'):
+        if not check_permission(user, 'knowledge', 'knowledge_tag', 'delete'):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('You do not have permission to delete tags')
         
@@ -268,7 +269,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
         from apps.manajemen.helpers import check_permission
         user = self.request.user
         
-        if user.is_authenticated and check_permission(user, 'knowledge', 'articles', 'view'):
+        if user.is_authenticated and check_permission(user, 'knowledge', 'knowledge_article', 'view'):
             # Users with permission can see all articles
             return Article.objects.all()
         elif user.is_authenticated:
@@ -347,12 +348,41 @@ class ArticleViewSet(viewsets.ModelViewSet):
         user = self.request.user
         
         # Check if user is the author or has delete permission
-        if instance.author != user and not check_permission(user, 'knowledge', 'articles', 'delete'):
+        if instance.author != user and not check_permission(user, 'knowledge', 'knowledge_article', 'delete'):
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied('You do not have permission to delete this article')
         
         # Delete the article
         instance.delete()
+
+    @action(detail=True, methods=['delete'], url_path='documents/(?P<doc_id>[0-9]+)', permission_classes=[IsAuthenticated])
+    def delete_document(self, request, slug=None, doc_id=None):
+        """
+        Delete a single document attachment from an article
+
+        DELETE /api/articles/{slug}/documents/{doc_id}/
+        """
+        from rest_framework.exceptions import PermissionDenied
+        from apps.manajemen.helpers import check_permission
+        article = self.get_object()
+
+        try:
+            doc = ArticleDocument.objects.get(id=doc_id, article=article)
+        except ArticleDocument.DoesNotExist:
+            return Response(
+                {'error': 'Document not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if article.author != request.user and not check_permission(request.user, 'knowledge', 'knowledge_article', 'edit'):
+            raise PermissionDenied('You do not have permission to delete this document')
+
+        doc.delete()
+
+        return Response({
+            'message': 'Document deleted successfully',
+            'documents': ArticleDocumentSerializer(article.documents.all(), many=True).data
+        })
     
     @action(detail=True, methods=['get'])
     def view_stats(self, request, slug=None):
@@ -710,7 +740,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'platform': platform
         })
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'])
     def submit_for_approval(self, request, slug=None):
         """
         Submit article for approval
@@ -741,7 +771,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    @action(detail=True, methods=['post'], permission_classes=[ApprovalPermission])
+    @action(detail=True, methods=['post'])
     def approve(self, request, slug=None):
         """
         Approve article
@@ -780,7 +810,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    @action(detail=True, methods=['post'], permission_classes=[ApprovalPermission])
+    @action(detail=True, methods=['post'])
     def reject(self, request, slug=None):
         """
         Reject article
@@ -824,7 +854,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'])
     def publish(self, request, slug=None):
         """
         Publish article (must be approved first)
@@ -876,7 +906,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'history': serializer.data
         })
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def pending_approval(self, request):
         """
         Get articles pending approval
@@ -899,7 +929,7 @@ class ArticleViewSet(viewsets.ModelViewSet):
             'articles': serializer.data
         })
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def my_articles(self, request):
         """
         Get current user's articles with all statuses
@@ -927,7 +957,7 @@ class RatingViewSet(viewsets.ModelViewSet):
     - destroy: Delete rating
     """
     serializer_class = RatingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [KnowledgeBasePermission]
     
     def get_queryset(self):
         """Filter ratings by article if provided"""

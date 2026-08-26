@@ -68,7 +68,7 @@ class Command(BaseCommand):
         self.stdout.write(f'  ✓ Deleted {control_count} controls')
         
         # Remove unused functions
-        unused = ['bulk_delete', 'import', 'approve', 'reject', 'print']
+        unused = ['bulk_delete', 'import', 'reject', 'print']
         deleted = PermissionFunction.objects.filter(nama_fungsi__in=unused).delete()[0]
         self.stdout.write(f'  ✓ Removed {deleted} unused functions')
     
@@ -85,6 +85,7 @@ class Command(BaseCommand):
             ('publish', 'Publish', 'Mempublikasikan konten'),
             ('unpublish', 'Unpublish', 'Membatalkan publikasi konten'),
             ('manage', 'Kelola', 'Mengelola data/pengaturan'),
+            ('approve', 'Setujui', 'Menyetujui data'),
         ]
         
         for nama, label, desk in functions:
@@ -114,6 +115,11 @@ class Command(BaseCommand):
             ('hcdp_participant', 'Peserta HCDP', 'Manajemen peserta program'),
             ('hcdp_assessment', 'Assessment HCDP', 'Penilaian dan evaluasi'),
             ('hcdp_report', 'Laporan HCDP', 'Laporan program HCDP'),
+
+            # IDP ASN (Individual Development Plan)
+            ('idp_asn', 'IDP ASN', 'Manajemen Individual Development Plan ASN'),
+            ('idp_report', 'Laporan IDP', 'Laporan dan rekap IDP ASN'),
+            ('idp_approval', 'Approval IDP', 'Persetujuan IDP ASN oleh atasan'),
             
             # Knowledge Management
             ('knowledge_article', 'Artikel Knowledge', 'Manajemen artikel knowledge base'),
@@ -152,8 +158,9 @@ class Command(BaseCommand):
         modules = [
             ('dashboard', 'Dashboard', 'Dashboard utama sistem', 'fas fa-tachometer-alt', 1),
             ('hcdp', 'HCDP', 'Human Capital Development Program', 'fas fa-graduation-cap', 2),
-            ('knowledge', 'Knowledge Base', 'Knowledge Management System', 'fas fa-book', 3),
-            ('settings', 'Pengaturan', 'Pengaturan sistem', 'fas fa-cogs', 4),
+            ('idp', 'IDP ASN', 'Individual Development Plan ASN', 'fas fa-clipboard-list', 3),
+            ('knowledge', 'Knowledge Base', 'Knowledge Management System', 'fas fa-book', 4),
+            ('settings', 'Pengaturan', 'Pengaturan sistem', 'fas fa-cogs', 5),
         ]
         
         for nama, label, desk, icon, order in modules:
@@ -192,10 +199,12 @@ class Command(BaseCommand):
         publish = PermissionFunction.objects.get(nama_fungsi='publish')
         unpublish = PermissionFunction.objects.get(nama_fungsi='unpublish')
         manage = PermissionFunction.objects.get(nama_fungsi='manage')
+        approve = PermissionFunction.objects.get(nama_fungsi='approve')
         
         # Get modules
         dashboard_mod = PermissionModule.objects.get(nama_module='dashboard')
         hcdp_mod = PermissionModule.objects.get(nama_module='hcdp')
+        idp_mod = PermissionModule.objects.get(nama_module='idp')
         knowledge_mod = PermissionModule.objects.get(nama_module='knowledge')
         settings_mod = PermissionModule.objects.get(nama_module='settings')
         
@@ -207,6 +216,10 @@ class Command(BaseCommand):
         hcdp_participant = PermissionControl.objects.get(nama_kontrol='hcdp_participant')
         hcdp_assessment = PermissionControl.objects.get(nama_kontrol='hcdp_assessment')
         hcdp_report = PermissionControl.objects.get(nama_kontrol='hcdp_report')
+
+        idp_asn = PermissionControl.objects.get(nama_kontrol='idp_asn')
+        idp_report = PermissionControl.objects.get(nama_kontrol='idp_report')
+        idp_approval = PermissionControl.objects.get(nama_kontrol='idp_approval')
         
         knowledge_article = PermissionControl.objects.get(nama_kontrol='knowledge_article')
         knowledge_category = PermissionControl.objects.get(nama_kontrol='knowledge_category')
@@ -240,6 +253,16 @@ class Command(BaseCommand):
             (hcdp_mod, hcdp_assessment, edit),
             (hcdp_mod, hcdp_report, view),
             (hcdp_mod, hcdp_report, export),
+            
+            # IDP ASN
+            (idp_mod, idp_asn, view),
+            (idp_mod, idp_asn, create),
+            (idp_mod, idp_asn, edit),
+            (idp_mod, idp_asn, delete),
+            (idp_mod, idp_report, view),
+            (idp_mod, idp_report, export),
+            (idp_mod, idp_approval, view),
+            (idp_mod, idp_approval, approve),
             
             # Knowledge
             (knowledge_mod, knowledge_article, view),

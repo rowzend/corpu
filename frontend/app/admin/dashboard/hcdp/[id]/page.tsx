@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
-    ArrowLeft, Save, Loader2, Trash2, GraduationCap, Upload,
+    ArrowLeft, Save, Loader2, Trash2, GraduationCap, Upload, X,
     Eye, Calendar, Clock, MapPin, Users, BookOpen, UserCheck
 } from 'lucide-react';
 import { getHCDPProgram, updateHCDPProgram, deleteHCDPProgram, type HCDPProgram } from '@/lib/api/hcdp';
@@ -29,6 +29,9 @@ export default function EditHCDPPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [gambarFile, setGambarFile] = useState<File | null>(null);
+    const [gambarPreview, setGambarPreview] = useState<string | null>(null);
+    const [removeGambar, setRemoveGambar] = useState(false);
     const [program, setProgram] = useState<HCDPProgram | null>(null);
     const [formData, setFormData] = useState({
         title: '',
@@ -59,6 +62,9 @@ export default function EditHCDPPage() {
                 const p = res?.data || res;
                 if (!p) throw new Error('Program tidak ditemukan');
                 setProgram(p);
+                setGambarFile(null);
+                setGambarPreview(p.gambar_url || null);
+                setRemoveGambar(false);
                 setFormData({
                     title: p.title || '',
                     description: p.description || '',
@@ -123,6 +129,8 @@ export default function EditHCDPPage() {
                 tags: tagsArray,
                 is_active: formData.is_active,
                 is_published: formData.is_published,
+                gambar: gambarFile,
+                remove_gambar: removeGambar,
             });
             showToast('Program berhasil diperbarui!', 'success');
             router.push('/admin/dashboard/hcdp');
@@ -366,21 +374,43 @@ export default function EditHCDPPage() {
                         <h2 className="text-lg font-semibold text-card-foreground">Thumbnail</h2>
                     </div>
                     <div className="p-6">
-                        {program?.gambar_url ? (
+                        {gambarPreview || program?.gambar_url ? (
                             <div className="relative inline-block">
                                 <img
-                                    src={program.gambar_url}
+                                    src={gambarPreview || program?.gambar_url || ''}
                                     alt="Thumbnail"
                                     className="h-40 rounded-xl object-cover border border-border"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => { setGambarFile(null); setGambarPreview(null); setRemoveGambar(!!program?.gambar_url); }}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
                             </div>
                         ) : (
                             <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors">
                                 <Upload className="w-6 h-6 text-muted-foreground mb-1" />
                                 <span className="text-sm text-muted-foreground">Upload gambar program</span>
                                 <span className="text-xs text-muted-foreground">PNG, JPG, WebP</span>
-                                <input type="file" accept="image/*" className="hidden" />
+                                <input
+                                    type="file" accept="image/*" className="hidden"
+                                    onChange={e => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setGambarFile(file);
+                                            setGambarPreview(URL.createObjectURL(file));
+                                            setRemoveGambar(false);
+                                        }
+                                    }}
+                                />
                             </label>
+                        )}
+                        {gambarPreview && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                {gambarFile ? 'Gambar baru siap diunggah saat disimpan.' : 'Gambar program saat ini.'}
+                            </p>
                         )}
                     </div>
                 </div>

@@ -10,6 +10,7 @@ import {
     type PermissionRule,
 } from '@/lib/services';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 import { ArrowLeft, Save, Loader2, Shield, Key, Check, X, ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function RolePermissionsPage() {
@@ -45,8 +46,9 @@ export default function RolePermissionsPage() {
             const currentPermissionIds = new Set(roleData.permissions.map(p => p.rule));
             setSelectedRuleIds(currentPermissionIds);
         } catch (err) {
-            setError('Failed to load role permissions. Please try again.');
-            showError('Gagal memuat data permission. Silakan coba lagi.');
+            const message = handleApiError(err);
+            setError(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }
@@ -84,7 +86,7 @@ export default function RolePermissionsPage() {
             router.push('/admin/roles');
         } catch (error) {
             closeLoading();
-            showError('Gagal memperbarui permission. Silakan coba lagi.');
+            showError(handleApiError(error));
         } finally {
             setIsSaving(false);
         }

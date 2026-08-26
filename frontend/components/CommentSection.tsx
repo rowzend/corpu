@@ -8,6 +8,7 @@ import CommentItem from './CommentItem';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { showConfirm, showError } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 
 interface CommentSectionProps {
     articleSlug: string;
@@ -54,9 +55,9 @@ export default function CommentSection({
 
             setHasMore(!!response.next);
             setPage(pageNum);
-        } catch (err: any) {
+        } catch (err) {
             console.error('Failed to load comments:', err);
-            setError(err.message || 'Gagal memuat komentar');
+            setError(handleApiError(err));
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -149,8 +150,8 @@ export default function CommentSection({
             await deleteComment(commentId);
             // Remove comment from list
             setComments(prev => removeCommentById(prev, commentId));
-        } catch (err: any) {
-            showError('Gagal menghapus komentar', 'Error');
+        } catch (err) {
+            showError(handleApiError(err));
         }
     };
 

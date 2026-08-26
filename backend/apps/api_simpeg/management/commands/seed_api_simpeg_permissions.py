@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from apps.manajemen.models import PermissionModule, PermissionControl, PermissionFunction, PermissionRule
+from apps.manajemen.models import PermissionModule, PermissionControl, PermissionFunction, PermissionRule, RoleRule
 
 
 class Command(BaseCommand):
@@ -45,6 +45,16 @@ class Command(BaseCommand):
                     {'nama': 'sync', 'label': 'Sync', 'deskripsi': 'Sinkronisasi data bupati dari ESIMPEG'},
                 ]
             },
+            {
+                'nama': 'unit_kerja',
+                'label': 'Unit Kerja',
+                'deskripsi': 'Manajemen data unit kerja beserta hierarki dari ESIMPEG',
+                'functions': [
+                    {'nama': 'view', 'label': 'View', 'deskripsi': 'Lihat daftar unit kerja'},
+                    {'nama': 'sync', 'label': 'Sync', 'deskripsi': 'Sinkronisasi data unit kerja dari ESIMPEG'},
+                    {'nama': 'change', 'label': 'Kelola Desain', 'deskripsi': 'Kelola desain pembelajaran unit kerja (kompetensi teknis & tujuan pembelajaran)'},
+                ]
+            },
         ]
 
         total_rules = 0
@@ -83,6 +93,34 @@ class Command(BaseCommand):
                 )
                 if created:
                     total_rules += 1
+
+        # Berikan akses 'change' (kelola desain pembelajaran) ke role-role yang
+        # sudah memiliki 'sync' pada unit_kerja (Super Admin, User Pemerintaha, dst)
+        try:
+            uk_change_rule = PermissionRule.objects.filter(
+                module=module,
+                control__nama_kontrol='unit_kerja',
+                function__nama_fungsi='change',
+                is_active=True,
+            ).first()
+            sync_rule = PermissionRule.objects.filter(
+                module=module,
+                control__nama_kontrol='unit_kerja',
+                function__nama_fungsi='sync',
+                is_active=True,
+            ).first()
+            if uk_change_rule and sync_rule:
+                synced_roles = RoleRule.objects.filter(rule=sync_rule).values_list('role_id', flat=True)
+                for role_id in synced_roles:
+                    _, created = RoleRule.objects.get_or_create(
+                        role_id=role_id,
+                        rule=uk_change_rule,
+                        defaults={},
+                    )
+                    if created:
+                        total_rules += 1
+        except Exception as e:
+            self.stdout.write(self.style.WARNING(f'  Skip RoleRule change: {e}'))
 
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('API SIMPEG Permissions Seeding Complete'))

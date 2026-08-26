@@ -1,5 +1,17 @@
 from django.contrib import admin
-from .models import Pegawai, SyncLog, SyncProgress
+from .models import Pegawai, UnitKerja, SyncLog, SyncProgress
+
+
+@admin.register(UnitKerja)
+class UnitKerjaAdmin(admin.ModelAdmin):
+    list_display = ['id_opd', 'nm_opd', 'parent_nm', 'level', 'is_opd_induk', 'status', 'nama_jenis_organisasi', 'synced_at']
+    list_filter = ['status', 'is_opd_induk', 'level', 'id_jenis_organisasi']
+    search_fields = ['nm_opd', 'id_opd']
+    readonly_fields = ['raw_data', 'synced_at', 'created_at']
+
+    @admin.display(description='Parent')
+    def parent_nm(self, obj):
+        return obj.parent.nm_opd if obj.parent else '-'
 
 
 @admin.register(Pegawai)

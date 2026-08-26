@@ -26,10 +26,10 @@ export function usePermission() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchPermissions();
+    void fetchPermissions();
   }, []);
 
-  const fetchPermissions = async () => {
+  async function fetchPermissions() {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
@@ -47,10 +47,9 @@ export function usePermission() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   const hasPermission = (module: string, func: string, control: string): boolean => {
-    if (isSuperadmin) return true;
     return permissions.some(
       p => p.module === module && p.function === func && p.control === control
     );

@@ -60,6 +60,34 @@ export class ApiError extends Error {
   }
 }
 
+/** Friendly Indonesian message per HTTP status, used when the server sends no message. */
+export function getFriendlyStatusMessage(status: number): string {
+  switch (status) {
+    case 400:
+      return 'Permintaan tidak valid. Silakan periksa kembali data Anda.';
+    case 401:
+      return 'Sesi Anda telah berakhir. Silakan login kembali.';
+    case 403:
+      return 'Anda tidak memiliki izin untuk melakukan tindakan ini. Jika akses dibatasi oleh role aktif, silakan pilih role yang sesuai atau hubungi administrator.';
+    case 404:
+      return 'Data yang Anda cari tidak ditemukan.';
+    case 405:
+      return 'Metode permintaan tidak diizinkan.';
+    case 422:
+      return 'Data yang Anda kirim tidak valid. Silakan periksa kembali.';
+    case 429:
+      return 'Terlalu banyak permintaan. Silakan coba lagi beberapa saat lagi.';
+    case 500:
+      return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
+    case 502:
+    case 503:
+    case 504:
+      return 'Layanan sedang tidak tersedia. Silakan coba lagi nanti.';
+    default:
+      return `Permintaan gagal dengan status ${status}. Silakan coba lagi.`;
+  }
+}
+
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -89,6 +117,21 @@ class ApiClient {
     return localStorage.getItem('token');
   }
 
+  private getActiveGroupId(): string | null {
+    if (typeof window === 'undefined') return null;
+    const match = document.cookie.match(/(?:^|;\s*)active_group_id=([^;]*)/);
+    return match ? match[1] : null;
+  }
+
+  private addActiveGroupHeader(headers: HeadersInit): HeadersInit {
+    // Send the active role (group_id) so backend scopes permissions to it
+    const activeGroupId = this.getActiveGroupId();
+    if (activeGroupId) {
+      (headers as Record<string, string>)['X-Active-Group-Id'] = activeGroupId;
+    }
+    return headers;
+  }
+
   private getHeaders(includeAuth = true): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -102,7 +145,7 @@ class ApiClient {
       }
     }
 
-    return headers;
+    return this.addActiveGroupHeader(headers);
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {
@@ -123,9 +166,9 @@ class ApiClient {
 
     // If no JSON content and response is not OK, throw error
     if (!hasJsonContent && !response.ok) {
-      const text = await response.text();
+      await response.text();
       throw new ApiError(
-        text ? `Server returned ${response.status}: ${text.slice(0, 200)}` : `Request failed with status ${response.status}`,
+        getFriendlyStatusMessage(response.status),
         response.status,
         'INVALID_RESPONSE'
       );
@@ -137,11 +180,11 @@ class ApiClient {
     // Check if response is not OK (4xx, 5xx)
     if (!response.ok) {
       // Handle different error formats
-      const errorMessage = data.message || data.detail || data.error || 'Request failed';
+      const serverMessage = data.message || data.detail || data.error || '';
       const errorCode = data.code || 'API_ERROR';
-      
+
       throw new ApiError(
-        errorMessage,
+        serverMessage || getFriendlyStatusMessage(response.status),
         response.status,
         errorCode,
         data.errors || data
@@ -239,7 +282,7 @@ class ApiClient {
 
     const response = await fetch(url.toString(), {
       method: 'POST',
-      headers,
+      headers: this.addActiveGroupHeader(headers),
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
 
@@ -271,7 +314,7 @@ class ApiClient {
 
     const response = await fetch(url.toString(), {
       method: 'PUT',
-      headers,
+      headers: this.addActiveGroupHeader(headers),
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
 
@@ -302,7 +345,7 @@ class ApiClient {
 
     const response = await fetch(url.toString(), {
       method: 'PATCH',
-      headers,
+      headers: this.addActiveGroupHeader(headers),
       body: isFormData ? data : (data ? JSON.stringify(data) : undefined),
     });
 
@@ -420,13 +463,14 @@ export const api = new ApiClient();
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
     // Try to extract detailed error message from response
-    if (error.data) {
+    const payload = error.errors;
+    if (payload) {
       // Handle validation errors (422)
       if (error.status === 422 || error.status === 400) {
-        if (typeof error.data === 'object') {
+        if (typeof payload === 'object') {
           // Extract field-specific errors
           const fieldErrors: string[] = [];
-          for (const [field, messages] of Object.entries(error.data)) {
+          for (const [field, messages] of Object.entries(payload)) {
             if (Array.isArray(messages)) {
               fieldErrors.push(`${field}: ${messages.join(', ')}`);
             } else if (typeof messages === 'string') {
@@ -440,31 +484,18 @@ export function handleApiError(error: unknown): string {
       }
       
       // Handle error with detail field
-      if (error.data.detail) {
-        return error.data.detail;
+      if (payload.detail) {
+        return payload.detail;
       }
       
       // Handle error with message field
-      if (error.data.message) {
-        return error.data.message;
+      if (payload.message) {
+        return payload.message;
       }
     }
     
-    // Handle specific HTTP status codes
-    switch (error.status) {
-      case 401:
-        return 'Sesi Anda telah berakhir. Silakan login kembali.';
-      case 403:
-        return 'Anda tidak memiliki izin untuk melakukan tindakan ini.';
-      case 404:
-        return 'Data yang Anda cari tidak ditemukan.';
-      case 422:
-        return 'Data yang Anda kirim tidak valid. Silakan periksa kembali.';
-      case 500:
-        return 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
-      default:
-        return error.message || 'Terjadi kesalahan yang tidak terduga.';
-    }
+    // Fallback: friendly message mapped from the HTTP status code
+    return getFriendlyStatusMessage(error.status);
   }
 
   if (error instanceof Error) {

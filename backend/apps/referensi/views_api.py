@@ -1,7 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission
+from apps.manajemen.helpers import check_permission
 from django.core.management import call_command
 import math
 from django.db.models import Q
@@ -19,8 +20,32 @@ from .serializers import (
 )
 
 
+def referensi_permission(control, function=None):
+    """
+    Factory returning a DRF permission class for referensi module (module 'referensi').
+    Maps HTTP method -> function name ('list'/'create'/'edit'/'delete').
+    If a fixed `function` is provided, it is used for all methods.
+    """
+    _METHOD_MAP = {
+        'GET': 'list',
+        'POST': 'create',
+        'PUT': 'edit',
+        'PATCH': 'edit',
+        'DELETE': 'delete',
+    }
+
+    class ReferensiPermission(BasePermission):
+        def has_permission(self, request, view):
+            fn = function or _METHOD_MAP.get(request.method)
+            if not fn:
+                return True
+            return check_permission(request.user, 'referensi', control, fn)
+
+    return ReferensiPermission
+
+
 class PerguruanTinggiListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('perguruan_tinggi')]
     serializer_class = PerguruanTinggiSerializer
     pagination_class = None
 
@@ -63,7 +88,7 @@ class PerguruanTinggiListAPIView(generics.ListCreateAPIView):
 
 
 class PerguruanTinggiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('perguruan_tinggi')]
     serializer_class = PerguruanTinggiSerializer
     lookup_field = 'pk'
 
@@ -90,7 +115,7 @@ class PerguruanTinggiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ProgramStudiListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('program_studi')]
     serializer_class = ProgramStudiSerializer
     pagination_class = None
 
@@ -136,7 +161,7 @@ class ProgramStudiListAPIView(generics.ListCreateAPIView):
 
 
 class ProgramStudiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('program_studi')]
     serializer_class = ProgramStudiSerializer
     lookup_field = 'pk'
 
@@ -163,7 +188,7 @@ class ProgramStudiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class InstansiListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('instansi')]
     serializer_class = InstansiSerializer
     pagination_class = None
 
@@ -206,7 +231,7 @@ class InstansiListAPIView(generics.ListCreateAPIView):
 
 
 class InstansiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('instansi')]
     serializer_class = InstansiSerializer
     lookup_field = 'pk'
 
@@ -237,7 +262,7 @@ class InstansiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 # ==========================================
 
 class ProvinsiListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('provinsi')]
     serializer_class = ProvinsiSerializer
     pagination_class = None
 
@@ -274,7 +299,7 @@ class ProvinsiListAPIView(generics.ListCreateAPIView):
 
 
 class ProvinsiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('provinsi')]
     serializer_class = ProvinsiSerializer
     lookup_field = 'pk'
 
@@ -301,7 +326,7 @@ class ProvinsiDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class KabupatenListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kabupaten')]
     serializer_class = KabupatenSerializer
     pagination_class = None
 
@@ -341,7 +366,7 @@ class KabupatenListAPIView(generics.ListCreateAPIView):
 
 
 class KabupatenDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kabupaten')]
     serializer_class = KabupatenSerializer
     lookup_field = 'pk'
 
@@ -368,7 +393,7 @@ class KabupatenDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class KecamatanListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kecamatan')]
     serializer_class = KecamatanSerializer
     pagination_class = None
 
@@ -408,7 +433,7 @@ class KecamatanListAPIView(generics.ListCreateAPIView):
 
 
 class KecamatanDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kecamatan')]
     serializer_class = KecamatanSerializer
     lookup_field = 'pk'
 
@@ -435,7 +460,7 @@ class KecamatanDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class KelurahanListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kelurahan')]
     serializer_class = KelurahanSerializer
     pagination_class = None
 
@@ -475,7 +500,7 @@ class KelurahanListAPIView(generics.ListCreateAPIView):
 
 
 class KelurahanDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kelurahan')]
     serializer_class = KelurahanSerializer
     lookup_field = 'pk'
 
@@ -518,7 +543,7 @@ TINGKAT_INSTANSI_MAP = {
 
 
 class InstansiImportXLSXAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('instansi')]
 
     def post(self, request):
         file = request.FILES.get('file')
@@ -627,7 +652,7 @@ class InstansiImportXLSXAPIView(APIView):
 
 
 class KategoriUserListAPIView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kategori_user')]
     serializer_class = KategoriUserSerializer
     pagination_class = None
 
@@ -664,7 +689,7 @@ class KategoriUserListAPIView(generics.ListCreateAPIView):
 
 
 class KategoriUserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('kategori_user')]
     serializer_class = KategoriUserSerializer
     lookup_field = 'pk'
 
@@ -677,7 +702,7 @@ class KategoriUserDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class SyncReferensiAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [referensi_permission('instansi', function='sync')]
 
     def post(self, request):
         source = request.data.get('source', 'github')

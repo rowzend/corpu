@@ -1045,8 +1045,12 @@ class UserPermissionsAPIView(APIView):
         from apps.manajemen.helpers import is_superadmin
         from django.conf import settings
 
-        # Superadmin bypass: return all active modules if override enabled
-        if getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False) and is_superadmin(user):
+        # Superadmin bypass: return all active modules if override enabled.
+        # Only applied when no specific role (group_id) is selected — when the
+        # user has chosen a role, the sidebar must be filtered by that role.
+        if (not group_id
+                and getattr(settings, 'PERMISSIONS_SUPERADMIN_OVERRIDE', False)
+                and is_superadmin(user)):
             all_modules = PermissionModule.objects.filter(is_active=True)
             all_permissions = []
             modules = set()

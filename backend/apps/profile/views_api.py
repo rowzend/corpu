@@ -4,9 +4,10 @@ import requests
 from botocore.config import Config
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import BasePermission, IsAuthenticated, AllowAny
 from django.conf import settings
 from django.core.files.base import ContentFile
+from apps.manajemen.helpers import check_permission
 from .models import ProfileSection, Position, Personalia, Brand
 from .serializers import (
     ProfileSectionSerializer, PositionSerializer,
@@ -14,8 +15,57 @@ from .serializers import (
 )
 from apps.manajemen.minio_service import MinioService
 
+
+def profile_permission(control):
+    """
+    Factory returning a DRF permission class for profile module (module 'profile').
+    Maps HTTP method -> function name ('view'/'create'/'edit'/'delete').
+    """
+    _METHOD_MAP = {
+        'GET': 'view',
+        'POST': 'create',
+        'PUT': 'edit',
+        'PATCH': 'edit',
+        'DELETE': 'delete',
+    }
+
+    class ProfilePermission(BasePermission):
+        def has_permission(self, request, view):
+            function = _METHOD_MAP.get(request.method)
+            if not function:
+                return True
+            return check_permission(request.user, 'profile', control, function)
+
+    return ProfilePermission
+
 logger = logging.getLogger(__name__)
 ESIMPEG_MINIO_BUCKET = 'esimpeg'
+
+
+def _prepare_image_data(request, instance, field='image'):
+    """
+    Clear an image/photo field when the payload explicitly carries an empty
+    value (null/empty string) and no new file is uploaded. The old file is
+    deleted from storage (MinIO) and the field is stripped from the payload
+    so the serializer does not validate it.
+    """
+    data = request.data
+    has_file = bool(request.FILES.get(field))
+    if field in data and data.get(field) in (None, '') and not has_file:
+        current = getattr(instance, field, None)
+        if current:
+            try:
+                current.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Failed to delete {field} on {instance}: {e}")
+        setattr(instance, field, None)
+        instance.save(update_fields=[field, 'updated_at'])
+        if hasattr(data, 'copy'):
+            cleaned = data.copy()
+            cleaned.pop(field, None)
+            return cleaned
+        return {k: v for k, v in data.items() if k != field}
+    return data
 
 
 def _download_photo_bytes(source_key):
@@ -80,7 +130,7 @@ def _copy_source_photo_to_personalia(instance, source_key):
 class ProfileSectionViewSet(viewsets.ModelViewSet):
     queryset = ProfileSection.objects.all()
     serializer_class = ProfileSectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [profile_permission('profile_section')]
     lookup_field = 'pk'
 
     def list(self, request, *args, **kwargs):
@@ -112,7 +162,8 @@ class ProfileSectionViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        data = _prepare_image_data(request, instance, 'image')
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({
@@ -133,7 +184,7 @@ class ProfileSectionViewSet(viewsets.ModelViewSet):
 class PersonaliaViewSet(viewsets.ModelViewSet):
     queryset = Personalia.objects.all()
     serializer_class = PersonaliaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [profile_permission('profile_personalia')]
     lookup_field = 'pk'
 
     def list(self, request, *args, **kwargs):
@@ -184,8 +235,9 @@ class PersonaliaViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
         old_photo = instance.photo
+        data = _prepare_image_data(request, instance, 'photo')
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
@@ -218,7 +270,7 @@ class PersonaliaViewSet(viewsets.ModelViewSet):
 class PositionViewSet(viewsets.ModelViewSet):
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [profile_permission('profile_position')]
     lookup_field = 'pk'
 
     def get_queryset(self):
@@ -354,7 +406,7 @@ class BrandViewSet(viewsets.ModelViewSet):
     """
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [profile_permission('profile_section')]
     lookup_field = 'pk'
 
     def get_serializer_context(self):
@@ -390,21 +442,10 @@ class BrandViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        import logging
-        logger = logging.getLogger(__name__)
-        
-        # Log request data untuk debugging
-        logger.error(f"Update brand request data: {request.data}")
-        logger.error(f"Request FILES: {request.FILES}")
-        logger.error(f"Request content type: {request.content_type}")
-        
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        
-        if not serializer.is_valid():
-            logger.error(f"Serializer errors: {serializer.errors}")
-            
+        data = _prepare_image_data(request, instance, 'image')
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({

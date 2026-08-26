@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Database, Plus, Pencil, Trash2, X, Search } from 'lucide-react';
 import { managementService, type PermissionControl } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -23,7 +24,7 @@ export default function KontrolPage() {
 
     const loadData = async () => {
         try { setIsLoading(true); setError(null); const res = await managementService.getControls(); setItems(res.data || []); }
-        catch { setError(t('load_error')); showError(t('load_error')); }
+        catch (err) { const msg = handleApiError(err); setError(msg); showError(msg); }
         finally { setIsLoading(false); }
     };
 
@@ -44,7 +45,7 @@ export default function KontrolPage() {
             else { await managementService.createControl(form); }
             setShowForm(false); await loadData(); closeLoading();
             showSuccess(editing ? t('update_success') : t('create_success'));
-        } catch { closeLoading(); showError(t('save_error')); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
         finally { setSaving(false); }
     };
 
@@ -52,7 +53,7 @@ export default function KontrolPage() {
         const confirmed = await showDeleteConfirm(item.label_kontrol, 'kontrol');
         if (!confirmed) return;
         try { showLoading(t('deleting')); await managementService.deleteControl(item.id); await loadData(); closeLoading(); showSuccess(t('delete_success')); }
-        catch { closeLoading(); showError(t('delete_error')); }
+        catch (err) { closeLoading(); showError(handleApiError(err)); }
     };
 
     const filtered = items.filter(i =>

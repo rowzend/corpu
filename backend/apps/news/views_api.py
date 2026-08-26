@@ -1,16 +1,67 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 from django.shortcuts import get_object_or_404
 
+from apps.manajemen.helpers import check_permission
 from .models import News
 from .serializers import NewsListSerializer, NewsDetailSerializer, NewsWriteSerializer
 
 
+def _prepare_thumbnail_data(request, instance):
+    """
+    Clear the thumbnail field when the payload explicitly carries an empty
+    value (null/empty string) and no new file is uploaded. The old file is
+    deleted from storage (MinIO) and the field is stripped from the payload
+    so the serializer does not validate it.
+    """
+    field = 'thumbnail'
+    data = request.data
+    has_file = bool(request.FILES.get(field))
+    if field in data and data.get(field) in (None, '') and not has_file:
+        current = getattr(instance, field, None)
+        if current:
+            try:
+                current.delete(save=False)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to delete thumbnail on {instance}: {e}")
+        setattr(instance, field, None)
+        instance.save(update_fields=[field, 'updated_at'])
+        if hasattr(data, 'copy'):
+            cleaned = data.copy()
+            cleaned.pop(field, None)
+            return cleaned
+        return {k: v for k, v in data.items() if k != field}
+    return data
+
+
+class NewsPermission(BasePermission):
+    """
+    Granular permission for news management (module 'berita', control 'news_article').
+    Read access is public; writes require RoleRule for create/edit/delete.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if not request.user.is_authenticated:
+            return False
+        function = {
+            'POST': 'create',
+            'PUT': 'edit',
+            'PATCH': 'edit',
+            'DELETE': 'delete',
+        }.get(request.method)
+        if not function:
+            return True
+        return check_permission(request.user, 'berita', 'news_article', function)
+
+
 class NewsViewSet(viewsets.ModelViewSet):
     queryset = News.objects.all()
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [NewsPermission]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'excerpt', 'content']
     ordering_fields = ['published_at', 'created_at', 'views']
@@ -80,9 +131,19 @@ class NewsViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        old_thumbnail = instance.thumbnail
+        data = _prepare_thumbnail_data(request, instance)
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+
+        if request.FILES.get('thumbnail') and old_thumbnail:
+            try:
+                old_thumbnail.delete(save=False)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Failed to delete old thumbnail: {e}")
+
         return Response({'success': True, 'data': NewsDetailSerializer(serializer.instance).data})
 
     def destroy(self, request, *args, **kwargs):

@@ -1,6 +1,7 @@
 import { api } from '@/lib/api';
 
 export interface PegawaiItem {
+    id: number;
     id_pegawai: number;
     nip_baru: string | null;
     nip_lama: string | null;
@@ -125,6 +126,178 @@ class SimpegService {
     async getBupatiSyncProgress(syncId: string): Promise<SyncProgressResponse> {
         return api.get<SyncProgressResponse>(`${this.baseEndpoint}/bupati/sync/progress/${syncId}/`);
     }
+
+    // ── Unit Kerja ───────────────────────────────────────────────────
+
+    async getUnitKerjaList(params?: {
+        page?: number;
+        per_page?: number;
+        search?: string;
+        parent_id?: string;
+        status?: string;
+        is_opd_induk?: string;
+    }): Promise<UnitKerjaListResponse> {
+        return api.get<UnitKerjaListResponse>(`${this.baseEndpoint}/unit-kerja/`, params);
+    }
+
+    async syncUnitKerja(password?: string): Promise<SyncProgressResponse> {
+        return api.post<SyncProgressResponse>(`${this.baseEndpoint}/unit-kerja/sync/`, password ? { password } : {});
+    }
+
+    async getUnitKerjaSyncProgress(syncId: string): Promise<SyncProgressResponse> {
+        return api.get<SyncProgressResponse>(`${this.baseEndpoint}/unit-kerja/sync/progress/${syncId}/`);
+    }
+
+    async getUnitKerjaTree(params?: {
+        search?: string;
+        include_inactive?: string;
+        root_id?: string;
+    }): Promise<UnitKerjaTreeResponse> {
+        return api.get<UnitKerjaTreeResponse>(`${this.baseEndpoint}/unit-kerja/tree/`, params);
+    }
+
+    async getUnitKerjaDesain(idOpd: number): Promise<UnitKerjaDesainResponse> {
+        return api.get<UnitKerjaDesainResponse>(`${this.baseEndpoint}/unit-kerja/${idOpd}/desain/`);
+    }
+
+    async saveUnitKerjaDesain(idOpd: number, payload: UnitKerjaDesainPayload): Promise<UnitKerjaDesainSaveResponse> {
+        return api.put<UnitKerjaDesainSaveResponse>(`${this.baseEndpoint}/unit-kerja/${idOpd}/desain/`, payload);
+    }
+
+    async deleteUnitKerjaDesain(idOpd: number): Promise<{ success: boolean; message?: string }> {
+        return api.delete(`${this.baseEndpoint}/unit-kerja/${idOpd}/desain/`);
+    }
+
+    async getUnitKerjaDesainOptions(): Promise<UnitKerjaDesainOptionsResponse> {
+        return api.get<UnitKerjaDesainOptionsResponse>(`${this.baseEndpoint}/unit-kerja/desain-options/`);
+    }
+}
+
+export interface KompetensiTeknisOption {
+    id: number;
+    uraian: string;
+    urutan: number;
+    /** daftar tujuan pembelajaran milik kompetensi ini (dari desain pembelajaran unit) */
+    tujuan?: TujuanPembelajaranItem[];
+}
+
+export interface UnitKerjaDesainOption {
+    id_opd: number;
+    nm_opd: string;
+    path_names: string[];
+    kompetensi: KompetensiTeknisOption[];
+}
+
+interface UnitKerjaDesainOptionsResponse {
+    success: boolean;
+    data: UnitKerjaDesainOption[];
+}
+
+export interface KompetensiTeknisItem {
+    id: number;
+    uraian: string;
+    urutan: number;
+    /** daftar tujuan pembelajaran milik kompetensi ini */
+    tujuan: TujuanPembelajaranItem[];
+}
+
+export interface TujuanPembelajaranItem {
+    id: number;
+    uraian: string;
+    urutan: number;
+}
+
+export interface UnitKerjaDesain {
+    id: number;
+    unit_kerja: {
+        id_opd: number;
+        nm_opd: string;
+        path_names: string[];
+    };
+    kompetensi_teknis: KompetensiTeknisItem[];
+    keterangan: string;
+    updated_at: string | null;
+}
+
+export interface UnitKerjaDesainPayload {
+    keterangan?: string;
+    kompetensi_teknis: Array<{
+        uraian: string;
+        urutan?: number;
+        tujuan: Array<{ uraian: string; urutan?: number }>;
+    }>;
+}
+
+interface UnitKerjaDesainResponse {
+    success: boolean;
+    data: UnitKerjaDesain | null;
+    message?: string;
+}
+
+interface UnitKerjaDesainSaveResponse {
+    success: boolean;
+    data: UnitKerjaDesain;
+    message?: string;
+}
+
+export interface UnitKerjaTreeNode {
+    id_opd: number;
+    nm_opd: string;
+    level: number;
+    status: number;
+    is_opd_induk: boolean;
+    jenis_organisasi: string | null;
+    id_opd_urut: number | null;
+    children?: UnitKerjaTreeNode[];
+    /** true bila unit non-aktif namun ditampilkan sebagai konteks induk */
+    _context?: boolean;
+}
+
+interface UnitKerjaTreeResponse {
+    success: boolean;
+    data: UnitKerjaTreeNode[];
+    stats: {
+        total_shown: number;
+        total_all: number;
+    };
+}
+
+export interface UnitKerjaItem {
+    id_opd: number;
+    nm_opd: string;
+    parent_id: number | null;
+    parent_name: string | null;
+    id_opd_urut: number | null;
+    level: number;
+    is_opd_induk: boolean;
+    status: number;
+    id_jenis_organisasi: number | null;
+    nama_jenis_organisasi: string | null;
+    path: { id_opd: number; nama: string }[] | null;
+    synced_at: string;
+    created_at: string;
+}
+
+interface UnitKerjaListResponse {
+    success: boolean;
+    data: UnitKerjaItem[];
+    stats?: {
+        total_aktif: number;
+        total_nonaktif: number;
+        total_opd_induk: number;
+        total_opd_induk_aktif: number;
+    };
+    pagination: {
+        page: number;
+        per_page: number;
+        total: number;
+        total_pages: number;
+    };
+    last_sync: {
+        synced_at: string;
+        total_records: number;
+        synced_by: string;
+    } | null;
 }
 
 export interface BupatiItem {

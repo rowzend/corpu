@@ -80,6 +80,9 @@ urlpatterns = [
     # HCDP API (Human Capital Development Program)
     path('apicorpu/1.0/hcdp/', include('apps.hcdp.urls_api')),
     
+    # IDP ASN API (Individual Development Plan)
+    path('apicorpu/1.0/idp/', include('apps.idp.urls_api')),
+    
     # Knowledge API (Authenticated - for admin/staff)
     path('apicorpu/1.0/knowledge/', include('apps.knowledge.urls_api')),
     

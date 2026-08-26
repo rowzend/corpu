@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Plus, Search, Users } from 'lucide-react';
 import { referensiService, type KategoriUser } from '@/lib/services/referensi.service';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -27,8 +28,8 @@ export default function KategoriUserPage() {
             const res = await referensiService.getKategoriUserList(filters);
             setItems(res.data || []);
             if (res.pagination) setPagination(res.pagination);
-        } catch {
-            showError('Gagal memuat data kategori user');
+        } catch (err) {
+            showError(handleApiError(err));
         } finally { setIsLoading(false); }
     };
 
@@ -55,9 +56,9 @@ export default function KategoriUserPage() {
             closeLoading();
             showSuccess('Berhasil dihapus');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menghapus');
+            showError(handleApiError(err));
         }
     };
 
@@ -74,9 +75,9 @@ export default function KategoriUserPage() {
             closeLoading();
             showSuccess(editingItem ? 'Berhasil diperbarui' : 'Berhasil dibuat');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan');
+            showError(handleApiError(err));
         } finally { setIsSubmitting(false); }
     };
 

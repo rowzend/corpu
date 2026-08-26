@@ -65,6 +65,14 @@ class LearningPermission(permissions.BasePermission):
             'my_attempts': ('learning', 'quizzes', 'view'),
             'stats': ('learning', 'quizzes', 'view'),
         },
+        'quiz_question': {
+            'list': ('learning', 'quizzes', 'view'),
+            'retrieve': ('learning', 'quizzes', 'view'),
+            'create': ('learning', 'quizzes', 'create'),
+            'update': ('learning', 'quizzes', 'edit'),
+            'partial_update': ('learning', 'quizzes', 'edit'),
+            'destroy': ('learning', 'quizzes', 'delete'),
+        },
         'certificate': {
             'list': ('learning', 'certificates', 'view'),
             'retrieve': ('learning', 'certificates', 'view'),
@@ -96,7 +104,8 @@ class LearningPermission(permissions.BasePermission):
             resource_map = {
                 'course': 'course', 'module': 'module', 'lesson': 'lesson',
                 'enrollment': 'enrollment', 'lesson_progress': 'lesson_progress',
-                'quiz': 'quiz', 'certificate': 'certificate',
+                'quiz': 'quiz', 'quiz_question': 'quiz_question',
+                'certificate': 'certificate',
                 'rating': 'rating', 'comment': 'comment',
             }
             return resource_map.get(basename, None)
@@ -114,14 +123,19 @@ class LearningPermission(permissions.BasePermission):
                 perm = self.PERMISSION_MAP[resource][action]
                 if check_permission(request.user, perm[0], perm[1], perm[2]):
                     return True
-                if resource in ['course', 'lesson', 'quiz'] and action in ['create', 'update', 'partial_update', 'destroy']:
-                    return True
                 return False
         return True
 
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
+        resource = self._get_resource_name(view)
+        if resource and resource in self.PERMISSION_MAP:
+            action = getattr(view, 'action', None)
+            if action and action in self.PERMISSION_MAP[resource]:
+                perm = self.PERMISSION_MAP[resource][action]
+                if check_permission(request.user, perm[0], perm[1], perm[2]):
+                    return True
         if hasattr(obj, 'instructor'):
             return obj.instructor == request.user
         if hasattr(obj, 'user'):

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Save, Building2, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { profileService, type ProfileSection } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useTranslations } from 'next-intl';
 
@@ -31,7 +32,7 @@ export default function SejarahPage() {
             }
         } catch (err) {
             console.error(err);
-            showError(t('load_error'));
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -50,7 +51,7 @@ export default function SejarahPage() {
             showSuccess(t('save_success'));
         } catch (err) {
             closeLoading();
-            showError(t('save_error'));
+            showError(handleApiError(err));
         } finally {
             setSaving(false);
         }

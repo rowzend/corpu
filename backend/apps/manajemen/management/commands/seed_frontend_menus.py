@@ -69,6 +69,7 @@ class Command(BaseCommand):
             (4, 'Integrasi', 4),
             (5, 'Konten & Informasi', 5),
             (6, 'Pembelajaran', 6),
+            (12, 'Manajemen IDP', 5),
             (7, 'Kursus Saya', 7),
             (8, 'Referensi', 8),
             (10, 'Pengetahuan', 9),
@@ -204,6 +205,17 @@ class Command(BaseCommand):
             'permission_key': 'api_simpeg.bupati.view',
         })
         self.stdout.write('  Created/Updated: Bupati')
+
+        upsert_child(simpeg, 'Unit Kerja', {
+            'icon': '🏢',
+            'type': 'module',
+            'external_url': '/admin/simpeg/unit-kerja',
+            'order': 3,
+            'category': 2,
+            'is_active': True,
+            'permission_key': 'api_simpeg.unit_kerja.view',
+        })
+        self.stdout.write('  Created/Updated: Unit Kerja')
 
         # Data References (under Management)
         ref_parent, _ = upsert('Data References', {
@@ -362,6 +374,117 @@ class Command(BaseCommand):
             'permission_key': 'hcdp.hcdp_program.view',
         })
         self.stdout.write('  Created/Updated: HCDP')
+
+        upsert('IDP ASN', {
+            'icon': '📋', 'type': 'module', 'external_url': '/admin/dashboard/idp', 'order': 1, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: IDP ASN (Manajemen IDP)')
+
+        upsert('Approval IDP ASN', {
+            'icon': '✅', 'type': 'module', 'external_url': '/admin/dashboard/idp/approval', 'order': 2, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_approval.view',
+        })
+        self.stdout.write('  Created/Updated: Approval IDP ASN (Manajemen IDP)')
+
+        # Master Data (Manajemen IDP)
+        master_data, _ = upsert('Master Data', {
+            'icon': '🗂️', 'type': 'menuItem', 'order': 3, 'category': 12, 'is_active': True,
+        })
+        if _:
+            self.stdout.write('  Created: Master Data (Manajemen IDP)')
+
+        # Jenis Kompetensi is a SINGLE CRUD module page (Teknis, Manajerial,
+        # Sosial Kultural are data rows inside it, not separate submenus).
+        jenis_kompetensi, _ = upsert_child(master_data, 'Jenis Kompetensi', {
+            'icon': '🏆', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/jenis-kompetensi',
+            'order': 1, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        if _:
+            self.stdout.write('  Created: Jenis Kompetensi (Master Data IDP)')
+
+        # Deactivate any leftover nested submenus (Teknis/Manajerial/Sosial Kultural)
+        # that were seeded previously as children of Jenis Kompetensi.
+        for child_name in ['Teknis', 'Manajerial', 'Sosial Kultural']:
+            stale = MenuItem.objects.filter(
+                name=child_name, platform=PLATFORM, parent=jenis_kompetensi, is_active=True
+            )
+            count = stale.update(is_active=False)
+            if count:
+                self.stdout.write(f'  Deactivated: {child_name} (nested submenu of Jenis Kompetensi)')
+
+        # Nama Kompetensi (single CRUD module, terkait dengan Jenis Kompetensi)
+        upsert_child(master_data, 'Nama Kompetensi', {
+            'icon': '💡', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/nama-kompetensi',
+            'order': 2, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Nama Kompetensi (Master Data IDP)')
+
+        # Prioritas Pengembangan (single CRUD module)
+        upsert_child(master_data, 'Prioritas Pengembangan', {
+            'icon': '🎯', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/prioritas-pengembangan',
+            'order': 3, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Prioritas Pengembangan (Master Data IDP)')
+
+        # Deactivate old menu names that were renamed.
+        for old_name in ['Pilar Pengembangan', 'Jenis Kegiatan Pengembangan']:
+            stale = MenuItem.objects.filter(
+                name=old_name, platform=PLATFORM, parent=master_data, is_active=True
+            )
+            count = stale.update(is_active=False)
+            if count:
+                self.stdout.write(f'  Deactivated: {old_name} (renamed)')
+
+        # Metode Pengembangan Kompetensi (single CRUD module, model 70-20-10)
+        upsert_child(master_data, 'Metode Pengembangan Kompetensi', {
+            'icon': '🧭', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/metode-pengembangan-kompetensi',
+            'order': 4, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Metode Pengembangan Kompetensi (Master Data IDP)')
+
+        # Bentuk Pengembangan Kompetensi (relasi ke Metode Pengembangan Kompetensi)
+        upsert_child(master_data, 'Bentuk Pengembangan Kompetensi', {
+            'icon': '📌', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/bentuk-pengembangan-kompetensi',
+            'order': 5, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Bentuk Pengembangan Kompetensi (Master Data IDP)')
+
+        # Nama Kegiatan / Program (relasi ke Bentuk Pengembangan Kompetensi)
+        upsert_child(master_data, 'Nama Kegiatan / Program', {
+            'icon': '📋', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/master-data/nama-kegiatan-program',
+            'order': 6, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Nama Kegiatan / Program (Master Data IDP)')
+
+        # Desain Pembelajaran: tree read-only Unit Kerja + Metode -> Bentuk -> Nama Kegiatan
+        upsert_child(master_data, 'Desain Pembelajaran', {
+            'icon': '🌳', 'type': 'module',
+            'external_url': '/admin/dashboard/idp/desain-pembelajaran',
+            'order': 7, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_asn.view',
+        })
+        self.stdout.write('  Created/Updated: Desain Pembelajaran (Master Data IDP)')
+
+        # Bersihkan sisa menu Desain Pembelajaran lama yang masih top-level
+        stale_desain = MenuItem.objects.filter(
+            name='Desain Pembelajaran', platform=PLATFORM, parent__isnull=True, is_active=True
+        )
+        count = stale_desain.update(is_active=False)
+        if count:
+            self.stdout.write(f'  Deactivated: Desain Pembelajaran (top-level, category 12)')
 
         # ================================================================
         # 7. KURSUS SAYA (category 7)

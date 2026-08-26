@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Save, ScrollText, Target, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { profileService, type ProfileSection } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useTranslations } from 'next-intl';
 
@@ -25,7 +26,7 @@ export default function SambutanVisiMisiPage() {
             setVisiMisi(sections.find(s => s.key === 'visi_misi') || null);
         } catch (err) {
             console.error(err);
-            showError(t('load_error'));
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -40,7 +41,7 @@ export default function SambutanVisiMisiPage() {
             showSuccess(t('save_success'));
         } catch (err) {
             closeLoading();
-            showError(t('save_error'));
+            showError(handleApiError(err));
         }
     };
 

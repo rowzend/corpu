@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, X, AlertCircle } from 'lucide-react';
 import { showError } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 
 interface CommentFormProps {
     onSubmit: (content: string) => Promise<void>;
@@ -37,8 +38,8 @@ export default function CommentForm({
             setErrorMsg('');
             await onSubmit(content.trim());
             setContent('');
-        } catch (error: any) {
-            const msg = error?.message || 'Gagal mengirim komentar. Silakan coba lagi.';
+        } catch (error) {
+            const msg = handleApiError(error);
             setErrorMsg(msg);
             showError(msg, 'Gagal');
         } finally {

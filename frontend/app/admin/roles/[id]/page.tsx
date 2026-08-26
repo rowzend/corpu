@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Save, Loader2, Shield, Users, Key, Pencil, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import { roleService, type RoleDetail } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 
 export default function RoleDetailPage() {
@@ -31,8 +32,9 @@ export default function RoleDetailPage() {
             setEditName(roleData.name);
             setEditRedirect(roleData.redirect_url || '/admin/dashboard');
         } catch (err) {
-            setError('Failed to load role details.');
-            showError('Gagal memuat detail role. Silakan coba lagi.');
+            const message = handleApiError(err);
+            setError(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }
@@ -50,7 +52,7 @@ export default function RoleDetailPage() {
             showSuccess('Role berhasil diperbarui');
         } catch (error) {
             closeLoading();
-            showError('Gagal memperbarui role. Silakan coba lagi.');
+            showError(handleApiError(error));
         } finally {
             setIsSaving(false);
         }
@@ -68,7 +70,7 @@ export default function RoleDetailPage() {
             router.push('/admin/roles');
         } catch (error) {
             closeLoading();
-            showError('Gagal menghapus role. Silakan coba lagi.');
+            showError(handleApiError(error));
         }
     };
 

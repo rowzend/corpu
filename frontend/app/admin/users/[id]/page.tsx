@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { userService, roleService, type User, type Role } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import LastActivity from '@/components/admin/LastActivity';
 import { Clock } from 'lucide-react';
@@ -53,8 +54,9 @@ export default function UserDetailPage() {
             });
         } catch (err) {
             console.error('Failed to load user:', err);
-            setError('Failed to load user details. Please try again.');
-            showError('Gagal memuat detail pengguna. Silakan coba lagi.');
+            const message = handleApiError(err);
+            setError(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }
@@ -77,7 +79,7 @@ export default function UserDetailPage() {
         } catch (error) {
             console.error('Failed to update user:', error);
             closeLoading();
-            showError('Gagal memperbarui pengguna. Silakan coba lagi.');
+            showError(handleApiError(error));
         } finally {
             setIsSaving(false);
         }
@@ -98,7 +100,7 @@ export default function UserDetailPage() {
         } catch (error) {
             console.error('Failed to delete user:', error);
             closeLoading();
-            showError('Gagal menghapus pengguna. Silakan coba lagi.');
+            showError(handleApiError(error));
         }
     };
 
@@ -124,7 +126,7 @@ export default function UserDetailPage() {
         } catch (error) {
             console.error('Failed to update user status:', error);
             closeLoading();
-            showError('Gagal memperbarui status pengguna. Silakan coba lagi.');
+            showError(handleApiError(error));
         }
     };
 

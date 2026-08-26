@@ -12,7 +12,7 @@ import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } 
 import { useTranslations } from 'next-intl';
 import { LazySearchSelect } from '@/components/ui/lazy-search-select';
 import { SearchSelect } from '@/components/ui/search-select';
-import { ESIMPEG_MEDIA_URL } from '@/lib/api';
+import { ESIMPEG_MEDIA_URL, handleApiError } from '@/lib/api';
 
 function photoUrl(path: string | null): string | null {
     if (!path) return null;
@@ -58,6 +58,7 @@ export default function PersonaliaPage() {
     const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [photoFile, setPhotoFile] = useState<File | null>(null);
+    const [removePhoto, setRemovePhoto] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [form, setForm] = useState<FormState>(emptyForm);
     const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -100,7 +101,7 @@ export default function PersonaliaPage() {
             setPersonalia(perData);
         } catch (err) {
             console.error(err);
-            showError(t('load_error'));
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -144,9 +145,9 @@ export default function PersonaliaPage() {
                 setPhotoFile(null);
             }
             closeLoading();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal mengambil data pegawai');
+            showError(handleApiError(err));
         }
     };
 
@@ -215,6 +216,7 @@ export default function PersonaliaPage() {
         setSelectedPositionId(null);
         setPhotoPreview(null);
         setPhotoFile(null);
+        setRemovePhoto(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
         setEditing(null);
         setShowForm(false);
@@ -244,6 +246,7 @@ export default function PersonaliaPage() {
         setSelectedPositionId(item.position_fk);
         setPhotoPreview(item.photo ? photoUrl(item.photo) : null);
         setPhotoFile(null);
+        setRemovePhoto(false);
         setEditing(item);
         setShowForm(true);
     };
@@ -253,6 +256,7 @@ export default function PersonaliaPage() {
         if (file) {
             setPhotoFile(file);
             setPhotoPreview(URL.createObjectURL(file));
+            setRemovePhoto(false);
         }
     };
 
@@ -276,9 +280,9 @@ export default function PersonaliaPage() {
             setNewPositionParent(null);
             closeLoading();
             showSuccess('Jabatan berhasil ditambahkan');
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan jabatan');
+            showError(handleApiError(err));
         }
     };
 
@@ -306,7 +310,11 @@ export default function PersonaliaPage() {
                 payload.source_pegawai_id = selectedSourceId;
             }
             if (editing) {
-                await profileService.updatePersonalia(editing.id, payload, photoFile);
+                if (removePhoto) {
+                    await profileService.updatePersonalia(editing.id, { ...payload, photo: '' });
+                } else {
+                    await profileService.updatePersonalia(editing.id, payload, photoFile);
+                }
             } else {
                 await profileService.createPersonalia(payload, photoFile);
             }
@@ -316,7 +324,7 @@ export default function PersonaliaPage() {
             showSuccess(editing ? t('save_success') : t('create_success'));
         } catch (err) {
             closeLoading();
-            showError(t('save_error'));
+            showError(handleApiError(err));
         }
     };
 
@@ -331,7 +339,7 @@ export default function PersonaliaPage() {
             showSuccess(t('delete_success'));
         } catch (err) {
             closeLoading();
-            showError(t('delete_error'));
+            showError(handleApiError(err));
         }
     };
 
@@ -343,7 +351,7 @@ export default function PersonaliaPage() {
             closeLoading();
         } catch (err) {
             closeLoading();
-            showError(t('update_error'));
+            showError(handleApiError(err));
         }
     };
 
@@ -583,7 +591,7 @@ export default function PersonaliaPage() {
                                         </div>
                                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
                                         {photoPreview && (
-                                            <button onClick={() => { setPhotoPreview(null); setPhotoFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                                            <button onClick={() => { setPhotoPreview(null); setPhotoFile(null); setRemovePhoto(true); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                                                 className="text-xs text-red-500 hover:text-red-600 font-medium">
                                                 {t('remove_photo')}
                                             </button>

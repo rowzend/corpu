@@ -50,7 +50,7 @@ export const newsService = {
   },
 
   async updateNews(id: number, data: FormData | Partial<NewsItem>): Promise<{ success: boolean; data: NewsItem }> {
-    return api.put(`/news/${id}/`, data);
+    return api.patch(`/news/${id}/`, data);
   },
 
   async deleteNews(id: number): Promise<{ success: boolean }> {

@@ -58,9 +58,10 @@ const CATEGORY_MAP: MenuCategoryMap = {
     9: 'Pengaturan',
     10: 'Pengetahuan',
     11: 'Manajemen Aplikasi',
+    12: 'Manajemen IDP',
 };
 
-const CATEGORY_ORDER = [1, 2, 3, 5, 10, 6, 7, 9];
+const CATEGORY_ORDER = [1, 2, 3, 5, 10, 6, 12, 7, 9];
 
 const sectionTitleMap: Record<string, string> = {
     'Utama': 'admin.sidebar.utama',
@@ -69,6 +70,7 @@ const sectionTitleMap: Record<string, string> = {
     'Integrasi': 'admin.sidebar.integrasi',
     'Konten & Informasi': 'admin.sidebar.konten',
     'Pembelajaran': 'admin.sidebar.pembelajaran',
+    'Manajemen IDP': 'admin.sidebar.manajemen_idp',
     'Kursus Saya': 'admin.sidebar.kursus_saya',
     'Referensi': 'admin.sidebar.referensi',
     'Pengetahuan': 'admin.sidebar.pengetahuan',
@@ -101,6 +103,16 @@ const itemNameMap: Record<string, string> = {
     'Sertifikat User': 'admin.sidebar.sertifikat_user',
     'Template Sertifikat': 'admin.sidebar.template_sertifikat',
     'HCDP': 'admin.sidebar.hcdp',
+    'IDP ASN': 'admin.sidebar.idp_asn',
+    'Approval IDP ASN': 'admin.sidebar.idp_approval',
+    'Desain Pembelajaran': 'admin.sidebar.desain_pembelajaran',
+    'Master Data': 'admin.sidebar.master_data',
+    'Jenis Kompetensi': 'admin.sidebar.jenis_kompetensi',
+    'Nama Kompetensi': 'admin.sidebar.nama_kompetensi',
+    'Prioritas Pengembangan': 'admin.sidebar.prioritas_pengembangan',
+    'Metode Pengembangan Kompetensi': 'admin.sidebar.metode_pengembangan_kompetensi',
+    'Bentuk Pengembangan Kompetensi': 'admin.sidebar.bentuk_pengembangan_kompetensi',
+    'Nama Kegiatan / Program': 'admin.sidebar.nama_kegiatan_program',
     'Kursus Saya': 'admin.sidebar.kursus_saya',
     'Progress Saya': 'admin.sidebar.progress_saya',
     'Sertifikat Saya': 'admin.sidebar.sertifikat_saya',
@@ -111,6 +123,7 @@ const itemNameMap: Record<string, string> = {
     'ESIMPEG': 'admin.sidebar.esimpeg',
     'Pegawai': 'admin.sidebar.pegawai',
     'Bupati': 'admin.sidebar.bupati',
+    'Unit Kerja': 'admin.sidebar.unit_kerja',
     'Perguruan Tinggi': 'admin.sidebar.perguruan_tinggi',
     'Program Studi': 'admin.sidebar.program_studi',
     'Lokasi Daerah': 'admin.sidebar.lokasi_daerah',
@@ -208,7 +221,11 @@ export default function AdminSidebar({ isMobileOpen, onToggleMobile }: AdminSide
     const sidebarRef = useRef<HTMLDivElement>(null);
 
     const safeT = (key: string) => {
-        try { return t(key); } catch { return key; }
+        try {
+            if (!key || key.includes(' ')) return key;
+            if (typeof t.has === 'function' && !t.has(key)) return key;
+            return t(key);
+        } catch { return key; }
     };
 
     const [expandedItems, setExpandedItems] = useState<string[]>([]);

@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ShieldPlus, Users, Key, Plus, Pencil, Trash2, X, Search } from 'lucide-react';
 import { roleService, type Role } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -31,8 +32,9 @@ export default function RolesPage() {
             const rolesData = await roleService.getRoles();
             setRoles(rolesData);
         } catch (err) {
-            setError(t('error_title'));
-            showError(t('error_title'));
+            const message = handleApiError(err);
+            setError(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }
@@ -53,7 +55,7 @@ export default function RolesPage() {
             showSuccess(t('create_success'));
         } catch (error) {
             closeLoading();
-            showError(t('create_error'));
+            showError(handleApiError(error));
         } finally {
             setIsCreating(false);
         }
@@ -70,7 +72,7 @@ export default function RolesPage() {
             showSuccess(t('delete_success'));
         } catch (error) {
             closeLoading();
-            showError(t('delete_error'));
+            showError(handleApiError(error));
         }
     };
 

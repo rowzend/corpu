@@ -86,7 +86,7 @@ export const profileService = {
     },
 
     async updateSection(id: number, data: Partial<ProfileSection>): Promise<ProfileSection> {
-        const response = await api.put<ApiResponse<ProfileSection>>(`/profile/sections/${id}/`, data);
+        const response = await api.patch<ApiResponse<ProfileSection>>(`/profile/sections/${id}/`, data);
         return response.data;
     },
 

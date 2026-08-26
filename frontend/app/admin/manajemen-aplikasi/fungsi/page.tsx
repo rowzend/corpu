@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Bolt, Plus, Pencil, Trash2, X, Search } from 'lucide-react';
 import { managementService, type PermissionFunction } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -27,7 +28,7 @@ export default function FungsiPage() {
             setError(null);
             const res = await managementService.getFunctions();
             setItems(res.data || []);
-        } catch { setError(t('load_error')); showError(t('load_error')); }
+        } catch (err) { const msg = handleApiError(err); setError(msg); showError(msg); }
         finally { setIsLoading(false); }
     };
 
@@ -54,7 +55,7 @@ export default function FungsiPage() {
             await loadData();
             closeLoading();
             showSuccess(editing ? t('update_success') : t('create_success'));
-        } catch { closeLoading(); showError(t('save_error')); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
         finally { setSaving(false); }
     };
 
@@ -67,7 +68,7 @@ export default function FungsiPage() {
             await loadData();
             closeLoading();
             showSuccess(t('delete_success'));
-        } catch { closeLoading(); showError(t('delete_error')); }
+        } catch (err) { closeLoading(); showError(handleApiError(err)); }
     };
 
     const filtered = items.filter(i =>

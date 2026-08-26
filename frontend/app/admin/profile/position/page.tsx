@@ -6,6 +6,7 @@ import {
     CheckCircle, XCircle, Layers, FolderTree, Save
 } from 'lucide-react';
 import { profileService, type Position } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useTranslations } from 'next-intl';
 
@@ -39,7 +40,7 @@ export default function PositionPage() {
             setTree(await profileService.getPositions());
         } catch (err) {
             console.error(err);
-            showError('Gagal memuat data jabatan');
+            showError(handleApiError(err));
         } finally {
             setLoading(false);
         }
@@ -96,7 +97,7 @@ export default function PositionPage() {
             await loadData();
             resetForm();
         } catch (err) {
-            showError('Gagal menyimpan jabatan');
+            showError(handleApiError(err));
         } finally {
             closeLoading();
         }
@@ -111,7 +112,7 @@ export default function PositionPage() {
             await loadData();
             showSuccess('Jabatan berhasil dihapus');
         } catch (err) {
-            showError('Gagal menghapus jabatan');
+            showError(handleApiError(err));
         } finally {
             closeLoading();
         }

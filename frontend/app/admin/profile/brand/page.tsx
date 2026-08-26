@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Image as ImageIcon, Star, Tag, X, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { getAdminBrands, createBrand, updateBrand, deleteBrand, getBrandById, type BrandItem } from '@/lib/api/profilePublic';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslations } from 'next-intl';
 
@@ -25,6 +26,7 @@ export default function BrandPage() {
     const [formData, setFormData] = useState(emptyForm);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [removeImage, setRemoveImage] = useState(false);
 
     useEffect(() => { fetchBrands(); }, []);
 
@@ -34,7 +36,7 @@ export default function BrandPage() {
             setBrands(await getAdminBrands());
         } catch (error) {
             console.error('Error fetching brands:', error);
-            showError(t('load_error'), 'Error');
+            showError(handleApiError(error), 'Error');
         } finally {
             setLoading(false);
         }
@@ -45,6 +47,7 @@ export default function BrandPage() {
         if (file) {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
+            setRemoveImage(false);
         }
     };
 
@@ -52,6 +55,7 @@ export default function BrandPage() {
         setFormData({ ...emptyForm });
         setSelectedFile(null);
         setPreviewUrl(null);
+        setRemoveImage(false);
         setEditingBrand(null);
     };
 
@@ -72,7 +76,7 @@ export default function BrandPage() {
             setIsDialogOpen(true);
         } catch (error) {
             console.error('Error fetching brand:', error);
-            showError(t('load_error'), 'Error');
+            showError(handleApiError(error), 'Error');
         }
     };
 
@@ -93,7 +97,11 @@ export default function BrandPage() {
             fd.append('is_primary', formData.is_primary.toString());
             fd.append('is_active', formData.is_active.toString());
             fd.append('order', formData.order.toString());
-            if (selectedFile) fd.append('image', selectedFile);
+            if (selectedFile) {
+                fd.append('image', selectedFile);
+            } else if (removeImage && editingBrand) {
+                fd.append('image', '');
+            }
 
             if (editingBrand) {
                 await updateBrand(editingBrand.id, fd);
@@ -107,7 +115,7 @@ export default function BrandPage() {
             fetchBrands();
         } catch (error) {
             console.error('Error saving brand:', error);
-            showError(t('save_error'), 'Error');
+            showError(handleApiError(error), 'Error');
         }
     };
 
@@ -120,7 +128,7 @@ export default function BrandPage() {
                 fetchBrands();
             } catch (error) {
                 console.error('Error deleting brand:', error);
-                showError(t('delete_error'), 'Error');
+                showError(handleApiError(error), 'Error');
             }
         }
     };
@@ -274,7 +282,7 @@ export default function BrandPage() {
                                 {previewUrl && (
                                     <div className="mt-3 relative inline-block">
                                         <img src={previewUrl} alt={t('preview_alt')} className="h-28 w-auto object-contain border border-border rounded-xl" />
-                                        <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); }}
+                                        <button type="button" onClick={() => { setSelectedFile(null); setPreviewUrl(null); setRemoveImage(!!editingBrand); }}
                                             className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-sm hover:bg-red-600 transition-colors">
                                             <X className="w-3 h-3" />
                                         </button>

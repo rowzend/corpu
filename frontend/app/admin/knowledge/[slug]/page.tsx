@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RemoteSearchSelect } from '@/components/ui/remote-search-select';
-import { ArrowLeft, Save, Loader2, Trash2, Upload, Link, Video, FileText, BookOpen, Eye, Heart, MessageCircle, Share2, ChevronDown, Link as LinkIcon, AlertCircle } from 'lucide-react';
-import { getArticle, updateArticle, deleteArticle, getTags, type Article, type Tag } from '@/lib/api/knowledge';
+import { ArrowLeft, Save, Loader2, Trash2, Upload, Link, Video, FileText, BookOpen, Eye, Heart, MessageCircle, Share2, ChevronDown, X, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { getArticle, updateArticle, deleteArticle, getTags, deleteArticleDocument, type Article, type Tag, type ArticleDocument } from '@/lib/api/knowledge';
 import { api, handleApiError } from '@/lib/api';
 import { showDeleteConfirm, showToast, showError } from '@/lib/sweetalert';
 
@@ -75,13 +75,19 @@ export default function EditArticlePage() {
         content: '',
         excerpt: '',
         category: null as number | null,
-        content_type: 'article' as const,
+        content_type: 'article' as 'article' | 'video' | 'document' | 'link',
         status: 'draft' as const,
         is_featured: false,
         youtube_url: '',
         external_url: '',
         file_url: '',
     });
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+    const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+    const [fileUpload, setFileUpload] = useState<File | null>(null);
+    const [existingDocuments, setExistingDocuments] = useState<ArticleDocument[]>([]);
+    const [newDocuments, setNewDocuments] = useState<File[]>([]);
+    const [removingDocId, setRemovingDocId] = useState<number | null>(null);
 
     useEffect(() => {
         if (slug) {
@@ -106,6 +112,7 @@ export default function EditArticlePage() {
             if (!articleData) throw new Error(t('not_found'));
 
             setArticle(articleData);
+            setExistingDocuments(articleData.documents || []);
             setTags(Array.isArray(tagsData) ? tagsData : []);
             setFormData({
                 title: articleData.title || '',
@@ -121,6 +128,9 @@ export default function EditArticlePage() {
             });
             if (articleData.tags && Array.isArray(articleData.tags)) {
                 setSelectedTags(articleData.tags.map(tag => tag.id));
+            }
+            if (articleData.thumbnail) {
+                setThumbnailPreview(articleData.thumbnail as string);
             }
         } catch (err) {
             setError(handleApiError(err));
@@ -178,6 +188,52 @@ export default function EditArticlePage() {
         );
     };
 
+    const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setThumbnailFile(file);
+            setThumbnailPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeThumbnail = () => {
+        setThumbnailFile(null);
+        setThumbnailPreview(null);
+    };
+
+    const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) setFileUpload(file);
+    };
+
+    const removeFileUpload = () => setFileUpload(null);
+
+    const handleDocumentsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files ? Array.from(e.target.files) : [];
+        if (files.length) setNewDocuments(prev => [...prev, ...files]);
+        e.target.value = '';
+    };
+
+    const removeNewDocument = (index: number) => {
+        setNewDocuments(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleDeleteDocument = async (doc: ArticleDocument) => {
+        if (!article || removingDocId) return;
+        const confirmed = await showDeleteConfirm(doc.file_name, t('delete_confirm_item'));
+        if (!confirmed) return;
+        setRemovingDocId(doc.id);
+        try {
+            await deleteArticleDocument(article.slug, doc.id);
+            setExistingDocuments(prev => prev.filter(d => d.id !== doc.id));
+            showToast(t('update_success'), 'success');
+        } catch (err) {
+            showError(handleApiError(err), t('update_error'));
+        } finally {
+            setRemovingDocId(null);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -195,6 +251,8 @@ export default function EditArticlePage() {
                 content_type: formData.content_type,
                 status: formData.status,
                 is_featured: formData.is_featured,
+                thumbnail: thumbnailFile || undefined,
+                documents: newDocuments.length ? newDocuments : undefined,
             };
             
             // Add media fields based on content type
@@ -208,6 +266,9 @@ export default function EditArticlePage() {
                     payload.file_url = fileUrl;
                 }
                 // Skip if invalid (like /media/... path) - keeps existing value in DB
+                if (fileUpload) {
+                    payload.file_upload = fileUpload;
+                }
             } else if (formData.content_type === 'link') {
                 payload.external_url = formData.external_url || '';
             }
@@ -313,6 +374,33 @@ export default function EditArticlePage() {
                 </div>
             )}
 
+            {article?.course_title && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    <BookOpen className="w-3.5 h-3.5" /> {t('lms_sync_badge')}
+                                </span>
+                                <h2 className="font-semibold text-emerald-900">{t('lms_sync_title')}</h2>
+                            </div>
+                            <p className="text-sm text-emerald-800 mb-1">{t('lms_sync_desc')}</p>
+                            <p className="text-xs text-emerald-700/80 flex items-center gap-1">
+                                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                                {t('lms_sync_manage_hint')}
+                            </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                            <Button asChild variant="outline" className="bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-100">
+                                <Link href={`/admin/learning/courses/${article.course_slug || ''}`}>
+                                    <BookOpen className="w-4 h-4 mr-2" /> {t('lms_sync_manage')}
+                                </Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Main Content */}
@@ -366,16 +454,22 @@ export default function EditArticlePage() {
                                         onChange={handleChange}
                                         placeholder={t('excerpt_placeholder')}
                                         rows={3}
-                                        className="border-border focus:border-emerald-500 focus:ring-emerald-500"
+                                        readOnly={!!article?.course_title}
+                                        className={`border-border focus:ring-emerald-500 ${article?.course_title ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-80' : 'focus:border-emerald-500'}`}
                                     />
                                     <p className="text-xs text-muted-foreground">
-                                        {t('excerpt_help')}
+                                        {article?.course_title ? t('lms_sync_content_hint') : t('excerpt_help')}
                                     </p>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="content" className="text-sm font-medium text-card-foreground">
+                                    <Label htmlFor="content" className="text-sm font-medium text-card-foreground flex items-center gap-2">
                                         {t('label_content')} <span className="text-red-500">*</span>
+                                        {article?.course_title && (
+                                            <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                                                <AlertCircle className="w-3 h-3" /> {t('lms_sync_content_locked')}
+                                            </span>
+                                        )}
                                     </Label>
                                     <Textarea
                                         id="content"
@@ -385,9 +479,12 @@ export default function EditArticlePage() {
                                         placeholder={t('content_placeholder')}
                                         rows={15}
                                         required
-                                        className="font-mono border-border focus:border-emerald-500 focus:ring-emerald-500"
+                                        readOnly={!!article?.course_title}
+                                        className={`font-mono border-border focus:ring-emerald-500 ${article?.course_title ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-80' : 'focus:border-emerald-500'}`}
                                     />
-                                    <p className="text-xs text-muted-foreground">{t('content_help')}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {article?.course_title ? t('lms_sync_content_hint') : t('content_help')}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -408,10 +505,12 @@ export default function EditArticlePage() {
                                         </div>
                                     )}
                                     {formData.content_type === 'document' && (
+                                        <>
                                         <div className="space-y-2">
                                             <Label htmlFor="file_url" className="text-sm font-medium text-card-foreground">{t('label_file_url')}</Label>
                                             <Input id="file_url" name="file_url" value={formData.file_url} onChange={handleChange} placeholder={t('file_url_placeholder')} className="border-border focus:border-emerald-500 focus:ring-emerald-500" />
                                         </div>
+                                        </>
                                     )}
                                     {formData.content_type === 'link' && (
                                         <div className="space-y-2">
@@ -500,6 +599,107 @@ export default function EditArticlePage() {
                                         className="w-4 h-4 text-emerald-600 border-border rounded focus:ring-emerald-500"
                                     />
                                     <span className="text-sm font-medium text-card-foreground">{t('label_featured')}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Thumbnail */}
+                        <div className="bg-card rounded-xl shadow-sm border border-border">
+                            <div className="px-6 py-4 border-b border-border">
+                                <h2 className="text-lg font-semibold text-card-foreground">{t('section_thumbnail')}</h2>
+                            </div>
+                            <div className="p-6">
+                                {thumbnailPreview ? (
+                                    <div className="relative inline-block w-full">
+                                        <img
+                                            src={thumbnailPreview}
+                                            alt="Thumbnail preview"
+                                            className="h-36 w-full rounded-xl object-cover border border-border"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={removeThumbnail}
+                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600 transition-colors"
+                                            title={t('remove_file')}
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
+                                        <Upload className="w-6 h-6 text-muted-foreground mb-1" />
+                                        <span className="text-sm text-muted-foreground">{t('upload_thumbnail')}</span>
+                                        <span className="text-xs text-muted-foreground">{t('upload_image_hint')}</span>
+                                        <input type="file" accept="image/*" onChange={handleThumbnailChange} className="hidden" />
+                                    </label>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Dokumen Lampiran */}
+                        <div className="bg-card rounded-xl shadow-sm border border-border">
+                            <div className="px-6 py-4 border-b border-border">
+                                <h2 className="text-lg font-semibold text-card-foreground">{t('section_documents')}</h2>
+                            </div>
+                            <div className="p-6 space-y-3">
+                                {existingDocuments.length > 0 && (
+                                    <div className="space-y-2">
+                                        {existingDocuments.map(doc => (
+                                            <div key={doc.id} className="flex items-center justify-between border border-border rounded-xl bg-muted px-3 py-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-card-foreground truncate">{doc.file_name}</p>
+                                                        <p className="text-xs text-muted-foreground">{doc.file_size_display}</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteDocument(doc)}
+                                                    disabled={removingDocId === doc.id}
+                                                    className="text-red-500 hover:text-red-600 p-1 disabled:opacity-50"
+                                                    title={t('remove_document')}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {newDocuments.length > 0 && (
+                                    <div className="space-y-2">
+                                        {newDocuments.map((doc, index) => (
+                                            <div key={index} className="flex items-center justify-between border border-border rounded-xl bg-muted px-3 py-2">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <FileText className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium text-card-foreground truncate">{doc.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{(doc.size / 1024).toFixed(1)} KB</p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeNewDocument(index)}
+                                                    className="text-red-500 hover:text-red-600 p-1"
+                                                    title={t('remove_document')}
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <label className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
+                                    <Upload className="w-5 h-5 text-muted-foreground mb-1" />
+                                    <span className="text-sm text-muted-foreground">{t('upload_documents')}</span>
+                                    <span className="text-xs text-muted-foreground">{t('documents_hint')}</span>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.png,.jpg,.jpeg"
+                                        onChange={handleDocumentsChange}
+                                        className="hidden"
+                                    />
                                 </label>
                             </div>
                         </div>

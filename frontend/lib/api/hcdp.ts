@@ -90,7 +90,20 @@ export async function createHCDPProgram(data: {
     tags?: string[];
     is_active?: boolean;
     is_published?: boolean;
+    gambar?: File | null;
 }): Promise<HCDPProgramDetailResponse> {
+    const hasFile = data.gambar instanceof File;
+    if (hasFile) {
+        const fd = new FormData();
+        const { gambar, ...rest } = data;
+        Object.entries(rest).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) {
+                fd.append(k, Array.isArray(v) ? v.join(',') : String(v));
+            }
+        });
+        fd.append('gambar', data.gambar as File);
+        return api.post('/hcdp/programs/', fd);
+    }
     return api.post('/hcdp/programs/', data);
 }
 
@@ -112,7 +125,26 @@ export async function updateHCDPProgram(id: number, data: Partial<{
     tags: string[];
     is_active: boolean;
     is_published: boolean;
+    gambar?: File | null;
+    remove_gambar?: boolean;
 }>): Promise<HCDPProgramDetailResponse> {
+    const hasFile = data.gambar instanceof File;
+    const hasClear = !!data.remove_gambar;
+    if (hasFile || hasClear) {
+        const fd = new FormData();
+        const { gambar, remove_gambar, ...rest } = data;
+        Object.entries(rest).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) {
+                fd.append(k, Array.isArray(v) ? v.join(',') : String(v));
+            }
+        });
+        if (hasFile) {
+            fd.append('gambar', data.gambar as File);
+        } else if (hasClear) {
+            fd.append('gambar', '');
+        }
+        return api.put(`/hcdp/programs/${id}/`, fd);
+    }
     return api.put(`/hcdp/programs/${id}/`, data);
 }
 

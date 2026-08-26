@@ -150,7 +150,7 @@ export async function createBrand(brandData: FormData): Promise<BrandItem> {
 export async function updateBrand(id: number, brandData: FormData): Promise<BrandItem> {
   const token = localStorage.getItem('token');
   const res = await fetch(`${getAdminBaseURL()}/profile/brands/${id}/`, {
-    method: 'PUT',
+    method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
     },

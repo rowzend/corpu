@@ -4,9 +4,61 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
+from apps.manajemen.helpers import check_permission
 from .models import HcdpProgram
 from .forms import HcdpProgramForm
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def _parse_body(request):
+    """Parse request body from JSON or multipart (request.POST) uniformly."""
+    if request.content_type == 'application/json' or (request.body and request.body.startswith(b'{')):
+        try:
+            return json.loads(request.body) if request.body else {}
+        except json.JSONDecodeError:
+            return {}
+    return request.POST.dict() if hasattr(request.POST, 'dict') else dict(request.POST)
+
+
+def _prepare_gambar_data(request, instance):
+    """Clear the gambar field when payload carries an empty value and no new
+    file is uploaded. The old file is deleted from storage (MinIO) and the key
+    is stripped so the caller does not overwrite it with None."""
+    data = _parse_body(request)
+    field = 'gambar'
+    has_file = bool(request.FILES.get(field))
+    if field in data and data.get(field) in (None, '') and not has_file:
+        current = getattr(instance, field, None)
+        if current:
+            try:
+                current.delete(save=False)
+            except Exception as e:
+                logger.warning(f"Failed to delete gambar on {instance}: {e}")
+        setattr(instance, field, None)
+        instance.save(update_fields=[field, 'updated_at'])
+        cleaned = dict(data)
+        cleaned.pop(field, None)
+        return cleaned
+    return data
+
+
+def _hcdp_permission(request, control, function):
+    """Granular check for HCDP module. Returns JsonResponse 403 if denied."""
+    user = getattr(request, 'user', None)
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return JsonResponse(
+            {'success': False, 'message': 'Anda tidak memiliki izin untuk melakukan tindakan ini.'},
+            status=403
+        )
+    if not check_permission(user, 'hcdp', control, function):
+        return JsonResponse(
+            {'success': False, 'message': 'Anda tidak memiliki izin untuk melakukan tindakan ini.'},
+            status=403
+        )
+    return None
 
 
 @csrf_exempt
@@ -16,6 +68,13 @@ def program_list_create(request):
     GET: List semua program HCDP dengan pagination dan filter
     POST: Create program HCDP baru
     """
+    if request.method == 'GET':
+        denied = _hcdp_permission(request, 'hcdp_program', 'view')
+    else:
+        denied = _hcdp_permission(request, 'hcdp_program', 'create')
+    if denied:
+        return denied
+
     if request.method == 'GET':
         page = int(request.GET.get('page', 1))
         per_page = int(request.GET.get('per_page', 10))
@@ -80,7 +139,7 @@ def program_list_create(request):
     
     elif request.method == 'POST':
         try:
-            body = json.loads(request.body)
+            body = _parse_body(request)
             
             program = HcdpProgram.objects.create(
                 judul=body.get('title', ''),
@@ -97,6 +156,10 @@ def program_list_create(request):
                 is_published=body.get('is_published', False),
                 created_by=request.user if request.user.is_authenticated else None
             )
+            
+            if 'gambar' in request.FILES:
+                program.gambar = request.FILES['gambar']
+                program.save()
             
             if body.get('start_date'):
                 from datetime import datetime
@@ -157,6 +220,15 @@ def program_detail(request, pk):
     PUT: Update program HCDP
     DELETE: Delete program HCDP
     """
+    if request.method == 'GET':
+        denied = _hcdp_permission(request, 'hcdp_program', 'view')
+    elif request.method == 'PUT':
+        denied = _hcdp_permission(request, 'hcdp_program', 'edit')
+    else:
+        denied = _hcdp_permission(request, 'hcdp_program', 'delete')
+    if denied:
+        return denied
+
     try:
         program = HcdpProgram.objects.get(pk=pk)
     except HcdpProgram.DoesNotExist:
@@ -194,8 +266,9 @@ def program_detail(request, pk):
     
     elif request.method == 'PUT':
         try:
-            body = json.loads(request.body)
-            
+            body = _prepare_gambar_data(request, program)
+            old_gambar = program.gambar
+
             if 'title' in body:
                 program.judul = body['title']
             if 'description' in body:
@@ -239,8 +312,17 @@ def program_detail(request, pk):
             elif 'end_date' in body and body['end_date'] is None:
                 program.tanggal_selesai = None
             
+            if 'gambar' in request.FILES:
+                program.gambar = request.FILES['gambar']
+
             program.save()
-            
+
+            if request.FILES.get('gambar') and old_gambar and program.gambar != old_gambar:
+                try:
+                    old_gambar.delete(save=False)
+                except Exception as e:
+                    logger.warning(f"Failed to delete old gambar: {e}")
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Program berhasil diupdate',
@@ -289,6 +371,10 @@ def program_stats(request):
     """
     Get statistik program HCDP untuk dashboard
     """
+    denied = _hcdp_permission(request, 'hcdp_report', 'view')
+    if denied:
+        return denied
+
     total_programs = HcdpProgram.objects.count()
     active_programs = HcdpProgram.objects.filter(is_active=True).count()
     published_programs = HcdpProgram.objects.filter(is_published=True).count()

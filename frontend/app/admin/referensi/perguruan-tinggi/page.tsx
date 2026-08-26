@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Search, Download, RefreshCw, Building2, Globe, MapPin } from 'lucide-react';
 import { referensiService, type PerguruanTinggi } from '@/lib/services/referensi.service';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -31,7 +32,7 @@ export default function PerguruanTinggiPage() {
             setItems(res.data || []);
             if (res.pagination) setPagination(res.pagination);
         } catch (err) {
-            showError('Gagal memuat data perguruan tinggi');
+            showError(handleApiError(err));
         } finally {
             setIsLoading(false);
         }
@@ -49,8 +50,8 @@ export default function PerguruanTinggiPage() {
             } else {
                 showError(res.message);
             }
-        } catch {
-            showError('Sinkronisasi gagal');
+        } catch (err) {
+            showError(handleApiError(err));
         } finally {
             setIsSyncing(false);
         }
@@ -77,9 +78,9 @@ export default function PerguruanTinggiPage() {
             closeLoading();
             showSuccess('Berhasil dihapus');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menghapus');
+            showError(handleApiError(err));
         }
     };
 
@@ -96,9 +97,9 @@ export default function PerguruanTinggiPage() {
             closeLoading();
             showSuccess(editingItem ? 'Berhasil diperbarui' : 'Berhasil dibuat');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan');
+            showError(handleApiError(err));
         } finally {
             setIsSubmitting(false);
         }

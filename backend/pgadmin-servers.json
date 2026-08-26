@@ -3,7 +3,7 @@
     "1": {
       "Name": "ASN Corpu Backend",
       "Group": "Servers",
-      "Host": "asncorpu-backend-postgres",
+      "Host": "postgres-shared",
       "Port": 5432,
       "MaintenanceDB": "asncorpu_backend_db",
       "Username": "asncorpu_user",

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Search, Upload, Building2, Globe, MapPin } from 'lucide-react';
 import { referensiService, type Instansi } from '@/lib/services/referensi.service';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -31,8 +32,8 @@ export default function InstansiPage() {
             const res = await referensiService.getInstansiList(filters);
             setItems(res.data || []);
             if (res.pagination) setPagination(res.pagination);
-        } catch {
-            showError('Gagal memuat data instansi');
+        } catch (err) {
+            showError(handleApiError(err));
         } finally { setIsLoading(false); }
     };
 
@@ -52,9 +53,9 @@ export default function InstansiPage() {
             } else {
                 showError(res.message);
             }
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Import gagal');
+            showError(handleApiError(err));
         } finally {
             setIsImporting(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -82,9 +83,9 @@ export default function InstansiPage() {
             closeLoading();
             showSuccess('Berhasil dihapus');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menghapus');
+            showError(handleApiError(err));
         }
     };
 
@@ -101,9 +102,9 @@ export default function InstansiPage() {
             closeLoading();
             showSuccess(editingItem ? 'Berhasil diperbarui' : 'Berhasil dibuat');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan');
+            showError(handleApiError(err));
         } finally {
             setIsSubmitting(false);
         }

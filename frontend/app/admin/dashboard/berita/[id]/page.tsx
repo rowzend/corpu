@@ -30,6 +30,7 @@ export default function EditBeritaPage() {
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
     const [existingThumbnail, setExistingThumbnail] = useState<string | null>(null);
+    const [removeThumbnailFlag, setRemoveThumbnailFlag] = useState(false);
     const [newsItem, setNewsItem] = useState<any>(null);
 
     useEffect(() => {
@@ -73,6 +74,7 @@ export default function EditBeritaPage() {
         if (file) {
             setThumbnailFile(file);
             setThumbnailPreview(URL.createObjectURL(file));
+            setRemoveThumbnailFlag(false);
         }
     };
 
@@ -80,6 +82,7 @@ export default function EditBeritaPage() {
         setThumbnailFile(null);
         setThumbnailPreview(null);
         setExistingThumbnail(null);
+        setRemoveThumbnailFlag(true);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +99,8 @@ export default function EditBeritaPage() {
                 Object.entries(form).forEach(([k, v]) => fd.append(k, v));
                 fd.append('thumbnail', thumbnailFile);
                 payload = fd;
+            } else if (removeThumbnailFlag) {
+                payload = { ...form, thumbnail: '' };
             }
             const res = await newsService.updateNews(Number(id), payload);
             if (res?.success) {

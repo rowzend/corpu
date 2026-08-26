@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pegawai, Bupati, SyncProgress, SyncLog
+from .models import Pegawai, Bupati, UnitKerja, SyncProgress, SyncLog
 
 
 class PegawaiListSerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class PegawaiListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pegawai
         fields = [
-            'id_pegawai', 'nip_baru', 'nip_lama', 'nama_pegawai',
+            'id', 'id_pegawai', 'nip_baru', 'nip_lama', 'nama_pegawai',
             'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
             'jenis_kelamin_display', 'alamat_rumah', 'no_hp',
             'id_jabatan', 'nama_jabatan', 'masa_kerja_jabatan',
@@ -58,3 +58,17 @@ class SyncLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = SyncLog
         fields = '__all__'
+
+
+class UnitKerjaListSerializer(serializers.ModelSerializer):
+    parent_id = serializers.IntegerField(source='parent.id_opd', read_only=True, default=None)
+    parent_name = serializers.CharField(source='parent.nm_opd', read_only=True, default=None)
+
+    class Meta:
+        model = UnitKerja
+        fields = [
+            'id_opd', 'nm_opd', 'parent_id', 'parent_name', 'id_opd_urut',
+            'level', 'is_opd_induk', 'status',
+            'id_jenis_organisasi', 'nama_jenis_organisasi', 'path',
+            'synced_at', 'created_at',
+        ]

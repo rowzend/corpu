@@ -12,6 +12,7 @@ import {
     type UpdateUserData,
     type UserListParams
 } from '@/lib/services';
+import { handleApiError } from '@/lib/api';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
@@ -50,8 +51,9 @@ export default function UsersPage() {
             setPagination(response.pagination);
         } catch (err) {
             console.error('Failed to load users:', err);
-            setError(t('error_desc'));
-            showError(t('error_desc'));
+            const message = handleApiError(err);
+            setError(message);
+            showError(message);
         } finally {
             setIsLoading(false);
         }

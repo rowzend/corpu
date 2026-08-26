@@ -10,6 +10,7 @@ import type {
     Provinsi, Kabupaten, Kecamatan, Kelurahan
 } from '@/lib/services/referensi.service';
 import { showSuccess, showError, showDeleteConfirm, showLoading, closeLoading } from '@/lib/sweetalert';
+import { handleApiError } from '@/lib/api';
 import { useThemeColors } from '@/lib/hooks/useThemeColors';
 
 type Level = 'provinsi' | 'kabupaten' | 'kecamatan' | 'kelurahan';
@@ -202,8 +203,8 @@ export default function LokasiDaerahPage() {
             }
             setItems(res.data || []);
             if (res.pagination) setPagination(res.pagination);
-        } catch {
-            showError(`Gagal memuat data ${config.labelPlural.toLowerCase()}`);
+        } catch (err) {
+            showError(handleApiError(err));
         } finally { setIsLoading(false); }
     };
 
@@ -285,8 +286,8 @@ export default function LokasiDaerahPage() {
             } else {
                 showError(res.message);
             }
-        } catch {
-            showError('Sinkronisasi gagal');
+        } catch (err) {
+            showError(handleApiError(err));
         } finally { setIsSyncing(false); }
     };
 
@@ -326,9 +327,9 @@ export default function LokasiDaerahPage() {
             closeLoading();
             showSuccess('Berhasil dihapus');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menghapus');
+            showError(handleApiError(err));
         }
     };
 
@@ -357,9 +358,9 @@ export default function LokasiDaerahPage() {
             closeLoading();
             showSuccess(editingItem ? 'Berhasil diperbarui' : 'Berhasil dibuat');
             loadData();
-        } catch {
+        } catch (err) {
             closeLoading();
-            showError('Gagal menyimpan');
+            showError(handleApiError(err));
         } finally { setIsSubmitting(false); }
     };
 

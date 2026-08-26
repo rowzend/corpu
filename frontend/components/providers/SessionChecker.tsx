@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 // Session idle timeout - 30 minutes (configurable from server settings)
@@ -51,6 +51,8 @@ export default function SessionChecker({
   const lastActivityRef = useRef<number>(Date.now());
   const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionTimeoutRef = useRef<number>(DEFAULT_SESSION_TIMEOUT);
+
+  const [showExpired, setShowExpired] = useState(false);
 
   const isLoginPage = pathname === '/login';
 
@@ -130,10 +132,10 @@ export default function SessionChecker({
           clearInterval(checkIntervalRef.current);
         }
 
-        // Call logout API and redirect
+        // Call logout API and show expired modal (user chooses when to leave)
         await logoutApi();
         clearAuthData();
-        router.push('/login?session=expired');
+        setShowExpired(true);
       }
     };
 
@@ -152,7 +154,7 @@ export default function SessionChecker({
       if (e.key === 'token' && !e.newValue) {
         console.log('🚪 Token removed in another tab, logging out...');
         clearAuthData();
-        router.push('/login?session=expired');
+        setShowExpired(true);
       }
     };
 
@@ -169,7 +171,42 @@ export default function SessionChecker({
       window.removeEventListener('storage', handleStorageChange);
       console.log('🛑 Session checker cleaned up');
     };
-  }, [isLoginPage, router]);
+  }, [isLoginPage]);
 
-  return null;
+  // Reset modal when navigating away (e.g. after refresh -> login)
+  useEffect(() => {
+    if (!isLoginPage) return;
+    setShowExpired(false);
+  }, [isLoginPage]);
+
+  const handleExpiredConfirm = () => {
+    router.push('/login?session=expired');
+  };
+
+  if (!showExpired) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-card rounded-3xl shadow-2xl max-w-md w-full mx-4 p-8 text-center animate-scale-in">
+        <div className="w-20 h-20 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-card-foreground mb-2">
+          Sesi Berakhir
+        </h2>
+        <p className="text-muted-foreground mb-6">
+          Sesi Anda telah berakhir karena terlalu lama tidak beraktivitas.
+          Silakan masuk kembali untuk melanjutkan.
+        </p>
+        <button
+          onClick={handleExpiredConfirm}
+          className="w-full bg-primary text-primary-foreground py-3 px-6 rounded-xl font-semibold hover:bg-primary/90 transition-all duration-200"
+        >
+          Masuk Kembali
+        </button>
+      </div>
+    </div>
+  );
 }
