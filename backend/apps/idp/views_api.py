@@ -27,6 +27,14 @@ def _parse_body(request):
 def _idp_permission(request, control, function):
     """Granular check for IDP module. Returns JsonResponse 403 if denied."""
     user = getattr(request, 'user', None)
+    try:
+        from apps.manajemen.helpers import get_active_group_id
+        logger.warning('IDP_PERM_DEBUG user=%s anon=%s active_group=%s ctrl=%s fn=%s',
+                       getattr(user, 'username', '?'),
+                       not getattr(user, 'is_authenticated', False),
+                       get_active_group_id(), control, function)
+    except Exception:
+        pass
     if user is None or not getattr(user, 'is_authenticated', False):
         return JsonResponse(
             {'success': False, 'message': 'Anda tidak memiliki izin untuk melakukan tindakan ini.'},
