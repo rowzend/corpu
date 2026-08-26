@@ -311,8 +311,8 @@ CACHES = {
 }
 
 # Session Configuration (Redis - SUPER FAST!)
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'  # Use Redis for sessions
-SESSION_CACHE_ALIAS = 'default'  # Use default cache (Redis)
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Use DB for sessions (reliable, no Redis eviction)
+SESSION_CACHE_ALIAS = 'default'  # Use default cache (Redis) for general caching
 SESSION_COOKIE_AGE = 1800  # 30 minutes (default session age)
 SESSION_SAVE_EVERY_REQUEST = True  # Update session on every request (track activity)
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
