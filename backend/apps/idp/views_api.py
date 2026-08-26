@@ -27,6 +27,14 @@ def _parse_body(request):
 def _idp_permission(request, control, function):
     """Granular check for IDP module. Returns JsonResponse 403 if denied."""
     user = getattr(request, 'user', None)
+    try:
+        logger.warning('PERMDBG cookie=%s session_load=%s user=%s anon=%s',
+                       request.COOKIES.get('sessionid'),
+                       dict(getattr(request, 'session', {})),
+                       getattr(user, 'username', '?'),
+                       not getattr(user, 'is_authenticated', False))
+    except Exception:
+        pass
     if user is None or not getattr(user, 'is_authenticated', False):
         return JsonResponse(
             {'success': False, 'message': 'Anda tidak memiliki izin untuk melakukan tindakan ini.'},
