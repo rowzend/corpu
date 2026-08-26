@@ -161,6 +161,13 @@ class Article(models.Model):
         verbose_name='Thumbnail',
         help_text='Gambar thumbnail untuk artikel (recommended: 800x600px)'
     )
+    sync_thumbnail = models.BooleanField(
+        default=True,
+        verbose_name='Sinkron thumbnail dari Course LMS',
+        help_text='Jika True, thumbnail artikel akan mengikuti thumbnail course LMS '
+                  '(mirror). Jika user mengubah/menghapus thumbnail secara manual di KMS, '
+                  'field ini otomatis False agar tidak ditimpa oleh sinkronisasi.'
+    )
     content_type = models.CharField(
         max_length=20,
         choices=CONTENT_TYPE_CHOICES,

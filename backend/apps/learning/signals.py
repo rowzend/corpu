@@ -1,5 +1,6 @@
 import os
 import threading
+import uuid
 from contextlib import contextmanager
 from django.db.models.signals import post_save, pre_save, post_delete, pre_delete
 from django.dispatch import receiver
@@ -230,15 +231,35 @@ def sync_course_to_article(course):
 
 def sync_course_thumbnail(article, course):
     """
-    Copy the course thumbnail to the article (pull-only).
-    Only applied when the article has no thumbnail yet, so manual KMS edits are kept.
+    Mirror the course thumbnail into the article (keeps KMS thumbnail in sync with LMS).
+
+    Only runs while ``article.sync_thumbnail`` is True. A manual edit/removal of the
+    thumbnail in KMS sets that flag to False (see ArticleViewSet), so the sync won't
+    clobber the user's choice. Each sync writes a unique filename so the browser/CDN
+    cache is busted and the new image is actually fetched.
     """
-    if not course.thumbnail or article.thumbnail:
+    if not getattr(article, 'sync_thumbnail', True):
         return
     try:
-        course_thumb = course.thumbnail
-        filename = os.path.basename(course_thumb.name) or 'thumbnail'
-        article.thumbnail.save(filename, ContentFile(course_thumb.read()), save=True)
+        if course.thumbnail:
+            course_thumb = course.thumbnail
+            base = os.path.basename(course_thumb.name) or 'thumbnail'
+            filename = f'{uuid.uuid4().hex}_{base}'
+            # Remove the previous thumbnail file to avoid orphans / stale images.
+            old = article.thumbnail
+            if old:
+                try:
+                    old.delete(save=False)
+                except Exception:
+                    pass
+            article.thumbnail.save(filename, ContentFile(course_thumb.read()), save=True)
+            if not article.sync_thumbnail:
+                article.sync_thumbnail = True
+                article.save(update_fields=['sync_thumbnail'])
+        else:
+            # Course no longer has a thumbnail -> clear the article thumbnail too.
+            if article.thumbnail:
+                article.thumbnail.delete(save=True)
     except Exception:
         pass
 

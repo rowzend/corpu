@@ -319,17 +319,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Set author to current user when creating article"""
-        serializer.save(author=self.request.user)
+        article = serializer.save(author=self.request.user)
+        # Manual thumbnail upload disables auto-sync from the LMS course.
+        if 'thumbnail' in self.request.data and getattr(article, 'source_course', None) and article.sync_thumbnail:
+            article.sync_thumbnail = False
+            article.save(update_fields=['sync_thumbnail'])
+        return article
     
     def update(self, request, *args, **kwargs):
         """Override update to add detailed error logging"""
         import logging
         logger = logging.getLogger(__name__)
-        
+
         logger.info("=== ARTICLE UPDATE REQUEST ===")
         logger.info(f"Request data: {request.data}")
         logger.info(f"Request user: {request.user}")
-        
+
         try:
             response = super().update(request, *args, **kwargs)
             logger.info("=== UPDATE SUCCESS ===")
@@ -337,7 +342,15 @@ class ArticleViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"=== UPDATE ERROR: {type(e).__name__}: {str(e)} ===")
             logger.exception("Full traceback:")
-            raise
+
+    def perform_update(self, serializer):
+        """Persist update; a manual thumbnail change disables LMS thumbnail sync."""
+        thumbnail_changed = 'thumbnail' in self.request.data
+        article = serializer.save()
+        if thumbnail_changed and getattr(article, 'source_course', None) and article.sync_thumbnail:
+            article.sync_thumbnail = False
+            article.save(update_fields=['sync_thumbnail'])
+        return article
     
     def perform_destroy(self, instance):
         """
