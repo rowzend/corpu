@@ -267,19 +267,29 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filter articles based on user permissions"""
         from apps.manajemen.helpers import check_permission
+        from django.db.models import Q
         user = self.request.user
-        
+
         if user.is_authenticated and check_permission(user, 'knowledge', 'knowledge_article', 'view'):
             # Users with permission can see all articles
-            return Article.objects.all()
+            qs = Article.objects.all()
         elif user.is_authenticated:
             # Authenticated users can see published + their own drafts
-            return Article.objects.filter(
+            qs = Article.objects.filter(
                 Q(status='published') | Q(author=user)
             )
         else:
             # Anonymous users can only see published articles
-            return Article.objects.filter(status='published')
+            qs = Article.objects.filter(status='published')
+
+        # Honor an explicit ?status= filter (e.g. the public KMS page requests
+        # status=published). 'all' means no filtering. This keeps the public
+        # knowledge base showing only the requested status even for admins whose
+        # token is sent on the "public" call.
+        status = self.request.query_params.get('status')
+        if status and status != 'all':
+            qs = qs.filter(status=status)
+        return qs
     
     def get_serializer_class(self):
         """Use different serializers for list vs detail"""
