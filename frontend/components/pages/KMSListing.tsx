@@ -558,9 +558,17 @@ export default function KMSPage({ basePath = '/kms' }: { basePath?: string }) {
                     {/* Icon/Cover */}
                     <div className={`w-48 flex-shrink-0 bg-gradient-to-br ${getContentTypeColor(article.content_type)} flex items-center justify-center text-7xl relative overflow-hidden`}>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                      <span className="transform group-hover:scale-125 group-hover:rotate-12 transition-all duration-500">
-                        {getContentTypeIcon(article.content_type)}
-                      </span>
+                      {article.thumbnail ? (
+                        <img
+                          src={article.thumbnail}
+                          alt={article.title}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="transform group-hover:scale-125 group-hover:rotate-12 transition-all duration-500">
+                          {getContentTypeIcon(article.content_type)}
+                        </span>
+                      )}
                     </div>
 
                     {/* Content */}
