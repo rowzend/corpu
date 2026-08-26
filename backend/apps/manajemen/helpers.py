@@ -34,7 +34,13 @@ def _role_groups(user):
     """Groups used for permission checks, scoped to the active role if set."""
     active_group_id = get_active_group_id()
     if active_group_id:
-        return user.groups.filter(id=active_group_id)
+        grp = user.groups.filter(id=active_group_id)
+        if grp.exists():
+            return grp
+        # Selected role is not one of the user's groups (e.g. a stale
+        # active_group_id cookie from a previous role). Ignore it so the user
+        # is not wrongly locked out; superadmin override can then apply.
+        clear_active_group_id()
     return user.groups.all()
 
 
