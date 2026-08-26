@@ -84,6 +84,7 @@ export default function EditArticlePage() {
     });
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+    const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
     const [fileUpload, setFileUpload] = useState<File | null>(null);
     const [existingDocuments, setExistingDocuments] = useState<ArticleDocument[]>([]);
     const [newDocuments, setNewDocuments] = useState<File[]>([]);
@@ -193,12 +194,14 @@ export default function EditArticlePage() {
         if (file) {
             setThumbnailFile(file);
             setThumbnailPreview(URL.createObjectURL(file));
+            setThumbnailRemoved(false);
         }
     };
 
     const removeThumbnail = () => {
         setThumbnailFile(null);
         setThumbnailPreview(null);
+        setThumbnailRemoved(true);
     };
 
     const handleFileUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,7 +254,8 @@ export default function EditArticlePage() {
                 content_type: formData.content_type,
                 status: formData.status,
                 is_featured: formData.is_featured,
-                thumbnail: thumbnailFile || undefined,
+                thumbnail: thumbnailRemoved ? null : (thumbnailFile || undefined),
+                ...(thumbnailRemoved ? { thumbnail_remove: true } : {}),
                 documents: newDocuments.length ? newDocuments : undefined,
             };
             

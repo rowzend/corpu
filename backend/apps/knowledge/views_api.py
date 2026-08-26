@@ -344,10 +344,22 @@ class ArticleViewSet(viewsets.ModelViewSet):
             logger.exception("Full traceback:")
 
     def perform_update(self, serializer):
-        """Persist update; a manual thumbnail change disables LMS thumbnail sync."""
-        thumbnail_changed = 'thumbnail' in self.request.data
+        """Persist update; a manual thumbnail change/removal disables LMS thumbnail sync."""
+        data = self.request.data
+        thumbnail_changed = 'thumbnail' in data
+        remove_thumb = str(data.get('thumbnail_remove', '')).lower() in ('1', 'true', 'yes', 'on')
         article = serializer.save()
-        if thumbnail_changed and getattr(article, 'source_course', None) and article.sync_thumbnail:
+        if remove_thumb:
+            if article.thumbnail:
+                try:
+                    article.thumbnail.delete(save=False)
+                except Exception:
+                    pass
+                article.thumbnail = None
+            if getattr(article, 'source_course', None) and article.sync_thumbnail:
+                article.sync_thumbnail = False
+            article.save(update_fields=['thumbnail', 'sync_thumbnail'])
+        elif thumbnail_changed and getattr(article, 'source_course', None) and article.sync_thumbnail:
             article.sync_thumbnail = False
             article.save(update_fields=['sync_thumbnail'])
         return article
