@@ -110,6 +110,7 @@ jobs:
 
             # Clone or reset to latest
             if [ -d ".git" ]; then
+              git remote set-url origin https://github.com/rowzend/corpu.git
               git fetch origin main
               git reset --hard origin/main
               git clean -fd
