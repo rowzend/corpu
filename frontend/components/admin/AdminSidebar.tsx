@@ -105,6 +105,7 @@ const itemNameMap: Record<string, string> = {
     'HCDP': 'admin.sidebar.hcdp',
     'IDP ASN': 'admin.sidebar.idp_asn',
     'Approval IDP ASN': 'admin.sidebar.idp_approval',
+    'Verifikasi IDP ASN': 'admin.sidebar.idp_verifikasi',
     'Desain Pembelajaran': 'admin.sidebar.desain_pembelajaran',
     'Master Data': 'admin.sidebar.master_data',
     'Jenis Kompetensi': 'admin.sidebar.jenis_kompetensi',

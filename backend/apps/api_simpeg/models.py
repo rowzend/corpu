@@ -212,9 +212,39 @@ class DesainPembelajaranUnit(models.Model):
     unit_kerja = models.OneToOneField(
         UnitKerja,
         related_name='desain_pembelajaran',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         verbose_name='Unit Kerja',
-        help_text='Unit kerja pemilik desain pembelajaran ini'
+        help_text='Unit kerja pemilik desain pembelajaran ini (kosong bila sudah diarsipkan sebagai riwayat)'
+    )
+
+    # Snapshot identitas unit kerja, diisi otomatis saat unit kerja dihapus
+    # agar desain tetap bisa dilacak sebagai riwayat meski unit-nya hilang.
+    unit_kerja_nm_opd = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        verbose_name='Nama OPD (Snapshot)',
+        help_text='Nama OPD saat desain diarsipkan menjadi riwayat'
+    )
+    unit_kerja_id_opd = models.BigIntegerField(
+        null=True,
+        blank=True,
+        verbose_name='ID OPD (Snapshot)',
+        help_text='ID OPD saat desain diarsipkan menjadi riwayat'
+    )
+
+    is_riwayat = models.BooleanField(
+        default=False,
+        verbose_name='Status Riwayat',
+        help_text='True bila unit kerja pemilik sudah dihapus dan desain diarsipkan sebagai riwayat'
+    )
+    archived_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Diarsipkan Pada',
+        help_text='Waktu desain diarsipkan menjadi riwayat'
     )
 
     keterangan = models.TextField(
@@ -241,7 +271,9 @@ class DesainPembelajaranUnit(models.Model):
         verbose_name_plural = 'Desain Pembelajaran Unit Kerja'
 
     def __str__(self):
-        return f'Desain Pembelajaran — {self.unit_kerja.nm_opd}'
+        if self.unit_kerja_id:
+            return f'Desain Pembelajaran — {self.unit_kerja.nm_opd}'
+        return f'Riwayat Desain — {self.unit_kerja_nm_opd or "(unit dihapus)"}'
 
 
 class KompetensiTeknisUnit(models.Model):

@@ -21,5 +21,5 @@ export * from './profile.service';
 export { newsService } from './news.service';
 export type { NewsItem, NewsListResponse } from './news.service';
 export { simpegService } from './simpeg.service';
-export type { PegawaiItem, BupatiItem, UnitKerjaItem, UnitKerjaTreeNode, UnitKerjaDesain } from './simpeg.service';
+export type { PegawaiItem, BupatiItem, UnitKerjaItem, UnitKerjaTreeNode, UnitKerjaDesain, UnitKerjaDesainRiwayat } from './simpeg.service';
 export * from './management.service';

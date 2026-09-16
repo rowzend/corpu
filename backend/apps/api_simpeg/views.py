@@ -1081,16 +1081,27 @@ def unit_kerja_tree(request):
 
 
 def _serialize_desain_unit(desain):
-    return {
-        'id': desain.id,
-        'unit_kerja': {
+    # Pakai snapshot bila unit kerja sudah dihapus (desain berstatus riwayat)
+    if desain.unit_kerja_id:
+        unit_kerja = {
             'id_opd': desain.unit_kerja_id,
             'nm_opd': desain.unit_kerja.nm_opd,
             'path_names': [
                 p.get('nama') for p in (desain.unit_kerja.path or [])
                 if isinstance(p, dict)
             ],
-        },
+        }
+    else:
+        unit_kerja = {
+            'id_opd': desain.unit_kerja_id_opd,
+            'nm_opd': desain.unit_kerja_nm_opd,
+            'path_names': [],
+        }
+    return {
+        'id': desain.id,
+        'is_riwayat': desain.is_riwayat,
+        'archived_at': desain.archived_at.isoformat() if desain.archived_at else None,
+        'unit_kerja': unit_kerja,
         # tiap kompetensi teknis membawa daftar tujuannya sendiri
         'kompetensi_teknis': [
             {
@@ -1242,7 +1253,7 @@ def unit_kerja_desain_options(request):
 
     desains = (
         DesainPembelajaranUnit.objects
-        .filter(unit_kerja__status=1, kompetensi_teknis__isnull=False)
+        .filter(unit_kerja__status=1, kompetensi_teknis__isnull=False, is_riwayat=False)
         .select_related('unit_kerja')
         .prefetch_related('kompetensi_teknis__tujuan')
         .distinct()
@@ -1268,3 +1279,26 @@ def unit_kerja_desain_options(request):
         })
 
     return Response({'success': True, 'data': data})
+
+
+@api_view(['GET'])
+@permission_classes([simpeg_permission('unit_kerja', 'view')])
+def unit_kerja_desain_riwayat(request):
+    """Daftar desain pembelajaran yang sudah diarsipkan sebagai riwayat
+    karena unit kerja pemiliknya telah dihapus.
+
+    Data kompetensi teknis & tujuan pembelajaran tetap utuh (tidak ikut
+    terhapus), sehingga masih bisa ditelusuri lewat endpoint ini.
+    """
+    if not check_permission(request.user, 'api_simpeg', 'unit_kerja', 'view'):
+        return Response({'success': False, 'error': 'Anda tidak memiliki akses.'}, status=status.HTTP_403_FORBIDDEN)
+
+    search = request.query_params.get('search', '').strip()
+    qs = DesainPembelajaranUnit.objects.filter(is_riwayat=True)
+    if search:
+        qs = qs.filter(unit_kerja_nm_opd__icontains=search)
+
+    qs = qs.prefetch_related('kompetensi_teknis__tujuan').order_by('-archived_at', 'unit_kerja_nm_opd')
+
+    data = [_serialize_desain_unit(d) for d in qs]
+    return Response({'success': True, 'data': data, 'total': len(data)})

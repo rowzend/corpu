@@ -89,7 +89,24 @@ def _serialize(idp, request=None):
         'updated_at': idp.updated_at.isoformat() if idp.updated_at else None,
         'approved_by': idp.approved_by.username if idp.approved_by else None,
         'approved_at': idp.approved_at.isoformat() if idp.approved_at else None,
+        'verified_by': idp.verified_by.username if idp.verified_by else None,
+        'verified_at': idp.verified_at.isoformat() if idp.verified_at else None,
+        'catatan_persetujuan': idp.catatan_persetujuan or '',
+        'alokasi_dukungan_program': idp.alokasi_dukungan_program or '',
     }
+
+
+def log_idp_revision(idp, from_status, to_status, catatan='', alokasi_dukungan_program='', request=None):
+    """Simpan log/riwayat perubahan status IDP."""
+    from .models import IdpRevisionLog
+    IdpRevisionLog.objects.create(
+        idp=idp,
+        from_status=from_status or '',
+        to_status=to_status or '',
+        catatan=catatan or '',
+        alokasi_dukungan_program=alokasi_dukungan_program or '',
+        actor=(request.user if (request and request.user.is_authenticated) else None),
+    )
 
 
 @csrf_exempt
@@ -255,9 +272,85 @@ def idp_detail(request, pk):
             })
         except Exception as e:
             return JsonResponse(
-                {'success': False, 'message': f'Gagal menghapus IDP: {str(e)}'},
-                status=500
-            )
+            {'success': False, 'message': f'Gagal menghapus IDP: {str(e)}'},
+            status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def idp_submit_action(request, pk):
+    """
+    POST: Kirim IDP ke atasan (draft -> submitted).
+    Body opsional: {catatan: '...'}
+    """
+    denied = _idp_permission(request, 'idp_asn', 'edit')
+    if denied:
+        return denied
+
+    try:
+        idp = IdpAsn.objects.select_related('asn', 'atasan_langsung').get(pk=pk)
+    except IdpAsn.DoesNotExist:
+        return JsonResponse(
+            {'success': False, 'message': 'IDP tidak ditemukan.'},
+            status=404
+        )
+
+    if idp.status != 'draft':
+        return JsonResponse(
+            {'success': False, 'message': 'Hanya IDP berstatus "Draft" yang dapat dikirim ke atasan.'},
+            status=400
+        )
+
+    try:
+        body = _parse_body(request)
+        old_status = idp.status
+        idp.status = IdpAsn.StatusChoices.SUBMITTED
+        idp.tanggal_pengajuan = timezone.now().date()
+        catatan_submit = body.get('catatan', idp.catatan or '')
+        idp.catatan = catatan_submit
+        idp.save()
+        log_idp_revision(idp, old_status, IdpAsn.StatusChoices.SUBMITTED, catatan=catatan_submit, request=request)
+        return JsonResponse({
+            'status': 'success',
+            'message': 'IDP berhasil dikirim ke atasan untuk diverifikasi',
+            'data': _serialize(idp, request)
+        })
+    except Exception as e:
+        logger.exception("Error submitting IDP")
+        return JsonResponse(
+            {'success': False, 'message': f'Gagal mengirim IDP: {str(e)}'},
+            status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def idp_riwayat(request, pk):
+    """GET: Riwayat/log revisi IDP tertentu."""
+    denied = _idp_permission(request, 'idp_asn', 'view')
+    if denied:
+        return denied
+
+    try:
+        idp = IdpAsn.objects.get(pk=pk)
+    except IdpAsn.DoesNotExist:
+        return JsonResponse(
+            {'success': False, 'message': 'IDP tidak ditemukan.'},
+            status=404
+        )
+
+    data = [{
+        'id': l.id,
+        'from_status': l.from_status,
+        'to_status': l.to_status,
+        'catatan': l.catatan,
+        'alokasi_dukungan_program': l.alokasi_dukungan_program,
+        'actor': l.actor.username if l.actor else None,
+        'created_at': l.created_at.isoformat() if l.created_at else None,
+    } for l in idp.riwayat.all()]
+
+    return JsonResponse({'status': 'success', 'data': data})
 
 
 @csrf_exempt
@@ -288,7 +381,8 @@ def idp_stats(request):
 @require_http_methods(["GET"])
 def idp_approval_list(request):
     """
-    GET: Daftar IDP yang diajukan (submitted) untuk di-approve.
+    GET: Daftar IDP yang sudah diverifikasi (verified) untuk di-approve
+    oleh kepala unit kerja.
     """
     denied = _idp_permission(request, 'idp_approval', 'view')
     if denied:
@@ -297,7 +391,7 @@ def idp_approval_list(request):
     page = int(request.GET.get('page', 1))
     per_page = int(request.GET.get('per_page', 10))
     search = request.GET.get('search', '')
-    status = request.GET.get('status', 'submitted')
+    status = request.GET.get('status', 'verified')
 
     idps = IdpAsn.objects.select_related('asn', 'atasan_langsung').filter(status=status)
 
@@ -346,32 +440,38 @@ def idp_approval_action(request, pk):
             status=404
         )
 
-    if idp.status != 'submitted':
+    if idp.status != 'verified':
         return JsonResponse(
-            {'success': False, 'message': 'Hanya IDP berstatus "Diajukan" yang dapat disetujui atau ditolak.'},
+            {'success': False, 'message': 'Hanya IDP berstatus "Diverifikasi" yang dapat disetujui atau ditolak.'},
             status=400
         )
 
     try:
         body = _parse_body(request)
         action = body.get('action', '').lower()
+        old_status = idp.status
 
         if action == 'approve':
             idp.status = IdpAsn.StatusChoices.APPROVED
             message = 'IDP berhasil disetujui'
         elif action == 'reject':
-            idp.status = IdpAsn.StatusChoices.REJECTED
-            message = 'IDP berhasil ditolak'
+            idp.status = IdpAsn.StatusChoices.DRAFT
+            message = 'IDP berhasil dikembalikan untuk revisi'
         else:
             return JsonResponse(
                 {'success': False, 'message': "Action harus berupa 'approve' atau 'reject'."},
                 status=400
             )
 
+        catatan_persetujuan = body.get('catatan_persetujuan', idp.catatan_persetujuan or '')
+        alokasi = body.get('alokasi_dukungan', idp.alokasi_dukungan_program or '')
         idp.catatan = body.get('catatan', idp.catatan or '')
+        idp.catatan_persetujuan = catatan_persetujuan
+        idp.alokasi_dukungan_program = alokasi
         idp.approved_by = request.user if request.user.is_authenticated else None
         idp.approved_at = timezone.now()
         idp.save()
+        log_idp_revision(idp, old_status, idp.status, catatan=catatan_persetujuan, alokasi_dukungan_program=alokasi, request=request)
 
         return JsonResponse({
             'status': 'success',
@@ -382,6 +482,112 @@ def idp_approval_action(request, pk):
         logger.exception("Error processing IDP approval")
         return JsonResponse(
             {'success': False, 'message': f'Gagal memproses persetujuan IDP: {str(e)}'},
+            status=500
+        )
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def idp_verifikasi_list(request):
+    """
+    GET: Daftar IDP yang diajukan (submitted) untuk diverifikasi oleh atasan.
+    """
+    denied = _idp_permission(request, 'idp_verifikasi', 'view')
+    if denied:
+        return denied
+
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 10))
+    search = request.GET.get('search', '')
+    status = request.GET.get('status', 'submitted')
+
+    idps = IdpAsn.objects.select_related('asn', 'atasan_langsung').filter(status=status)
+
+    if search:
+        idps = idps.filter(
+            Q(asn__nama_pegawai__icontains=search) |
+            Q(asn__nip_baru__icontains=search) |
+            Q(asn__nip_lama__icontains=search) |
+            Q(asn__nama_jabatan__icontains=search) |
+            Q(atasan_langsung__nama_pegawai__icontains=search)
+        )
+
+    paginator = Paginator(idps, per_page)
+    page_obj = paginator.get_page(page)
+
+    return JsonResponse({
+        'status': 'success',
+        'data': [_serialize(idp, request) for idp in page_obj],
+        'pagination': {
+            'page': page,
+            'per_page': per_page,
+            'total': paginator.count,
+            'total_pages': paginator.num_pages,
+            'has_next': page_obj.has_next(),
+            'has_previous': page_obj.has_previous(),
+        }
+    })
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def idp_verifikasi_action(request, pk):
+    """
+    POST: Verifikasi / Tolak IDP oleh atasan.
+    Body: {action: 'verify'|'reject', catatan: '...'}
+    submitted -> verified (atau rejected)
+    """
+    denied = _idp_permission(request, 'idp_verifikasi', 'approve')
+    if denied:
+        return denied
+
+    try:
+        idp = IdpAsn.objects.select_related('asn', 'atasan_langsung').get(pk=pk)
+    except IdpAsn.DoesNotExist:
+        return JsonResponse(
+            {'success': False, 'message': 'IDP tidak ditemukan.'},
+            status=404
+        )
+
+    if idp.status != 'submitted':
+        return JsonResponse(
+            {'success': False, 'message': 'Hanya IDP berstatus "Diajukan" yang dapat diverifikasi atau ditolak.'},
+            status=400
+        )
+
+    try:
+        body = _parse_body(request)
+        action = body.get('action', '').lower()
+        old_status = idp.status
+
+        if action == 'verify':
+            idp.status = IdpAsn.StatusChoices.VERIFIED
+            message = 'IDP berhasil diverifikasi'
+        elif action == 'reject':
+            idp.status = IdpAsn.StatusChoices.DRAFT
+            message = 'IDP berhasil dikembalikan untuk revisi'
+        else:
+            return JsonResponse(
+                {'success': False, 'message': "Action harus berupa 'verify' atau 'reject'."},
+                status=400
+            )
+
+        catatan_verif = body.get('catatan', idp.catatan or '')
+        idp.catatan = catatan_verif
+        idp.verified_by = request.user if request.user.is_authenticated else None
+        idp.verified_at = timezone.now()
+        idp.save()
+        log_idp_revision(idp, old_status, idp.status, catatan=catatan_verif, request=request)
+
+        return JsonResponse({
+            'status': 'success',
+            'message': message,
+            'data': _serialize(idp, request)
+        })
+    except Exception as e:
+        logger.exception("Error processing IDP verifikasi")
+        return JsonResponse(
+            {'success': False, 'message': f'Gagal memproses verifikasi IDP: {str(e)}'},
             status=500
         )
 

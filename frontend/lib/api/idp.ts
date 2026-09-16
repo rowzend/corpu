@@ -27,13 +27,17 @@ export interface IdpAsn {
     dasar_penyusunan_idp: string;
     tanggal_pengajuan: string | null;
     target_kompetensi: string;
-    status: 'draft' | 'submitted' | 'approved' | 'rejected';
+    status: 'draft' | 'submitted' | 'verified' | 'approved' | 'rejected';
     catatan: string;
     created_by: string | null;
     created_at: string;
     updated_at: string;
     approved_by: string | null;
     approved_at: string | null;
+    verified_by: string | null;
+    verified_at: string | null;
+    catatan_persetujuan: string;
+    alokasi_dukungan_program: string;
 }
 
 export interface IdpAsnListResponse {
@@ -104,6 +108,10 @@ export async function deleteIdp(id: number): Promise<{ status: string; message: 
     return api.delete(`/idp/asn/${id}/`);
 }
 
+export async function submitIdp(id: number, catatan?: string): Promise<IdpAsnDetailResponse> {
+    return api.post(`/idp/asn/${id}/submit/`, { catatan });
+}
+
 export async function getIdpStats(): Promise<IdpStatsResponse> {
     return api.get('/idp/stats/');
 }
@@ -117,12 +125,51 @@ export async function getIdpApprovalList(params?: {
     return api.get('/idp/approval/', params);
 }
 
-export async function approveIdp(id: number, catatan?: string): Promise<IdpAsnDetailResponse> {
-    return api.post(`/idp/approval/${id}/`, { action: 'approve', catatan });
+export async function approveIdp(id: number, catatanPersetujuan?: string, alokasiDukungan?: string): Promise<IdpAsnDetailResponse> {
+    return api.post(`/idp/approval/${id}/`, {
+        action: 'approve',
+        catatan_persetujuan: catatanPersetujuan || '',
+        alokasi_dukungan: alokasiDukungan || '',
+    });
 }
 
-export async function rejectIdp(id: number, catatan?: string): Promise<IdpAsnDetailResponse> {
-    return api.post(`/idp/approval/${id}/`, { action: 'reject', catatan });
+export async function rejectIdp(id: number, catatanPersetujuan?: string, alokasiDukungan?: string): Promise<IdpAsnDetailResponse> {
+    return api.post(`/idp/approval/${id}/`, {
+        action: 'reject',
+        catatan_persetujuan: catatanPersetujuan || '',
+        alokasi_dukungan: alokasiDukungan || '',
+    });
+}
+
+export async function getIdpVerifikasiList(params?: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    status?: string;
+}): Promise<IdpAsnListResponse> {
+    return api.get('/idp/verifikasi/', params);
+}
+
+export async function verifyIdp(id: number, catatan?: string): Promise<IdpAsnDetailResponse> {
+    return api.post(`/idp/verifikasi/${id}/`, { action: 'verify', catatan });
+}
+
+export async function rejectVerifikasiIdp(id: number, catatan?: string): Promise<IdpAsnDetailResponse> {
+    return api.post(`/idp/verifikasi/${id}/`, { action: 'reject', catatan });
+}
+
+export interface IdpRevisionLog {
+    id: number;
+    from_status: string;
+    to_status: string;
+    catatan: string;
+    alokasi_dukungan_program: string;
+    actor: string | null;
+    created_at: string | null;
+}
+
+export async function getIdpRiwayat(id: number): Promise<{ status: string; data: IdpRevisionLog[] }> {
+    return api.get(`/idp/asn/${id}/riwayat/`);
 }
 
 export interface JenisKompetensi {

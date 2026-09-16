@@ -381,8 +381,14 @@ class Command(BaseCommand):
         })
         self.stdout.write('  Created/Updated: IDP ASN (Manajemen IDP)')
 
+        upsert('Verifikasi IDP ASN', {
+            'icon': '🔍', 'type': 'module', 'external_url': '/admin/dashboard/idp/verifikasi', 'order': 2, 'category': 12, 'is_active': True,
+            'permission_key': 'idp.idp_verifikasi.view',
+        })
+        self.stdout.write('  Created/Updated: Verifikasi IDP ASN (Manajemen IDP)')
+
         upsert('Approval IDP ASN', {
-            'icon': '✅', 'type': 'module', 'external_url': '/admin/dashboard/idp/approval', 'order': 2, 'category': 12, 'is_active': True,
+            'icon': '✅', 'type': 'module', 'external_url': '/admin/dashboard/idp/approval', 'order': 3, 'category': 12, 'is_active': True,
             'permission_key': 'idp.idp_approval.view',
         })
         self.stdout.write('  Created/Updated: Approval IDP ASN (Manajemen IDP)')

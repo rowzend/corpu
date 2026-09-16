@@ -4,53 +4,38 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import {
-    Plus, Search, Pencil, Trash2, ClipboardList, User, Calendar,
-    UserCheck, FileCheck2, FileClock, Users, CheckCircle2
+    Search, ClipboardList, User, Calendar, CheckCircle2, XCircle, UserCheck, FileClock
 } from 'lucide-react';
-import { getIdpList, getIdpStats, deleteIdp, type IdpAsn } from '@/lib/api/idp';
+import { getIdpVerifikasiList, rejectVerifikasiIdp, type IdpAsn } from '@/lib/api/idp';
 import { handleApiError } from '@/lib/api';
-import { showToast, showError, showConfirm } from '@/lib/sweetalert';
+import { showToast, showError, showConfirm, showInput } from '@/lib/sweetalert';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-    draft: { label: 'Draft', className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
     submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' },
     verified: { label: 'Diverifikasi', className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' },
     approved: { label: 'Disetujui', className: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300' },
     rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300' },
 };
 
-export default function AdminIdpPage() {
+export default function AdminIdpVerifikasiPage() {
     const router = useRouter();
-
     const [idps, setIdps] = useState<IdpAsn[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('submitted');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [total, setTotal] = useState(0);
-    const [stats, setStats] = useState({
-        total_idp: 0,
-        draft: 0,
-        submitted: 0,
-        approved: 0,
-        rejected: 0,
-        total_asn: 0,
-    });
 
     const fetchData = async (pageNum = page, query = search, status = statusFilter) => {
         setLoading(true);
         try {
-            const res = await getIdpList({ page: pageNum, per_page: 10, search: query, status });
+            const res = await getIdpVerifikasiList({ page: pageNum, per_page: 10, search: query, status });
             if (res?.data) {
                 setIdps(res.data);
                 setTotal(res.pagination?.total || 0);
                 setTotalPages(res.pagination?.total_pages || 1);
             }
-            try {
-                const s = await getIdpStats();
-                if (s?.data) setStats(s.data);
-            } catch { }
         } catch (error) {
             console.error(handleApiError(error));
             setIdps([]);
@@ -60,7 +45,7 @@ export default function AdminIdpPage() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => fetchData(1, '', 'all'), 0);
+        const timer = setTimeout(() => fetchData(1, '', 'submitted'), 0);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -70,57 +55,44 @@ export default function AdminIdpPage() {
         fetchData(pageNum, search, statusFilter);
     };
 
-    const handleDelete = async (id: number, nama: string) => {
-        const confirmed = await showConfirm(
-            `Yakin ingin menghapus IDP untuk "${nama}"?`,
-            'Hapus IDP',
-            'Hapus',
-            'Batal'
+    const handleReject = async (idp: IdpAsn) => {
+        const reason = await showInput(
+            'Tolak IDP',
+            'Alasan penolakan',
+            'Tuliskan alasan penolakan...',
+            '',
+            'textarea'
         );
-        if (!confirmed) return;
+        if (reason === null) return;
         try {
-            await deleteIdp(id);
-            showToast('IDP berhasil dihapus', 'success');
+            await rejectVerifikasiIdp(idp.id, reason);
+            showToast('IDP berhasil ditolak', 'warning');
             fetchData(page, search, statusFilter);
         } catch (error) {
-            showError(handleApiError(error), 'Gagal Menghapus');
+            showError(handleApiError(error), 'Gagal Menolak');
         }
     };
 
-    const statuses = ['all', 'draft', 'submitted', 'approved', 'rejected'];
-
     return (
         <div className="space-y-6">
-            {/* Header Gradient */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-teal-500 via-cyan-600 to-blue-700 p-8">
+            {/* Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-600 to-purple-700 p-8">
                 <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0di00aC0ydjRoLTR2MmgyM3Y0aDJWNmgyVjR6bTAtMzBWMEgzNHY0aC00djJoNHY0aDJWNmgyVjR6TTYgMzR2LTRINHY0SDB2Mmg0djRoMnYtNGg0di0yek02IDRWMUg0djRIMHYyaDR2NGgyVjZoNFY0eiIvPjwvZz48L2c+PC9zdmc+')] opacity-20" />
                 <div className="relative z-10">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="bg-white/20 backdrop-blur-sm rounded-xl p-2">
-                                <ClipboardList className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-bold text-white">IDP ASN</h1>
-                                <p className="text-teal-100 text-sm">Individual Development Plan Aparatur Sipil Negara</p>
-                            </div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-2">
+                            <ClipboardList className="w-6 h-6 text-white" />
                         </div>
-                        <button
-                            onClick={() => router.push('/admin/dashboard/idp/create')}
-                            className="inline-flex items-center gap-2 bg-card text-teal-700 hover:bg-teal-50 px-5 py-2.5 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
-                        >
-                            <Plus className="w-4 h-4" /> Buat IDP
-                        </button>
+                        <div>
+                            <h1 className="text-2xl font-bold text-white">Verifikasi IDP ASN</h1>
+                            <p className="text-indigo-100 text-sm">Verifikasi Individual Development Plan oleh atasan langsung</p>
+                        </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
                         {[
-                            { label: 'Total IDP', value: stats.total_idp, icon: ClipboardList, color: 'bg-white/20 text-white' },
-                            { label: 'Draft', value: stats.draft, icon: FileClock, color: 'bg-gray-400/20 text-gray-200' },
-                            { label: 'Diajukan', value: stats.submitted, icon: FileCheck2, color: 'bg-blue-400/20 text-blue-200' },
-                            { label: 'Disetujui', value: stats.approved, icon: UserCheck, color: 'bg-green-400/20 text-green-200' },
-                            { label: 'ASN', value: stats.total_asn, icon: Users, color: 'bg-purple-400/20 text-purple-200' },
+                            { label: 'Menunggu', value: total, icon: FileClock, color: 'bg-blue-400/20 text-blue-200' },
+                            { label: 'Diverifikasi', value: 0, icon: UserCheck, color: 'bg-indigo-400/20 text-indigo-200' },
                         ].map((stat, i) => (
                             <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
                                 <div className="flex items-center gap-3">
@@ -129,7 +101,7 @@ export default function AdminIdpPage() {
                                     </div>
                                     <div>
                                         <p className="text-2xl font-bold text-white">{stat.value}</p>
-                                        <p className="text-xs text-teal-100">{stat.label}</p>
+                                        <p className="text-xs text-indigo-100">{stat.label}</p>
                                     </div>
                                 </div>
                             </div>
@@ -138,7 +110,7 @@ export default function AdminIdpPage() {
                 </div>
             </div>
 
-            {/* Search & Filters */}
+            {/* Search & Filter */}
             <div className="bg-card rounded-xl shadow-sm border border-border p-4">
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
@@ -149,19 +121,18 @@ export default function AdminIdpPage() {
                             value={search}
                             onChange={e => { setSearch(e.target.value); }}
                             onKeyDown={e => { if (e.key === 'Enter') applyFilters(1); }}
-                            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 bg-muted focus:bg-card transition-colors text-sm"
+                            className="w-full pl-10 pr-4 py-2.5 border border-border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-muted focus:bg-card transition-colors text-sm"
                         />
                     </div>
                     <select
                         value={statusFilter}
                         onChange={e => { setStatusFilter(e.target.value); applyFilters(1); }}
-                        className="px-4 py-2.5 border border-border rounded-xl bg-muted text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                        className="px-4 py-2.5 border border-border rounded-xl bg-muted text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     >
-                        {statuses.map(s => (
-                            <option key={s} value={s}>
-                                {s === 'all' ? 'Semua Status' : s.charAt(0).toUpperCase() + s.slice(1)}
-                            </option>
-                        ))}
+                        <option value="submitted">Diajukan</option>
+                        <option value="verified">Diverifikasi</option>
+                        <option value="approved">Disetujui</option>
+                        <option value="rejected">Ditolak</option>
                     </select>
                 </div>
             </div>
@@ -183,46 +154,37 @@ export default function AdminIdpPage() {
                                     <th className="px-4 py-3 font-semibold">ASN</th>
                                     <th className="px-4 py-3 font-semibold">Atasan Langsung</th>
                                     <th className="px-4 py-3 font-semibold">Periode IDP</th>
-                                    <th className="px-4 py-3 font-semibold">Dasar Penyusunan IDP</th>
-                                    <th className="px-4 py-3 font-semibold">Catatan</th>
                                     <th className="px-4 py-3 font-semibold">Status</th>
+                                    <th className="px-4 py-3 font-semibold">Catatan</th>
                                     <th className="px-4 py-3 font-semibold text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {idps.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-16 text-center">
-                                            <div className="w-16 h-16 mx-auto mb-4 bg-teal-100 rounded-full flex items-center justify-center">
-                                                <ClipboardList className="w-8 h-8 text-teal-500" />
+                                        <td colSpan={7} className="px-4 py-16 text-center">
+                                            <div className="w-16 h-16 mx-auto mb-4 bg-indigo-100 rounded-full flex items-center justify-center">
+                                                <CheckCircle2 className="w-8 h-8 text-indigo-500" />
                                             </div>
                                             <h3 className="text-lg font-semibold text-card-foreground mb-2">
-                                                {total === 0 ? 'Belum ada IDP' : 'IDP tidak ditemukan'}
+                                                Tidak ada IDP untuk diverifikasi
                                             </h3>
-                                            <p className="text-muted-foreground mb-6">
+                                            <p className="text-muted-foreground">
                                                 {total === 0
-                                                    ? 'Mulai dengan membuat IDP ASN pertama'
-                                                    : 'Coba ubah kata kunci pencarian Anda'}
+                                                    ? 'Belum ada IDP yang diajukan untuk verifikasi'
+                                                    : 'Coba ubah kata kunci pencarian atau filter Anda'}
                                             </p>
-                                            {total === 0 && (
-                                                <button
-                                                    onClick={() => router.push('/admin/dashboard/idp/create')}
-                                                    className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-teal-200"
-                                                >
-                                                    <Plus className="w-4 h-4" /> Buat IDP Pertama
-                                                </button>
-                                            )}
                                         </td>
                                     </tr>
                                 ) : (
                                     idps.map((idp, idx) => {
-                                        const st = statusConfig[idp.status] || statusConfig.draft;
+                                        const st = statusConfig[idp.status] || statusConfig.submitted;
                                         return (
                                             <tr key={idp.id} className="border-b border-border last:border-0 hover:bg-muted/40 transition-colors">
                                                 <td className="px-4 py-4 text-muted-foreground">{(page - 1) * 10 + idx + 1}</td>
                                                 <td className="px-4 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center flex-shrink-0">
+                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0">
                                                             <User className="w-4 h-4 text-white" />
                                                         </div>
                                                         <div className="min-w-0">
@@ -249,54 +211,38 @@ export default function AdminIdpPage() {
                                                         <span>{idp.periode_display}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-4 max-w-[220px]">
-                                                    <p className="text-muted-foreground truncate">{idp.dasar_penyusunan_idp || '-'}</p>
-                                                </td>
-                                                <td className="px-4 py-4 max-w-[200px]">
-                                                    <p className="text-muted-foreground truncate" title={idp.catatan || ''}>{idp.catatan || '-'}</p>
-                                                </td>
                                                 <td className="px-4 py-4">
                                                     <Badge className={`${st.className} border-0 text-xs font-medium`}>
                                                         {st.label}
                                                     </Badge>
                                                 </td>
+                                                <td className="px-4 py-4 max-w-[180px]">
+                                                    <p className="text-muted-foreground truncate">{idp.catatan || '-'}</p>
+                                                </td>
                                                 <td className="px-4 py-4">
-                                                    <div className="flex justify-end gap-1">
-                                                        {idp.status === 'submitted' && (
+                                                    {idp.status === 'submitted' ? (
+                                                        <div className="flex justify-end gap-1">
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); router.push(`/admin/dashboard/idp/${idp.id}/verifikasi`); }}
-                                                                className="p-2 text-muted-foreground hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                                                title="Verifikasi IDP"
+                                                                onClick={() => router.push(`/admin/dashboard/idp/${idp.id}/verifikasi`)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-xs font-medium transition-colors"
                                                             >
-                                                                <CheckCircle2 className="w-4 h-4" />
+                                                                <CheckCircle2 className="w-3.5 h-3.5" /> Verifikasi
                                                             </button>
-                                                        )}
-                                                        {idp.status === 'verified' && (
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); router.push(`/admin/dashboard/idp/approval?id=${idp.id}`); }}
-                                                                className="p-2 text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                                                title="Approval IDP"
+                                                                onClick={() => handleReject(idp)}
+                                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors"
                                                             >
-                                                                <FileCheck2 className="w-4 h-4" />
+                                                                <XCircle className="w-3.5 h-3.5" /> Tolak
                                                             </button>
-                                                        )}
-                                                        {idp.status === 'draft' && (
-                                                            <button
-                                                                onClick={() => router.push(`/admin/dashboard/idp/${idp.id}`)}
-                                                                className="p-2 text-muted-foreground hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
-                                                                title="Edit IDP"
-                                                            >
-                                                                <Pencil className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDelete(idp.id, idp.asn_nama); }}
-                                                            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Hapus IDP"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-end">
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {idp.verified_by || '-'}
+                                                                {idp.verified_at ? ` · ${new Date(idp.verified_at).toLocaleDateString('id-ID')}` : ''}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         );
@@ -320,7 +266,7 @@ export default function AdminIdpPage() {
                                 >
                                     Prev
                                 </button>
-                                <span className="px-3 py-1.5 text-sm bg-teal-500 text-white rounded-lg">
+                                <span className="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg">
                                     {page}
                                 </span>
                                 <button

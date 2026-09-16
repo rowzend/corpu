@@ -171,6 +171,10 @@ class SimpegService {
     async getUnitKerjaDesainOptions(): Promise<UnitKerjaDesainOptionsResponse> {
         return api.get<UnitKerjaDesainOptionsResponse>(`${this.baseEndpoint}/unit-kerja/desain-options/`);
     }
+
+    async getUnitKerjaDesainRiwayat(search?: string): Promise<UnitKerjaDesainRiwayatResponse> {
+        return api.get<UnitKerjaDesainRiwayatResponse>(`${this.baseEndpoint}/unit-kerja/desain/riwayat/`, search ? { search } : undefined);
+    }
 }
 
 export interface KompetensiTeknisOption {
@@ -217,6 +221,17 @@ export interface UnitKerjaDesain {
     kompetensi_teknis: KompetensiTeknisItem[];
     keterangan: string;
     updated_at: string | null;
+}
+
+export interface UnitKerjaDesainRiwayat extends UnitKerjaDesain {
+    is_riwayat: boolean;
+    archived_at: string | null;
+}
+
+interface UnitKerjaDesainRiwayatResponse {
+    success: boolean;
+    data: UnitKerjaDesainRiwayat[];
+    total: number;
 }
 
 export interface UnitKerjaDesainPayload {

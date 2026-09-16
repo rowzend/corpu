@@ -9,6 +9,8 @@ urlpatterns = [
 
     # Detail, Update, Delete
     path('asn/<int:pk>/', views_api.idp_detail, name='idp_detail'),
+    path('asn/<int:pk>/submit/', views_api.idp_submit_action, name='idp_submit_action'),
+    path('asn/<int:pk>/riwayat/', views_api.idp_riwayat, name='idp_riwayat'),
 
     # Stats
     path('stats/', views_api.idp_stats, name='idp_stats'),
@@ -16,6 +18,10 @@ urlpatterns = [
     # Approval
     path('approval/', views_api.idp_approval_list, name='idp_approval_list'),
     path('approval/<int:pk>/', views_api.idp_approval_action, name='idp_approval_action'),
+
+    # Verifikasi (atasan)
+    path('verifikasi/', views_api.idp_verifikasi_list, name='idp_verifikasi_list'),
+    path('verifikasi/<int:pk>/', views_api.idp_verifikasi_action, name='idp_verifikasi_action'),
 
     # Master Data: Jenis Kompetensi
     path('jenis-kompetensi/', views_api.jenis_kompetensi_list_create, name='jenis_kompetensi_list_create'),

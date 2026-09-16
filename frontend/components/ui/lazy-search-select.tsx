@@ -18,6 +18,7 @@ interface LazySearchSelectProps {
   minChars?: number;
   disabled?: boolean;
   disabledLabel?: string;
+  defaultLabel?: string;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function LazySearchSelect({
   minChars = 3,
   disabled = false,
   disabledLabel = '',
+  defaultLabel = '',
   className = '',
 }: LazySearchSelectProps) {
   const [open, setOpen] = useState(false);
@@ -70,8 +72,9 @@ export function LazySearchSelect({
     } else {
       const match = options.find(o => o.value === value);
       if (match) setSelectedLabel(match.label);
+      else if (defaultLabel) setSelectedLabel(defaultLabel);
     }
-  }, [value]);
+  }, [value, options, defaultLabel]);
 
   const doSearch = useCallback(async (q: string) => {
     if (q.length < minChars) {

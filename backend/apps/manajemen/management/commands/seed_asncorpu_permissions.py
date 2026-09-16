@@ -119,7 +119,8 @@ class Command(BaseCommand):
             # IDP ASN (Individual Development Plan)
             ('idp_asn', 'IDP ASN', 'Manajemen Individual Development Plan ASN'),
             ('idp_report', 'Laporan IDP', 'Laporan dan rekap IDP ASN'),
-            ('idp_approval', 'Approval IDP', 'Persetujuan IDP ASN oleh atasan'),
+            ('idp_verifikasi', 'Verifikasi IDP', 'Verifikasi IDP ASN oleh atasan'),
+            ('idp_approval', 'Approval IDP', 'Persetujuan IDP ASN oleh kepala unit kerja'),
             
             # Knowledge Management
             ('knowledge_article', 'Artikel Knowledge', 'Manajemen artikel knowledge base'),
@@ -219,6 +220,7 @@ class Command(BaseCommand):
 
         idp_asn = PermissionControl.objects.get(nama_kontrol='idp_asn')
         idp_report = PermissionControl.objects.get(nama_kontrol='idp_report')
+        idp_verifikasi = PermissionControl.objects.get(nama_kontrol='idp_verifikasi')
         idp_approval = PermissionControl.objects.get(nama_kontrol='idp_approval')
         
         knowledge_article = PermissionControl.objects.get(nama_kontrol='knowledge_article')
@@ -261,6 +263,8 @@ class Command(BaseCommand):
             (idp_mod, idp_asn, delete),
             (idp_mod, idp_report, view),
             (idp_mod, idp_report, export),
+            (idp_mod, idp_verifikasi, view),
+            (idp_mod, idp_verifikasi, approve),
             (idp_mod, idp_approval, view),
             (idp_mod, idp_approval, approve),
             

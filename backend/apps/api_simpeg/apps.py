@@ -6,3 +6,6 @@ class ApiSimpegConfig(AppConfig):
     name = 'apps.api_simpeg'
     label = 'api_simpeg'
     verbose_name = 'API SIMPEG'
+
+    def ready(self):
+        from . import signals  # noqa: F401

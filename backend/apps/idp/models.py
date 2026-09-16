@@ -124,6 +124,7 @@ class IdpAsn(models.Model):
     class StatusChoices(models.TextChoices):
         DRAFT = 'draft', 'Draft'
         SUBMITTED = 'submitted', 'Diajukan'
+        VERIFIED = 'verified', 'Diverifikasi'
         APPROVED = 'approved', 'Disetujui'
         REJECTED = 'rejected', 'Ditolak'
 
@@ -223,6 +224,37 @@ class IdpAsn(models.Model):
         help_text='Waktu IDP disetujui atau ditolak'
     )
 
+    verified_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='idp_verified',
+        verbose_name='Diverifikasi Oleh',
+        help_text='User (atasan) yang melakukan verifikasi IDP'
+    )
+
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name='Waktu Verifikasi',
+        help_text='Waktu IDP diverifikasi'
+    )
+
+    catatan_persetujuan = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Catatan Persetujuan',
+        help_text='Catatan atau masukan dari kepala unit kerja terkait IDP ini'
+    )
+
+    alokasi_dukungan_program = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Alokasi Dukungan Program',
+        help_text='Alokasi dukungan program untuk pengembangan kompetensi ini'
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Tanggal Dibuat'
@@ -248,6 +280,67 @@ class IdpAsn(models.Model):
         if not self.periode_dari or not self.periode_sampai:
             return '-'
         return f"{self.periode_dari.strftime('%d/%m/%Y')} - {self.periode_sampai.strftime('%d/%m/%Y')}"
+
+
+class IdpRevisionLog(models.Model):
+    """
+    Log/riwayat setiap perubahan status (revisi) pada IDP ASN.
+    Mencatat transisi status, catatan, alokasi dukungan, dan pelaku.
+    """
+
+    idp = models.ForeignKey(
+        IdpAsn,
+        on_delete=models.CASCADE,
+        related_name='riwayat',
+        verbose_name='IDP ASN'
+    )
+    from_status = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Status Awal',
+        help_text='Status sebelum perubahan'
+    )
+    to_status = models.CharField(
+        max_length=20,
+        blank=True,
+        default='',
+        verbose_name='Status Tujuan',
+        help_text='Status setelah perubahan'
+    )
+    catatan = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Catatan',
+        help_text='Catatan/alas an terkait transisi ini'
+    )
+    alokasi_dukungan_program = models.TextField(
+        blank=True,
+        default='',
+        verbose_name='Alokasi Dukungan Program',
+        help_text='Alokasi dukungan program (jika ada)'
+    )
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='idp_revision_logs',
+        verbose_name='Pelaku'
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Waktu'
+    )
+
+    class Meta:
+        db_table = 'idp_revision_log'
+        verbose_name = 'Riwayat Revisi IDP'
+        verbose_name_plural = 'Riwayat Revisi IDP'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Revisi IDP #{self.idp_id}: {self.from_status} -> {self.to_status}"
 
 
 class PrioritasPengembangan(models.Model):

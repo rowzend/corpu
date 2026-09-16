@@ -13,17 +13,28 @@ import { SearchSelect } from '@/components/ui/search-select';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
     ArrowLeft, Save, Loader2, FileText, User as UserIcon, Calendar as CalendarIcon,
-    Plus, Trash2, Target as TargetIcon, Pencil
+    Plus, Trash2, Target as TargetIcon, Pencil, Send, History, Clock
 } from 'lucide-react';
-import { getIdpDetail, updateIdp, getJenisKompetensiList, getNamaKompetensiList, getPrioritasPengembanganList, getPilarPengembanganList, getJenisKegiatanPengembanganList, getNamaKegiatanProgramList, type IdpAsn, type JenisKompetensi, type NamaKompetensi, type PrioritasPengembangan, type PilarPengembangan, type JenisKegiatanPengembangan, type NamaKegiatanProgram } from '@/lib/api/idp';
+
+const revisionStatusLabels: Record<string, string> = {
+    draft: 'Draft',
+    submitted: 'Diajukan',
+    verified: 'Diverifikasi',
+    approved: 'Disetujui',
+    rejected: 'Ditolak',
+    '': '-',
+};
+const statusLabel = (s: string) => revisionStatusLabels[s] || s || '-';
+import { getIdpDetail, updateIdp, submitIdp, getIdpRiwayat, getJenisKompetensiList, getNamaKompetensiList, getPrioritasPengembanganList, getPilarPengembanganList, getJenisKegiatanPengembanganList, getNamaKegiatanProgramList, type IdpAsn, type IdpRevisionLog, type JenisKompetensi, type NamaKompetensi, type PrioritasPengembangan, type PilarPengembangan, type JenisKegiatanPengembangan, type NamaKegiatanProgram } from '@/lib/api/idp';
 import { simpegService, type UnitKerjaDesainOption } from '@/lib/services/simpeg.service';
-import { showToast, showError } from '@/lib/sweetalert';
+import { showToast, showError, showConfirm } from '@/lib/sweetalert';
 import { handleApiError } from '@/lib/api';
 import { usePermission } from '@/lib/hooks/usePermission';
 
 const statusConfig: Record<string, { label: string; className: string }> = {
     draft: { label: 'Draft', className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
     submitted: { label: 'Diajukan', className: 'bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300' },
+    verified: { label: 'Diverifikasi', className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300' },
     approved: { label: 'Disetujui', className: 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-300' },
     rejected: { label: 'Ditolak', className: 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-300' },
 };
@@ -191,6 +202,7 @@ export default function EditIdpPage() {
         tanggal_pengajuan: null as string | null,
     });
     const [targetKompetensi, setTargetKompetensi] = useState<TargetKompetensiItem[]>([]);
+    const [riwayat, setRiwayat] = useState<IdpRevisionLog[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [draft, setDraft] = useState<NewTargetDraft>({ ...EMPTY_DRAFT });
@@ -360,6 +372,27 @@ export default function EditIdpPage() {
         }));
     };
 
+    const loadIdp = useCallback(async () => {
+        const res = await getIdpDetail(id);
+        const d = res.data;
+        setIdp(d);
+        setFormData({
+            asn_id: d.asn_id,
+            atasan_langsung_id: d.atasan_langsung_id,
+            periode_dari: d.periode_dari || null,
+            periode_sampai: d.periode_sampai || null,
+            dasar_penyusunan_idp: d.dasar_penyusunan_idp || '',
+            tanggal_pengajuan: d.tanggal_pengajuan || null,
+        });
+        setTargetKompetensi(parseTargetKompetensi(d.target_kompetensi));
+        try {
+            const rh = await getIdpRiwayat(id);
+            if (rh?.data) setRiwayat(rh.data);
+        } catch { /* abaikan jika gagal memuat riwayat */ }
+        return d;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
     useEffect(() => {
         if (!id) return;
         (async () => {
@@ -498,10 +531,44 @@ export default function EditIdpPage() {
                 tanggal_pengajuan: formData.tanggal_pengajuan,
                 target_kompetensi: JSON.stringify(targetKompetensi),
             });
+            await loadIdp();
             showToast('IDP berhasil diperbarui!', 'success');
-            router.push('/admin/dashboard/idp');
         } catch (error) {
             showError(handleApiError(error), 'Gagal Menyimpan IDP');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleSubmitToAtasan = async () => {
+        const confirmed = await showConfirm(
+            'Kirim IDP ini ke atasan untuk diverifikasi? Status akan berubah dari Draft menjadi menunggu verifikasi.',
+            'Kirim ke Atasan',
+            'Ya, Kirim',
+            'Batal'
+        );
+        if (!confirmed) return;
+        if (!formData.asn_id) {
+            showError('Silakan pilih ASN terlebih dahulu', 'Validasi');
+            return;
+        }
+        setSaving(true);
+        try {
+            // Simpan dulu perubahan terbaru, lalu kirim ke atasan
+            await updateIdp(id, {
+                asn_id: formData.asn_id,
+                atasan_langsung_id: formData.atasan_langsung_id,
+                periode_dari: formData.periode_dari,
+                periode_sampai: formData.periode_sampai,
+                dasar_penyusunan_idp: formData.dasar_penyusunan_idp,
+                tanggal_pengajuan: formData.tanggal_pengajuan,
+                target_kompetensi: JSON.stringify(targetKompetensi),
+            });
+            await submitIdp(id, idp?.catatan || '');
+            showToast('IDP berhasil dikirim ke atasan', 'success');
+            router.push('/admin/dashboard/idp');
+        } catch (error) {
+            showError(handleApiError(error), 'Gagal Mengirim IDP');
         } finally {
             setSaving(false);
         }
@@ -566,6 +633,7 @@ export default function EditIdpPage() {
                                 value={formData.asn_id}
                                 onChange={(v) => setFormData(prev => ({ ...prev, asn_id: v !== null ? Number(v) : null }))}
                                 placeholder={idp ? `${idp.asn_nama} (${idp.asn_nip || '-'})` : 'Cari ASN...'}
+                                defaultLabel={idp ? `${idp.asn_nama} (${idp.asn_nip || '-'})` : undefined}
                                 searchPlaceholder="Ketik minimal 3 karakter untuk mencari ASN..."
                                 minChars={3}
                             />
@@ -583,9 +651,10 @@ export default function EditIdpPage() {
                                 fetchFn={fetchAsnOptions}
                                 value={formData.atasan_langsung_id}
                                 onChange={(v) => setFormData(prev => ({ ...prev, atasan_langsung_id: v !== null ? Number(v) : null }))}
-                                placeholder={idp?.atasan_langsung_nama
+                                placeholder="Cari atasan langsung..."
+                                defaultLabel={idp?.atasan_langsung_nama
                                     ? `${idp.atasan_langsung_nama} (${idp.atasan_langsung?.nip || '-'})`
-                                    : 'Cari atasan langsung...'}
+                                    : undefined}
                                 searchPlaceholder="Ketik minimal 3 karakter untuk mencari atasan..."
                                 minChars={3}
                             />
@@ -674,28 +743,6 @@ export default function EditIdpPage() {
                             />
                         </div>
                     </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3 justify-end">
-                    <button
-                        type="button"
-                        onClick={() => router.back()}
-                        className="px-4 py-2.5 text-sm font-medium text-card-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors"
-                    >
-                        Batal
-                    </button>
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-lg shadow-teal-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-36"
-                    >
-                        {saving ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
-                        ) : (
-                            <><Save className="w-4 h-4" /> Simpan Perubahan</>
-                        )}
-                    </button>
                 </div>
 
                 {/* Target Kompetensi */}
@@ -866,6 +913,90 @@ export default function EditIdpPage() {
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* Riwayat Revisi */}
+                <div className="bg-card rounded-xl shadow-sm border border-border">
+                    <div className="px-6 py-4 border-b border-border flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-500/10 flex items-center justify-center">
+                            <History className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                        </div>
+                        <div>
+                            <h2 className="text-base font-semibold text-card-foreground">Riwayat Revisi</h2>
+                            <p className="text-xs text-muted-foreground">Log setiap perubahan status & catatan pada IDP ini</p>
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        {riwayat.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Belum ada riwayat revisi.</p>
+                        ) : (
+                            <ol className="relative border-l border-border ml-2 space-y-5">
+                                {riwayat.map((r) => (
+                                    <li key={r.id} className="ml-4">
+                                        <span className="absolute -left-[7px] w-3.5 h-3.5 rounded-full bg-teal-500 border-2 border-card" />
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-sm font-medium text-card-foreground">
+                                                {statusLabel(r.from_status)} &rarr; {statusLabel(r.to_status)}
+                                            </span>
+                                            {r.actor && (
+                                                <span className="text-xs text-muted-foreground">oleh {r.actor}</span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                            <Clock className="w-3 h-3" />
+                                            {r.created_at ? new Date(r.created_at).toLocaleString('id-ID') : '-'}
+                                        </p>
+                                        {r.catatan && (
+                                            <p className="text-sm text-foreground mt-1 bg-muted/40 rounded-lg px-3 py-2 whitespace-pre-wrap">
+                                                {r.catatan}
+                                            </p>
+                                        )}
+                                        {r.alokasi_dukungan_program && (
+                                            <p className="text-sm text-foreground mt-1 bg-muted/40 rounded-lg px-3 py-2 whitespace-pre-wrap">
+                                                <span className="font-medium text-muted-foreground">Alokasi Dukungan: </span>
+                                                {r.alokasi_dukungan_program}
+                                            </p>
+                                        )}
+                                    </li>
+                                ))}
+                            </ol>
+                        )}
+                    </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex flex-col-reverse sm:flex-row gap-3 justify-end pt-2 border-t border-border">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="px-4 py-2.5 text-sm font-medium text-card-foreground bg-card border border-border rounded-xl hover:bg-muted transition-colors"
+                    >
+                        Batal
+                    </button>
+                    {idp?.status === 'draft' && (
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-lg shadow-teal-200 disabled:opacity-50 disabled:cursor-not-allowed min-w-36"
+                        >
+                            {saving ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
+                            ) : (
+                                <><Save className="w-4 h-4" /> Simpan Perubahan</>
+                            )}
+                        </button>
+                    )}
+                    {idp?.status === 'draft' && (
+                        <button
+                            type="button"
+                            onClick={handleSubmitToAtasan}
+                            disabled={saving}
+                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-semibold transition-colors min-w-44"
+                        >
+                            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                            Kirim ke Atasan
+                        </button>
+                    )}
                 </div>
             </form>
 

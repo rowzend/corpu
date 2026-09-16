@@ -18,4 +18,5 @@ urlpatterns = [
     path('unit-kerja/sync/progress/<str:sync_id>/', views.unit_kerja_sync_progress, name='unit_kerja_sync_progress'),
     path('unit-kerja/<int:id_opd>/desain/', views.unit_kerja_desain, name='unit_kerja_desain'),
     path('unit-kerja/desain-options/', views.unit_kerja_desain_options, name='unit_kerja_desain_options'),
+    path('unit-kerja/desain/riwayat/', views.unit_kerja_desain_riwayat, name='unit_kerja_desain_riwayat'),
 ]

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search, RefreshCw, Database, Clock, Network, Building2, Loader2 } from 'lucide-react';
-import { simpegService, type UnitKerjaItem } from '@/lib/services';
+import { simpegService, type UnitKerjaItem, type UnitKerjaDesainRiwayat } from '@/lib/services';
 import { showError, showConfirm } from '@/lib/sweetalert';
 import { handleApiError, ApiError } from '@/lib/api';
 import Swal from 'sweetalert2';
@@ -22,6 +22,10 @@ export default function UnitKerjaPage() {
     const [lastSync, setLastSync] = useState<{ synced_at: string; total_records: number; synced_by: string } | null>(null);
     const [stats, setStats] = useState({ total_aktif: 0, total_nonaktif: 0, total_opd_induk: 0, total_opd_induk_aktif: 0 });
     const perPage = 10;
+
+    const [riwayat, setRiwayat] = useState<UnitKerjaDesainRiwayat[]>([]);
+    const [riwayatLoading, setRiwayatLoading] = useState(false);
+    const [riwayatOpen, setRiwayatOpen] = useState(false);
 
     const fetchUnits = useCallback(async () => {
         setLoading(true);
@@ -63,6 +67,24 @@ export default function UnitKerjaPage() {
     const handleStatusChange = (value: string) => {
         setStatusFilter(value);
         setPage(1);
+    };
+
+    const fetchRiwayat = useCallback(async () => {
+        setRiwayatLoading(true);
+        try {
+            const res = await simpegService.getUnitKerjaDesainRiwayat();
+            setRiwayat(res.data || []);
+        } catch {
+            setRiwayat([]);
+        } finally {
+            setRiwayatLoading(false);
+        }
+    }, []);
+
+    const toggleRiwayat = () => {
+        const next = !riwayatOpen;
+        setRiwayatOpen(next);
+        if (next && riwayat.length === 0) fetchRiwayat();
     };
 
     const handleSync = async () => {
@@ -404,6 +426,70 @@ export default function UnitKerjaPage() {
                         </p>
                     </div>
                 </div>
+            </div>
+
+            {/* Riwayat Desain Pembelajaran (unit kerja yang sudah dihapus) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <button
+                    type="button"
+                    onClick={toggleRiwayat}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                    <span className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <Clock className="w-4 h-4 text-amber-600" />
+                        Riwayat Desain Pembelajaran
+                        <Badge variant="outline" className="text-gray-500">{riwayat.length}</Badge>
+                    </span>
+                    <span className="text-xs text-gray-400">{riwayatOpen ? 'Tutup' : 'Lihat'}</span>
+                </button>
+                {riwayatOpen && (
+                    <div className="px-4 py-4 divide-y divide-gray-100">
+                        {riwayatLoading ? (
+                            <p className="text-sm text-gray-500 py-4 text-center">Memuat riwayat...</p>
+                        ) : riwayat.length === 0 ? (
+                            <p className="text-sm text-gray-500 py-4 text-center">
+                                Belum ada riwayat. Desain pembelajaran akan otomatis diarsipkan ke sini bila unit kerja pemiliknya dihapus.
+                            </p>
+                        ) : (
+                            riwayat.map((r) => (
+                                <div key={r.id} className="py-4 first:pt-0 last:pb-0">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {r.unit_kerja.nm_opd || '(unit dihapus)'}
+                                                {r.unit_kerja.id_opd ? ` (ID: ${r.unit_kerja.id_opd})` : ''}
+                                            </p>
+                                            <p className="text-xs text-gray-400">
+                                                Diarsipkan: {r.archived_at ? new Date(r.archived_at).toLocaleString('id-ID') : '-'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {r.keterangan && (
+                                        <p className="text-xs text-gray-500 mt-1 italic">{r.keterangan}</p>
+                                    )}
+                                    {r.kompetensi_teknis.length > 0 ? (
+                                        <ul className="mt-2 space-y-2">
+                                            {r.kompetensi_teknis.map((k) => (
+                                                <li key={k.id} className="text-sm text-gray-700">
+                                                    <span className="font-medium">• {k.uraian}</span>
+                                                    {k.tujuan.length > 0 && (
+                                                        <ul className="ml-5 mt-1 list-disc text-gray-500">
+                                                            {k.tujuan.map((t) => (
+                                                                <li key={t.id}>{t.uraian}</li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    ) : (
+                                        <p className="text-xs text-gray-400 mt-1">Tidak ada kompetensi teknis.</p>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
