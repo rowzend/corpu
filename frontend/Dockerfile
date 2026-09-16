@@ -26,6 +26,13 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+
+ENV NEXT_PUBLIC_API_URL=/apicorpu/1.0
+ENV NEXT_PUBLIC_BACKEND_URL=
+ENV NEXT_PUBLIC_API_TIMEOUT=30000
+ENV NEXT_PUBLIC_APP_NAME=ASNCORPU
+ENV NEXT_PUBLIC_APP_VERSION=1.0.0
+
 RUN npm run build -- --webpack
 
 # Production runner stage
