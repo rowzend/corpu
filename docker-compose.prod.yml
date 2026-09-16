@@ -19,7 +19,7 @@ services:
       - SECURE_SSL_REDIRECT=False
       - USE_X_FORWARDED_HOST=True
       - USE_X_FORWARDED_PORT=True
-      - RUN_MIGRATIONS=0
+      - RUN_MIGRATIONS=1
       - RUN_COLLECTSTATIC=0
     extra_hosts:
       - "host.docker.internal:host-gateway"
