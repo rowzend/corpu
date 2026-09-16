@@ -116,6 +116,8 @@ class Personalia(models.Model):
     def save(self, *args, **kwargs):
         if self.position_fk and not self.position:
             self.position = self.position_fk.name
+        if self.position_fk and self.order == 0:
+            self.order = self.position_fk.order
         super().save(*args, **kwargs)
 
 
