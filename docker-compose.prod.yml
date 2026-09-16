@@ -33,6 +33,7 @@ services:
           cpus: '1.0'
     networks:
       - shared-network
+      - proxy-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
       interval: 30s
@@ -90,4 +91,6 @@ volumes:
 
 networks:
   shared-network:
+    external: true
+  proxy-network:
     external: true
