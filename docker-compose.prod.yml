@@ -75,6 +75,7 @@ services:
       - media_volume:/usr/share/nginx/html/media:ro
     networks:
       - shared-network
+      - proxy-network
     depends_on:
       - asncorpu_backend
       - asncorpu-frontend
