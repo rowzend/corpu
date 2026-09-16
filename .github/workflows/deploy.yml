@@ -121,6 +121,7 @@ jobs:
             # Generate backend/.env from GitHub secrets
             cat > backend/.env <<'ENVEOF'
             SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+            ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,103.143.152.139,asncorpu-nginx,asncorpu_backend_app,asncorpu.pesisirselatankab.go.id
             DB_HOST=postgres-main
             DB_NAME=asncorpu_backend_db
             DB_USER=asncorpu_user
