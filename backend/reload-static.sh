@@ -1,32 +1,33 @@
 #!/bin/bash
 
-echo "🔄 Reloading Static Files untuk ESIMPEG-Python..."
+echo "Reloading Static Files for ASNCORPU..."
 echo ""
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 
 # Step 1: Collect static files
-echo "📦 Step 1: Collecting static files..."
-docker exec esimpeg_python_app python manage.py collectstatic --noinput --clear
+echo "Step 1: Collecting static files..."
+docker compose exec asncorpu_backend python manage.py collectstatic --noinput --clear
 
-# Step 2: Restart container (untuk refresh gunicorn)
+# Step 2: Restart container
 echo ""
-echo "🔄 Step 2: Restarting container..."
-docker restart esimpeg_python_app
+echo "Step 2: Restarting container..."
+docker compose restart asncorpu_backend
 
 # Step 3: Wait for health check
 echo ""
-echo "⏳ Step 3: Waiting for container to be healthy..."
+echo "Step 3: Waiting for container to be healthy..."
 sleep 5
 
 # Step 4: Check status
 echo ""
-echo "✅ Container status:"
-docker ps --filter "name=esimpeg_python" --format "table {{.Names}}\t{{.Status}}"
+echo "Container status:"
+docker compose ps asncorpu_backend
 
 echo ""
-echo "✨ Done! Sekarang:"
-echo "   1. Buka browser"
-echo "   2. Tekan Ctrl+Shift+R (hard refresh) atau Ctrl+F5"
-echo "   3. Test ganti password"
+echo "Done!"
+echo "  1. Open browser"
+echo "  2. Press Ctrl+Shift+R (hard refresh) or Ctrl+F5"
 echo ""
-echo "🌐 URL: http://localhost:8005"
-echo ""
+echo "URL: http://localhost:3000"

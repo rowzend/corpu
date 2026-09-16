@@ -16,6 +16,7 @@ db.sqlite3
 media/
 staticfiles/
 .env
+.env.*
 
 # IDE
 .vscode/
@@ -30,3 +31,16 @@ Thumbs.db
 # Node (if using npm for Tailwind)
 node_modules/
 package-lock.json
+
+# Docker
+docker-compose*.yml
+
+# Database credentials
+pgpass
+pgadmin-servers.json
+*.dump
+*.gz
+*.sql
+
+# Logs
+logs/

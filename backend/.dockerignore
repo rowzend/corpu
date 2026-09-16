@@ -1,0 +1,59 @@
+# Version control
+.git
+.gitignore
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Python bytecode
+*.pyc
+__pycache__/
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database dumps
+*.dump
+*.gz
+*.sql
+
+# Documentation
+*.md
+docs/
+
+# Tests
+tests/
+*_test.py
+test_*.py
+
+# Docker files
+docker-compose*.yml
+Dockerfile*
+
+# Scripts (not needed in image)
+*.sh
+!entrypoint.sh
+
+# Static files (built during entrypoint)
+staticfiles/
+media/
+
+# Node modules (should never be in backend)
+node_modules/

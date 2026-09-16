@@ -1,38 +1,32 @@
 # Use Python 3.11 slim image
-FROM python:3.11-slim
+FROM python:3.11-slim AS base
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=core.settings
-
-# Python memory optimization
 ENV PYTHONHASHSEED=random
-ENV PYTHONMALLOC=malloc
-# Garbage collection optimization for large data
-ENV PYTHONGC=0
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (only what's needed)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         postgresql-client \
-        default-mysql-client \
         build-essential \
-        libmariadb-dev \
+        libpq-dev \
         pkg-config \
         gettext \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Install Python dependencies (cached layer)
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy application code
 COPY . /app/
 
 # Create directories
@@ -44,13 +38,14 @@ RUN chmod +x /app/entrypoint.sh
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
+
 USER app
 
 # Expose port
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:8000/health/ || exit 1
 
 # Run entrypoint

@@ -1,12 +1,59 @@
+# Dependencies
 node_modules/
+.pnp.*
+
+# Next.js
 .next/
+out/
+build/
+
+# Environment files (NEVER commit secrets)
 .env
 .env.*
+!.env.example
+!.env.production
+
+# Python
 *.pyc
 __pycache__/
+*.pyo
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+
+# Static files
 staticfiles/
 media/
+
+# Database dumps
 *.dump
 *.gz
 *.sql
+
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+htmlcov/
+.coverage
+coverage/
+
+# Debug files with credentials
+09-*.md
+
+# Docker compose override (local only)
+docker-compose.override.yml

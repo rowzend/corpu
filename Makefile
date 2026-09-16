@@ -8,79 +8,103 @@ help: ## Show this help message
 	@echo "Targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
-up: ## Start all services
-	docker-compose up -d
-	@echo "✅ ASNCORPU started!"
-	@echo "🌐 Access: http://localhost:3000"
-	@echo "📡 API: http://localhost:3000/apicorpu"
+up: ## Start all services (dev)
+	docker compose up -d
+	@echo "ASNCORPU started!"
+	@echo "Access: http://localhost:3000"
+	@echo "API: http://localhost:3000/apicorpu"
+
+up-prod: ## Start all services (production)
+	docker compose -f docker-compose.prod.yml up -d
+	@echo "ASNCORPU (prod) started!"
+	@echo "Access: http://localhost:3000"
 
 down: ## Stop all services
-	docker-compose down
-	@echo "✅ ASNCORPU stopped!"
+	docker compose down
+	docker compose -f docker-compose.prod.yml down 2>/dev/null || true
+	@echo "ASNCORPU stopped!"
 
 restart: ## Restart all services
-	docker-compose restart
-	@echo "✅ ASNCORPU restarted!"
+	docker compose restart
+	@echo "ASNCORPU restarted!"
 
 logs: ## Show logs (all services)
-	docker-compose logs -f
+	docker compose logs -f
 
 logs-backend: ## Show backend logs
-	docker-compose logs -f asncorpu_backend
+	docker compose logs -f asncorpu_backend
 
 logs-frontend: ## Show frontend logs
-	docker-compose logs -f asncorpu-frontend
+	docker compose logs -f asncorpu-frontend
 
 logs-nginx: ## Show nginx logs
-	docker-compose logs -f asncorpu-nginx
+	docker compose logs -f asncorpu-nginx
 
 build: ## Rebuild all services
-	docker-compose up -d --build
-	@echo "✅ ASNCORPU rebuilt!"
+	docker compose up -d --build
+	@echo "ASNCORPU rebuilt!"
 
 build-backend: ## Rebuild backend only
-	docker-compose up -d --build asncorpu_backend
-	@echo "✅ Backend rebuilt!"
+	docker compose up -d --build asncorpu_backend
+	@echo "Backend rebuilt!"
 
 build-frontend: ## Rebuild frontend only
-	docker-compose up -d --build asncorpu-frontend
-	@echo "✅ Frontend rebuilt!"
+	docker compose up -d --build asncorpu-frontend
+	@echo "Frontend rebuilt!"
 
 clean: ## Stop and remove all containers, volumes
-	docker-compose down -v
-	@echo "✅ ASNCORPU cleaned!"
+	docker compose down -v
+	@echo "ASNCORPU cleaned!"
+
+clean-all: ## Stop and remove everything including images
+	docker compose down -v --rmi local
+	docker compose -f docker-compose.prod.yml down -v --rmi local 2>/dev/null || true
+	docker image prune -f
+	@echo "All cleaned!"
 
 status: ## Show status of all services
-	docker-compose ps
+	docker compose ps
+	@echo ""
+	@echo "Production:"
+	@docker compose -f docker-compose.prod.yml ps 2>/dev/null || echo "Not running"
 
 shell-backend: ## Open shell in backend container
-	docker-compose exec asncorpu_backend bash
+	docker compose exec asncorpu_backend bash
 
 shell-frontend: ## Open shell in frontend container
-	docker-compose exec asncorpu-frontend sh
+	docker compose exec asncorpu-frontend sh
 
 shell-nginx: ## Open shell in nginx container
-	docker-compose exec asncorpu-nginx sh
+	docker compose exec asncorpu-nginx sh
 
 test-nginx: ## Test nginx configuration
-	docker-compose exec asncorpu-nginx nginx -t
+	docker compose exec asncorpu-nginx nginx -t
 
 reload-nginx: ## Reload nginx configuration
-	docker-compose exec asncorpu-nginx nginx -s reload
-	@echo "✅ Nginx reloaded!"
+	docker compose exec asncorpu-nginx nginx -s reload
+	@echo "Nginx reloaded!"
 
 migrate: ## Run Django migrations
-	docker-compose exec asncorpu_backend python manage.py migrate
-	@echo "✅ Migrations completed!"
+	docker compose exec asncorpu_backend python manage.py migrate
+	@echo "Migrations completed!"
 
 collectstatic: ## Collect Django static files
-	docker-compose exec asncorpu_backend python manage.py collectstatic --noinput
-	@echo "✅ Static files collected!"
+	docker compose exec asncorpu_backend python manage.py collectstatic --noinput
+	@echo "Static files collected!"
 
 createsuperuser: ## Create Django superuser
-	docker-compose exec asncorpu_backend python manage.py createsuperuser
+	docker compose exec asncorpu_backend python manage.py createsuperuser
 
 health: ## Check health of all services
 	@echo "Checking health..."
-	@curl -s http://localhost:3000/health || echo "❌ Nginx not responding"
+	@curl -s http://localhost:3000/health || echo "Nginx not responding"
 	@echo ""
+
+deploy-pull: ## Pull latest images and restart (production)
+	docker compose -f docker-compose.prod.yml down
+	docker rmi $$(docker images 'ghcr.io/rowzend/corpu/asncorpu-backend' -q) 2>/dev/null || true
+	docker rmi $$(docker images 'ghcr.io/rowzend/corpu/asncorpu-frontend' -q) 2>/dev/null || true
+	docker compose -f docker-compose.prod.yml pull
+	docker compose -f docker-compose.prod.yml up -d
+	docker image prune -f
+	@echo "Deploy complete!"
