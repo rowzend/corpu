@@ -104,8 +104,16 @@ jobs:
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            DEPLOY_DIR=/home/lev/Documents/vps-settings/projects/asncorpu
+            DEPLOY_DIR=$HOME/projects/asncorpu
+            mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
+
+            # Clone or pull
+            if [ -d ".git" ]; then
+              git pull origin main
+            else
+              git clone https://github.com/rowzend/corpu.git .
+            fi
 
             # Pull latest code
             git pull origin main
