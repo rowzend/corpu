@@ -150,8 +150,9 @@ jobs:
             export BACKEND_TAG=${{ github.sha }}
             export FRONTEND_TAG=${{ github.sha }}
 
-            # Stop containers
-            docker compose -f docker-compose.prod.yml down
+            # Stop and force-remove all asncorpu containers
+            docker rm -f asncorpu_backend_app asncorpu-frontend-nextjs asncorpu-nginx 2>/dev/null || true
+            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
 
             # Remove old images (force)
             docker rmi $(docker images 'ghcr.io/rowzend/corpu/asncorpu-backend' -q) 2>/dev/null || true
@@ -160,7 +161,7 @@ jobs:
             # Pull fresh images
             docker compose -f docker-compose.prod.yml pull
 
-            # Start with force-recreate to ensure new images are used
+            # Start fresh
             docker compose -f docker-compose.prod.yml up -d --force-recreate
 
             # Cleanup
