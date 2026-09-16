@@ -118,8 +118,8 @@ jobs:
             fi
 
             # Set image tags to this exact commit
-            export BACKEND_TAG=${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-            export FRONTEND_TAG=${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            export BACKEND_TAG=${{ github.sha }}
+            export FRONTEND_TAG=${{ github.sha }}
 
             # Stop containers
             docker compose -f docker-compose.prod.yml down
