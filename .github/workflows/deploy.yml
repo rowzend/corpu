@@ -108,15 +108,14 @@ jobs:
             mkdir -p "$DEPLOY_DIR"
             cd "$DEPLOY_DIR"
 
-            # Clone or pull
+            # Clone or reset to latest
             if [ -d ".git" ]; then
-              git pull origin main
+              git fetch origin main
+              git reset --hard origin/main
+              git clean -fd
             else
               git clone https://github.com/rowzend/corpu.git .
             fi
-
-            # Pull latest code
-            git pull origin main
 
             # Set image tags to this exact commit
             export BACKEND_TAG=${{ env.BACKEND_IMAGE }}:${{ github.sha }}
