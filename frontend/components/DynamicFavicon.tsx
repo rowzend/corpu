@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { getPublicSettings } from '@/lib/api/profilePublic';
 
+const DEFAULT_FAVICON = '/favicon.png';
+
 export default function DynamicFavicon() {
   useEffect(() => {
     getPublicSettings().then(settings => {
@@ -34,10 +36,10 @@ export default function DynamicFavicon() {
         appleLink.href = settings.logo;
       }
 
-      // Handle error loading (add onerror handler)
+      // Handle error loading (fallback to default favicon)
       link.onerror = () => {
-        // If favicon fails to load, remove it
-        link?.remove();
+        link.href = DEFAULT_FAVICON;
+        link.type = 'image/png';
       };
       if (appleLink) {
         appleLink.onerror = () => {

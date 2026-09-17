@@ -265,11 +265,16 @@ MINIO_REGION = config('MINIO_REGION', default='us-east-1')
 MINIO_USE_PROXY = config('MINIO_USE_PROXY', default=True, cast=bool)
 MINIO_PROXY_URL = config('MINIO_PROXY_URL', default='/media/minio/')
 
-# Use MinIO storage backend if available (falls back to local filesystem)
-DEFAULT_FILE_STORAGE = config('DEFAULT_FILE_STORAGE', default='apps.manajemen.s3_storage.MinioStorage')
+# Storage backend selection based on environment
+if DEBUG:
+    # Dev: Use local filesystem storage
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+else:
+    # Production: Use MinIO storage
+    DEFAULT_FILE_STORAGE = config('DEFAULT_FILE_STORAGE', default='apps.manajemen.s3_storage.MinioStorage')
 
 # Django 5.2 uses STORAGES (DEFAULT_FILE_STORAGE is deprecated/ignored).
-# Keep 'default' in sync with DEFAULT_FILE_STORAGE so uploads use MinIO.
+# Keep 'default' in sync with DEFAULT_FILE_STORAGE so uploads use correct backend.
 STORAGES = {
     'default': {
         'BACKEND': DEFAULT_FILE_STORAGE,

@@ -513,11 +513,11 @@ function HeroSection() {
               {/* CTA Buttons */}
               <div className="pt-2 flex flex-wrap gap-4">
                 <Link 
-                  href="/register" 
+                  href="/login?tab=register" 
                   className="inline-flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-8 py-3.5 rounded-lg font-bold text-base shadow-lg shadow-yellow-500/25 hover:shadow-yellow-500/40 transition-all duration-300 hover:scale-[1.02]"
                 >
                   <span className="text-lg">🎓</span>
-                  {t('cta_start')}
+                  Daftar Sekarang
                 </Link>
 
                 <Link 

@@ -24,7 +24,7 @@ async function getPublicSettings(): Promise<Record<string, string>> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSettings();
-  const favicon = settings.favicon || '/favicon.ico';
+  const favicon = settings.favicon || '/favicon.png';
   const logo = settings.logo || '';
   const appName = settings.app_name || 'ASN Academy';
   const appDesc = settings.app_description || 'Platform pembelajaran digital untuk pengembangan kompetensi Aparatur Sipil Negara';
@@ -33,6 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: appName,
     description: appDesc,
     icons: {
+      icon: favicon,
       apple: logo || favicon,
     },
     openGraph: {
