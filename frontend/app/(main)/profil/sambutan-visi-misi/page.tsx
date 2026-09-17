@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProfileSections, type ProfileSection } from '@/lib/api/profilePublic';
 import { useTranslations } from 'next-intl';
+import { contentToHtml } from '@/lib/utils/contentHtml';
 
 export default function SambutanVisiMisiPage() {
   const t = useTranslations('profile'); const tc = useTranslations('common');
@@ -32,8 +33,8 @@ export default function SambutanVisiMisiPage() {
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold text-card-foreground mb-4">{sambutan.title}</h2>
               <div
-                className="text-foreground leading-relaxed prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: sambutan.content }}
+                className="text-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: contentToHtml(sambutan.content) }}
               />
             </CardContent>
           </Card>
@@ -43,8 +44,8 @@ export default function SambutanVisiMisiPage() {
             <CardContent className="p-6">
               <h2 className="text-2xl font-bold text-card-foreground mb-4">{visiMisi.title}</h2>
               <div
-                className="text-foreground leading-relaxed prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: visiMisi.content }}
+                className="text-foreground leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: contentToHtml(visiMisi.content) }}
               />
             </CardContent>
           </Card>

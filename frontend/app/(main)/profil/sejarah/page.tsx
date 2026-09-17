@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { getProfileSections, type ProfileSection } from '@/lib/api/profilePublic';
 import { useTranslations } from 'next-intl';
+import { contentToHtml } from '@/lib/utils/contentHtml';
 
 export default function SejarahPage() {
   const t = useTranslations('profile'); const tc = useTranslations('common');
@@ -27,8 +28,8 @@ export default function SejarahPage() {
         <Card>
           <CardContent className="p-6">
             <div
-              className="text-foreground leading-relaxed prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: section.content }}
+              className="text-foreground leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: contentToHtml(section.content) }}
             />
           </CardContent>
         </Card>
