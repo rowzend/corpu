@@ -10,7 +10,7 @@ ENV PYTHONHASHSEED=random
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies (only what's needed)
+# Install system dependencies including LibreOffice for DOCX/PPTX to PDF conversion
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         postgresql-client \
@@ -19,6 +19,12 @@ RUN apt-get update \
         pkg-config \
         gettext \
         curl \
+        libreoffice-core \
+        libreoffice-writer \
+        libreoffice-impress \
+        fonts-liberation \
+        fonts-noto-core \
+        fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies (cached layer)

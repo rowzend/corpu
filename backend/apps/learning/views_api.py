@@ -850,18 +850,13 @@ class CertificateViewSet(viewsets.ModelViewSet):
         use_tte = per_course_tte or (settings.tte_enabled and settings.tte_certificate and settings.tte_certificate.name and settings.tte_passphrase)
 
         try:
-            from django.template import Template, Context
-
-            template_html = None
+            template_name = None
             if course.certificate_template and course.certificate_template.name:
-                try:
-                    course.certificate_template.open('rb')
-                    template_html = course.certificate_template.read().decode('utf-8')
-                    course.certificate_template.close()
-                except Exception:
-                    template_html = None
+                template_name = course.certificate_template.name.lower()
 
-            if template_html:
+            if template_name and (template_name.endswith('.docx') or template_name.endswith('.pptx')):
+                return self._render_docx_certificate(cert, settings, course, use_tte, per_course_tte)
+            elif template_name and (template_name.endswith('.html') or template_name.endswith('.htm')):
                 return self._render_html_certificate(cert, settings, course, use_tte, per_course_tte)
             else:
                 return self._render_reportlab_certificate(cert, settings, course, use_tte, per_course_tte)
@@ -931,6 +926,66 @@ class CertificateViewSet(viewsets.ModelViewSet):
         t = Template(template_html)
         html_str = t.render(ctx)
         pdf_bytes = HTML(string=html_str).write_pdf()
+
+        if use_tte:
+            try:
+                pdf_bytes = self._sign_pdf_tte(pdf_bytes, per_course_tte or settings, is_course=bool(per_course_tte))
+            except Exception:
+                pass
+
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="sertifikat-{cert.certificate_number}.pdf"'
+        return response
+
+    def _render_docx_certificate(self, cert, settings, course, use_tte, per_course_tte=None):
+        from .docx_converter import render_docx_to_pdf
+
+        vals = self._cert_vals(course, settings)
+
+        issued = cert.issued_at.strftime('%d %B %Y') if cert.issued_at else '-'
+        total_hours = getattr(course, 'duration_hours', 0)
+
+        course.certificate_template.open('rb')
+        template_bytes = course.certificate_template.read()
+        course.certificate_template.close()
+
+        def _read_image(field):
+            if not field or not getattr(field, 'name', None):
+                return None
+            try:
+                field.open('rb')
+                data = field.read()
+                field.close()
+                ext = os.path.splitext(field.name)[1].lower().lstrip('.')
+                return (data, ext, 2)
+            except Exception:
+                return None
+
+        image_fields = {}
+        logo_data = _read_image(vals['logo'])
+        if logo_data:
+            image_fields['logo'] = logo_data
+        sig_data = _read_image(vals['signature_image'])
+        if sig_data:
+            image_fields['signature_image'] = (sig_data[0], sig_data[1], 1.5)
+
+        context = {
+            'institution_name': vals['institution_name'],
+            'user_name': cert.user_name,
+            'course_title': cert.course_title,
+            'certificate_number': cert.certificate_number,
+            'issued_at': issued,
+            'course_hours': str(total_hours) if total_hours else '',
+            'show_course_hours': vals['show_course_hours'],
+            'signature_name': vals['signature_name'],
+            'signature_title': vals['signature_title'],
+        }
+
+        pdf_bytes = render_docx_to_pdf(
+            template_bytes, context,
+            filename=course.certificate_template.name,
+            image_fields=image_fields,
+        )
 
         if use_tte:
             try:

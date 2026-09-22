@@ -405,9 +405,26 @@ export default function TemplatePage() {
                     </div>
                     <div className="p-6">
                         <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 mb-5 text-sm text-violet-800">
-                            <p className="font-medium mb-1">Variable untuk template HTML:</p>
-                            <code className="text-xs text-violet-700">{'{{ institution_name }}, {{ user_name }}, {{ course_title }}, {{ certificate_number }}, {{ issued_at }}, {{ logo }} (base64), {{ signature_image }} (base64), {{ signature_name }}, {{ signature_title }}, {{ course_hours }}'}</code>
-                            <p className="text-xs mt-1.5 text-violet-600">Kosongkan template → fallback ke layout default (ReportLab)</p>
+                            <p className="font-medium mb-2">Variable untuk template (DOCX/PPTX/HTML):</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                <div className="bg-white rounded-lg p-2 border border-violet-100">
+                                    <p className="font-medium text-violet-700 mb-1">Auto dari sistem:</p>
+                                    <code className="text-violet-600">{'{{ user_name }}'}</code> - Nama peserta<br/>
+                                    <code className="text-violet-600">{'{{ course_title }}'}</code> - Judul kursus<br/>
+                                    <code className="text-violet-600">{'{{ certificate_number }}'}</code> - Nomor sertifikat<br/>
+                                    <code className="text-violet-600">{'{{ issued_at }}'}</code> - Tanggal terbit<br/>
+                                    <code className="text-violet-600">{'{{ course_hours }}'}</code> - Durasi (jam)
+                                </div>
+                                <div className="bg-white rounded-lg p-2 border border-violet-100">
+                                    <p className="font-medium text-violet-700 mb-1">Dari Pengaturan Global:</p>
+                                    <code className="text-violet-600">{'{{ institution_name }}'}</code> - Nama institusi<br/>
+                                    <code className="text-violet-600">{'{{ logo }}'}</code> - Logo institusi<br/>
+                                    <code className="text-violet-600">{'{{ signature_name }}'}</code> - Nama penandatangan<br/>
+                                    <code className="text-violet-600">{'{{ signature_title }}'}</code> - Jabatan<br/>
+                                    <code className="text-violet-600">{'{{ signature_image }}'}</code> - Tanda tangan
+                                </div>
+                            </div>
+                            <p className="text-xs mt-2 text-violet-600">DOCX/PPTX: desain di Word/PowerPoint, gunakan placeholder <code className="text-violet-700">{'{{ variabel }}'}</code></p>
                         </div>
 
                         {courses.length === 0 ? (
@@ -437,7 +454,9 @@ export default function TemplatePage() {
                                                     <span className="font-medium text-sm text-card-foreground">{course.title}</span>
                                                 </div>
                                                 <div className="flex gap-1.5 text-xs">
-                                                    {course.certificate_template && <Badge className="bg-green-100 text-green-700 border-0">HTML</Badge>}
+                                                    {course.certificate_template && course.certificate_template.toLowerCase().endsWith('.docx') && <Badge className="bg-blue-100 text-blue-700 border-0">DOCX</Badge>}
+                                                    {course.certificate_template && course.certificate_template.toLowerCase().endsWith('.pptx') && <Badge className="bg-orange-100 text-orange-700 border-0">PPTX</Badge>}
+                                                    {course.certificate_template && (course.certificate_template.toLowerCase().endsWith('.html') || course.certificate_template.toLowerCase().endsWith('.htm')) && <Badge className="bg-green-100 text-green-700 border-0">HTML</Badge>}
                                                     {course.certificate_background && <Badge variant="outline" className="border-border">BG</Badge>}
                                                     {(course.cert_institution_name || course.cert_signature_name) && <Badge variant="outline" className="border-border">Custom</Badge>}
                                                     {!course.certificate_template && !course.certificate_background && !course.cert_institution_name && !course.cert_signature_name && !course.cert_number_prefix && !course.cert_number_format &&
@@ -514,12 +533,13 @@ export default function TemplatePage() {
                                                             </label>
                                                         </div>
                                                         <div className="space-y-1.5">
-                                                            <Label className="text-xs font-medium text-card-foreground">Template HTML</Label>
+                                                            <Label className="text-xs font-medium text-card-foreground">Template Sertifikat</Label>
                                                             <label className="flex items-center gap-2 px-3 py-2 border border-border rounded-xl cursor-pointer hover:bg-muted transition-colors text-sm text-muted-foreground">
-                                                                <Upload className="w-3.5 h-3.5" />{files.tmpl ? files.tmpl.name : 'Pilih file'}
-                                                                <input type="file" accept=".html,.htm" className="hidden"
+                                                                <Upload className="w-3.5 h-3.5" />{files.tmpl ? files.tmpl.name : 'Pilih file (.html, .docx, .pptx)'}
+                                                                <input type="file" accept=".html,.htm,.docx,.pptx" className="hidden"
                                                                     onChange={(e) => setCourseTmplFiles(cf => ({ ...cf, [course.id]: { ...cf[course.id], tmpl: e.target.files?.[0] || null } }))} />
                                                             </label>
+                                                            <p className="text-xs text-muted-foreground">HTML untuk layout manual, DOCX/PPTX untuk desain di Word/PowerPoint</p>
                                                         </div>
                                                     </div>
                                                     <div className="border-t border-border pt-4 mt-4">

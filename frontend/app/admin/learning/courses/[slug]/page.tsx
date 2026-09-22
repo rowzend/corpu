@@ -697,11 +697,12 @@ export default function EditCoursePage() {
                                 )}
                             </div>
                             <div>
-                                <Label className="text-sm font-medium text-foreground">Template Sertifikat HTML</Label>
-                                <input type="file" accept=".html,.htm" onChange={(e) => {
+                                <Label className="text-sm font-medium text-foreground">Template Sertifikat</Label>
+                                <input type="file" accept=".html,.htm,.docx,.pptx" onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) setFormData(f => ({ ...f, _cert_tmpl_file: file }));
                                 }} className="mt-2 block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                                <p className="text-xs text-muted-foreground mt-1">HTML untuk layout manual, DOCX/PPTX untuk desain di Word/PowerPoint</p>
                                 {formData.certificate_template && !formData._cert_tmpl_file && (
                                     <p className="text-xs text-muted-foreground mt-1">Sudah ada template</p>
                                 )}

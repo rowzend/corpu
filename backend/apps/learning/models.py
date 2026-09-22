@@ -50,7 +50,7 @@ class Course(models.Model):
     enrolled_count = models.IntegerField(default=0, verbose_name='Jumlah Pendaftar')
     lesson_count = models.IntegerField(default=0, verbose_name='Jumlah Pelajaran')
     certificate_background = models.ImageField(upload_to='certificates/', blank=True, null=True, verbose_name='Background Sertifikat')
-    certificate_template = models.FileField(upload_to='certificates/templates/', blank=True, null=True, verbose_name='Template Sertifikat (HTML)')
+    certificate_template = models.FileField(upload_to='certificates/templates/', blank=True, null=True, verbose_name='Template Sertifikat (HTML/DOCX/PPTX)')
     cert_institution_name = models.CharField(max_length=255, blank=True, default='', verbose_name='Nama Institusi (Override)')
     cert_logo = models.ImageField(upload_to='certificates/', blank=True, null=True, verbose_name='Logo (Override)')
     cert_signature_name = models.CharField(max_length=255, blank=True, default='', verbose_name='Nama Penandatangan (Override)')
