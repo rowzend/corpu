@@ -17,6 +17,8 @@ class CategorySimpleSerializer(serializers.ModelSerializer):
 
 
 class CourseListSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False, allow_blank=True)
+    description = serializers.CharField(required=False, allow_blank=True)
     instructor = serializers.StringRelatedField()
     modules = serializers.SerializerMethodField()
     category = CategorySimpleSerializer(read_only=True)
