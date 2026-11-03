@@ -149,6 +149,34 @@ def jwt_required(view_func):
     
     return wrapper
 
+def _fallback_error_from_session(request):
+    """
+    Ambil detail error fallback ESIMPEG yang disimpan FlexibleAuthBackend
+    ke session saat authenticate() gagal.
+
+    Mengembalikan (code, message); (None, None) jika tidak ada detail.
+    Dipakai agar API tidak menampilkan "Username tidak ditemukan" untuk
+    semua kasus (timeout, koneksi putus, ESIMPEG error, dst).
+    """
+    if not hasattr(request, 'session'):
+        return None, None
+    code = request.session.pop('auth_error_code', None)
+    message = request.session.pop('auth_error_message', None)
+    return code, message
+
+
+def _auth_error_status(code):
+    """Pilih HTTP status yang pantas untuk kode error autentikasi."""
+    if not code:
+        return 404
+    if code.startswith('ESIMPEG_'):
+        # Gangguan infrastruktur / layanan, bukan kesalahan kredensial
+        return 503
+    if code in ('USER_NOT_FOUND', 'FALLBACK_DISABLED'):
+        return 404
+    return 401
+
+
 def landing_page(request):
     """
     Landing page = Login page (backend-only system)
@@ -178,35 +206,17 @@ def landing_page(request):
         # Check if AJAX request
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
-        # Check if user exists (by username or email)
+        # Check if user exists (by username or email).
+        # CATATAN: hanya untuk menentukan pesan error — TIDAK di-return di sini,
+        # karena user baru (belum ada di DB lokal) harus tetap bisa login
+        # melalui fallback ESIMPEG.
         user_exists = User.objects.filter(
             Q(username=username) | Q(email=username)
         ).exists()
-        
-        if not user_exists:
-            # Username tidak ditemukan di database
-            error_msg = 'Username tidak ditemukan. Silakan hubungi administrator untuk registrasi akun.'
-            
-            # Log failed login attempt (username not found)
-            try:
-                from core.models import MsLogData
-                MsLogData.log_login_failed(username, request, via='web', reason='Username not found')
-            except Exception as e:
-                logger.error(f"Failed to log login failure: {e}")
-            
-            if is_ajax:
-                return JsonResponse({
-                    'success': False,
-                    'message': error_msg,
-                    'type': 'error'
-                })
-            else:
-                messages.error(request, error_msg)
-                return render(request, 'landing.html')
-        
-        # User exists, now authenticate (check password)
+
+        # Authenticate (local DB, lalu fallback ESIMPEG)
         user = authenticate(request, username=username, password=password)
-        
+
         if user is not None:
             # CONDITIONAL SINGLE SESSION: Only enforce for NIP/NIK-based usernames
             from core.session_utils import (
@@ -273,13 +283,25 @@ def landing_page(request):
                 messages.success(request, success_msg)
                 return redirect(next_url)
         else:
-            # User exists but password wrong
-            error_msg = 'Username atau password salah!'
-            
-            # Log failed login attempt (wrong password)
+            # Login gagal — ambil detail dari fallback ESIMPEG supaya pesannya
+            # spesifik (timeout / ESIMPEG error / kredensial salah), bukan
+            # selalu "Username tidak ditemukan".
+            fb_code, fb_message = _fallback_error_from_session(request)
+
+            if not user_exists and not fb_code:
+                error_msg = 'Username tidak ditemukan. Silakan hubungi administrator untuk registrasi akun.'
+                fail_reason = 'Username not found'
+            elif fb_code:
+                error_msg = fb_message or 'Gagal memverifikasi akun. Silakan coba lagi.'
+                fail_reason = fb_code
+            else:
+                error_msg = 'Username atau password salah!'
+                fail_reason = 'Invalid password'
+
+            # Log failed login attempt
             try:
                 from core.models import MsLogData
-                MsLogData.log_login_failed(username, request, via='web', reason='Invalid password')
+                MsLogData.log_login_failed(username, request, via='web', reason=fail_reason)
             except Exception as e:
                 logger.error(f"Failed to log login failure: {e}")
             
@@ -731,7 +753,10 @@ def api_login_v5(request):
             'version': '5.0'
         }, status=200)
     else:
-        # Determine error response based on whether user exists locally
+        # Login gagal — pakai detail error dari fallback ESIMPEG supaya pesan
+        # sesuai penyebab (timeout, ESIMPEG down, kredensial salah, dst).
+        fb_code, fb_message = _fallback_error_from_session(request)
+
         if local_user_exists:
             # User exists locally but password wrong
             return JsonResponse({
@@ -740,15 +765,22 @@ def api_login_v5(request):
                 'code': 'INVALID_CREDENTIALS',
                 'version': '5.0'
             }, status=401)
-        else:
-            # User doesn't exist locally, check if ESIMPEG is reachable
-            # If ESIMPEG fallback failed, it means user not found there either
+
+        if fb_code:
             return JsonResponse({
                 'status': 'error',
-                'message': 'Username tidak ditemukan',
-                'code': 'USER_NOT_FOUND',
+                'message': fb_message or 'Gagal memverifikasi akun. Silakan coba lagi.',
+                'code': fb_code,
                 'version': '5.0'
-            }, status=404)
+            }, status=_auth_error_status(fb_code))
+
+        # Tidak ada di DB lokal dan fallback tidak memberi detail error
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Username tidak ditemukan',
+            'code': 'USER_NOT_FOUND',
+            'version': '5.0'
+        }, status=404)
 
 
 @csrf_exempt
@@ -1005,7 +1037,10 @@ def api_jwt_login_v5(request):
             except Exception as e:
                 logger.error(f"Failed to log login failure: {e}")
             
-            # Determine error response based on whether user exists locally
+            # Login gagal — pakai detail error dari fallback ESIMPEG supaya
+            # pesan sesuai penyebabnya, bukan selalu "Username tidak ditemukan"
+            fb_code, fb_message = _fallback_error_from_session(request)
+
             if local_user_exists:
                 # User exists locally but password wrong
                 return JsonResponse({
@@ -1014,15 +1049,22 @@ def api_jwt_login_v5(request):
                     'code': 'INVALID_CREDENTIALS',
                     'version': '5.0'
                 }, status=401)
-            else:
-                # User doesn't exist locally, check if ESIMPEG is reachable
-                # If ESIMPEG fallback failed, it means user not found there either
+
+            if fb_code:
                 return JsonResponse({
                     'status': 'error',
-                    'message': 'Username tidak ditemukan',
-                    'code': 'USER_NOT_FOUND',
+                    'message': fb_message or 'Gagal memverifikasi akun. Silakan coba lagi.',
+                    'code': fb_code,
                     'version': '5.0'
-                }, status=404)
+                }, status=_auth_error_status(fb_code))
+
+            # Tidak ada di DB lokal dan fallback tidak memberi detail error
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Username tidak ditemukan',
+                'code': 'USER_NOT_FOUND',
+                'version': '5.0'
+            }, status=404)
             
     except json.JSONDecodeError:
         return JsonResponse({

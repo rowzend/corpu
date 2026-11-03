@@ -33,6 +33,12 @@ class FlexibleAuthBackend(ModelBackend):
         if username is None or password is None:
             return None
 
+        # Bersihkan sisa error dari percobaan login sebelumnya, supaya pesan
+        # error lama tidak "nyangkut" dan ditampilkan untuk percobaan berikutnya.
+        if hasattr(request, 'session'):
+            request.session.pop('auth_error_code', None)
+            request.session.pop('auth_error_message', None)
+
         # Step 1: Try local authentication first
         user = self._authenticate_local(username, password)
         if user:
@@ -81,12 +87,18 @@ class FlexibleAuthBackend(ModelBackend):
         Returns tuple: (user, error_code, error_message)
         """
         if not getattr(settings, 'ESIMPEG_FALLBACK_ENABLED', True):
-            return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
+            return None, 'FALLBACK_DISABLED', (
+                'Akun tidak ditemukan di sistem dan login melalui ESIMPEG sedang '
+                'dinonaktifkan. Silakan hubungi administrator.'
+            )
 
         esimpeg_url = getattr(settings, 'ESIMPEG_API_URL', None)
         if not esimpeg_url:
             logger.warning("ESIMPEG_API_URL not configured")
-            return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
+            return None, 'ESIMPEG_NOT_CONFIGURED', (
+                'Akun tidak ditemukan dan layanan ESIMPEG belum dikonfigurasi. '
+                'Silakan hubungi administrator.'
+            )
 
         try:
             login_url = f"{esimpeg_url}/apisimpeg/5.0/auth/login"
@@ -100,37 +112,75 @@ class FlexibleAuthBackend(ModelBackend):
                 },
                 timeout=10
             )
-
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('status') == 'success':
-                    user_data = data.get('data', {}).get('user', {})
-                    user = self._get_or_create_user_from_esimpeg(user_data, username, password)
-                    if user:
-                        return user, None, None
-                    return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
-                else:
-                    error_message = data.get('message', 'Authentication failed')
-                    error_code = data.get('code', 'INVALID_CREDENTIALS')
-                    return None, error_code, error_message
-            else:
-                try:
-                    data = response.json()
-                    error_message = data.get('message', 'Authentication failed')
-                    error_code = data.get('code', 'INVALID_CREDENTIALS')
-                    return None, error_code, error_message
-                except:
-                    return None, 'INVALID_CREDENTIALS', 'Username atau password salah'
-
         except requests.exceptions.Timeout:
             logger.warning("ESIMPEG API timeout")
-            return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
-        except requests.exceptions.ConnectionError:
-            logger.warning("ESIMPEG API connection error")
-            return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
+            return None, 'ESIMPEG_TIMEOUT', (
+                'Layanan ESIMPEG tidak merespons (timeout). Silakan coba lagi.'
+            )
+        except requests.exceptions.ConnectionError as e:
+            logger.warning(f"ESIMPEG API connection error: {e}")
+            return None, 'ESIMPEG_UNREACHABLE', (
+                'Tidak dapat terhubung ke layanan ESIMPEG. Silakan coba lagi '
+                'atau hubungi administrator.'
+            )
         except Exception as e:
             logger.error(f"ESIMPEG fallback error: {e}")
-            return None, 'USER_NOT_FOUND', 'Username tidak ditemukan'
+            return None, 'ESIMPEG_ERROR', (
+                'Terjadi kesalahan saat memverifikasi akun ke layanan ESIMPEG. '
+                'Silakan coba lagi atau hubungi administrator.'
+            )
+
+        # Baca body respons (boleh HTML saat server error, jangan sampai exception)
+        try:
+            data = response.json()
+        except (ValueError, json.JSONDecodeError):
+            data = None
+
+        # --- Sukses ---
+        if (response.status_code == 200 and isinstance(data, dict)
+                and data.get('status') == 'success'):
+            user_data = data.get('data', {}).get('user', {}) or {}
+            user = self._get_or_create_user_from_esimpeg(user_data, username, password)
+            if user:
+                return user, None, None
+            # ESIMPEG menerima login, tapi gagal sinkron ke DB lokal
+            logger.error(f"ESIMPEG login OK tapi sinkronisasi akun lokal gagal: {username}")
+            return None, 'ESIMPEG_USER_SYNC_FAILED', (
+                'Login ESIMPEG berhasil, tetapi gagal menyinkronkan akun ke '
+                'sistem ini. Silakan hubungi administrator.'
+            )
+
+        # --- ESIMPEG merespons dengan pesan error (JSON) ---
+        if isinstance(data, dict) and data.get('message'):
+            error_code = data.get('code') or f'ESIMPEG_HTTP_{response.status_code}'
+            return None, error_code, data.get('message')
+
+        # --- ESIMPEG error server (HTML / tanpa JSON), mis. DisallowedHost ---
+        if response.status_code >= 500:
+            detail = response.text or ''
+            if 'DisallowedHost' in detail:
+                logger.error(
+                    f"ESIMPEG menolak host (ALLOWED_HOSTS). URL={login_url} "
+                    f"HTTP {response.status_code}"
+                )
+            else:
+                logger.error(
+                    f"ESIMPEG server error HTTP {response.status_code}: {detail[:300]}"
+                )
+            return None, 'ESIMPEG_SERVER_ERROR', (
+                f'Layanan ESIMPEG mengalami kesalahan server (HTTP '
+                f'{response.status_code}). Silakan hubungi administrator.'
+            )
+
+        # --- Respon tidak dikenal ---
+        logger.warning(
+            f"ESIMPEG login gagal HTTP {response.status_code}: "
+            f"{(response.text or '')[:300]}"
+        )
+        return None, 'ESIMPEG_INVALID_RESPONSE', (
+            'Layanan ESIMPEG memberikan respons yang tidak dikenali. '
+            'Silakan coba lagi.'
+        )
 
     def _get_or_create_user_from_esimpeg(self, user_data, username, password):
         """
