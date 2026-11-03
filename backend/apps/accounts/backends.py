@@ -155,18 +155,23 @@ class FlexibleAuthBackend(ModelBackend):
             error_code = data.get('code') or f'ESIMPEG_HTTP_{response.status_code}'
             return None, error_code, data.get('message')
 
-        # --- ESIMPEG error server (HTML / tanpa JSON), mis. DisallowedHost ---
+        # --- ESIMPEG menolak host (ALLOWED_HOSTS) -> salah konfigurasi, bukan kredensial ---
+        if 'DisallowedHost' in (response.text or ''):
+            logger.error(
+                f"ESIMPEG menolak host (ALLOWED_HOSTS). URL={login_url} "
+                f"HTTP {response.status_code}"
+            )
+            return None, 'ESIMPEG_HOST_REJECTED', (
+                'Konfigurasi host layanan ESIMPEG ditolak (ALLOWED_HOSTS). '
+                'Silakan hubungi administrator.'
+            )
+
+        # --- ESIMPEG error server (HTML / tanpa JSON) ---
         if response.status_code >= 500:
-            detail = response.text or ''
-            if 'DisallowedHost' in detail:
-                logger.error(
-                    f"ESIMPEG menolak host (ALLOWED_HOSTS). URL={login_url} "
-                    f"HTTP {response.status_code}"
-                )
-            else:
-                logger.error(
-                    f"ESIMPEG server error HTTP {response.status_code}: {detail[:300]}"
-                )
+            logger.error(
+                f"ESIMPEG server error HTTP {response.status_code}: "
+                f"{(response.text or '')[:300]}"
+            )
             return None, 'ESIMPEG_SERVER_ERROR', (
                 f'Layanan ESIMPEG mengalami kesalahan server (HTTP '
                 f'{response.status_code}). Silakan hubungi administrator.'
