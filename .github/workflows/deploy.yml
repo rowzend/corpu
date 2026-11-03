@@ -142,7 +142,7 @@ jobs:
             GUNICORN_TIMEOUT=60
             GUNICORN_WORKERS=2
             GUNICORN_WORKER_CLASS=sync
-            ESIMPEG_API_URL=http://host.docker.internal:8005
+            ESIMPEG_API_URL=http://esimpeg-python-postgresql
             ESIMPEG_FALLBACK_ENABLED=True
             PERMISSIONS_SUPERADMIN_OVERRIDE=False
             ENVEOF
