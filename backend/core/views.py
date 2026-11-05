@@ -1556,7 +1556,7 @@ def api_logout_v4(request):
         # Blacklist token
         try:
             from core.token_blacklist import TokenBlacklist
-            TokenBlacklist.add(token_str)
+            TokenBlacklist.add(token)
         except Exception as e:
             logger.warning(f"Failed to blacklist token: {e}")
         
@@ -1643,7 +1643,7 @@ def api_logout_v5(request):
         # Blacklist token
         try:
             from core.token_blacklist import TokenBlacklist
-            TokenBlacklist.add(token_str)
+            TokenBlacklist.add(token)
         except Exception as e:
             logger.warning(f"Failed to blacklist token: {e}")
         

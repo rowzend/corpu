@@ -46,6 +46,11 @@ export const authService = {
       localStorage.setItem('token', tokenData.access_token);
       localStorage.setItem('refresh_token', tokenData.refresh_token ?? '');
 
+      // Restart the idle timer on every login: without this, a stale
+      // lastActivity from a previous session makes SessionChecker show the
+      // "Sesi Berakhir" modal immediately after entering the dashboard.
+      localStorage.setItem('lastActivity', Date.now().toString());
+
       // Normalize user: backend sends 'user_id' but frontend expects 'id'
       const rawUser = tokenData.user ?? {};
       if (rawUser.user_id !== undefined && rawUser.id === undefined) {
@@ -77,6 +82,7 @@ export const authService = {
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user');
+      localStorage.removeItem('lastActivity');
 
       // Clear cookies
       document.cookie = 'token=; max-age=0; path=/';

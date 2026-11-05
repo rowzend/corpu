@@ -89,6 +89,22 @@ export default function SessionChecker({
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
+    // Guard against a stale idle timestamp left over from a previous session:
+    // it must never predate the current token's issue time, otherwise the very
+    // first page after login instantly triggers the "Sesi Berakhir" modal.
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const issuedAt = payload.iat ? payload.iat * 1000 : Date.now();
+      const stored = localStorage.getItem('lastActivity');
+      if (!stored || parseInt(stored) < issuedAt) {
+        localStorage.setItem('lastActivity', Date.now().toString());
+        lastActivityRef.current = Date.now();
+        console.log('🕒 Idle timestamp reset to current login time');
+      }
+    } catch {
+      // Malformed token/storage: keep going, periodic check will handle it
+    }
+
     console.log('🔐 Session checker initialized');
 
     // Update last activity on user interactions
