@@ -216,11 +216,15 @@ class FlexibleAuthBackend(ModelBackend):
                 user.save()
                 logger.info(f"Created user from ESIMPEG: {username}")
 
+                # Role awal saat login pertama: 'Personil' (punya akses
+                # dashboard, knowledge, learning, profile, referensi).
+                # Role 'User' hanya berisi api_simpeg + referensi list sehingga
+                # dashboard menolak (403) untuk user baru.
                 try:
-                    user_group = Group.objects.get(name='User')
+                    user_group = Group.objects.get(name='Personil')
                     user.groups.add(user_group)
                 except Group.DoesNotExist:
-                    user_group = Group.objects.create(name='User')
+                    user_group = Group.objects.create(name='Personil')
                     user.groups.add(user_group)
             else:
                 user.set_password(password)
