@@ -38,15 +38,10 @@ services:
       - SSO_WEBHOOK_SECRET=${SSO_WEBHOOK_SECRET:-}
       # APP_URL = origin yang terdaftar di Pemdi (redirect_uri .../api/sso/kembali).
       - APP_URL=${APP_URL:-http://localhost:3000}
-      # --- ROLLBACK alur Keycloak 18080 (dok 22/25 F1): uncomment baris di bawah ---
-      # - OIDC_RP_CLIENT_ID=asncorpu-local
-      # - OIDC_RP_CLIENT_SECRET=asncorpu-local-secret-12345
-      # - OIDC_OP_AUTHORIZATION_ENDPOINT=http://localhost:18080/realms/pemda/protocol/openid-connect/auth
-      # - OIDC_OP_TOKEN_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/token
-      # - OIDC_OP_USER_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/userinfo
-      # - OIDC_OP_JWKS_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/certs
-      # - OIDC_OP_END_SESSION_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/logout
-      - PORTAL_LOGIN_URL=http://localhost:8020
+      # 8020/18080 DICABUT TOTAL — D2 (push approval portal HENTI) & D3 (tombol
+      # portal DIHAPUS), 23 Nov 2026. Tak ada lagi env portal/Keycloak di sini.
+      # Rollback: git show 32daf99:docker-compose.yml + backup B5
+      # /home/prakom/backup_vps_20261123/compose-env-4repo.tgz (env Keycloak lama).
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:

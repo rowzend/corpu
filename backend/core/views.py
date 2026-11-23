@@ -689,9 +689,10 @@ def api_register_v1(request):
 
     Alur:
       1. User lokal dibuat: is_active=False, registration_status='pending'
-      2. User Keycloak dibuat DISABLED + password di-set (best effort, tidak
-         memblokir) — Keycloak = penyimpan kredensial, app = urusan approval.
-      3. Aktivasi oleh admin (RegistrationActionAPIView → approve → enabled).
+      2. Push ke Keycloak DICABUT TOTAL (D1=O1, 23 Nov 2026): env
+         KEYCLOAK_ADMIN_URL kosong → ensure_keycloak_user() 'skipped';
+         kredensial hanya di DB lokal asncorpu.
+      3. Aktivasi oleh admin (RegistrationActionAPIView → approve → user aktif).
 
     Anti-enumeration: endpoint ini tidak mengekspos apakah email orang lain
     terdaftar selain pesan duplikat wajib untuk UX register (rate-limited per IP).
@@ -2508,12 +2509,14 @@ def api_notifications_read_all(request):
 # ============================================================
 
 def sso_ditolak(request):
-    """Halaman penolakan SSO: akun Keycloak ada, tapi tidak terdaftar/aktif di asncorpu.
+    """Halaman penolakan SSO: NIP tidak punya baris users aktif di asncorpu.
 
     Dok 22 G1: SSO asncorpu TANPA JIT — approval admin adalah gerbangnya.
+    Portal 8020 sudah DICABUT TOTAL (D3, 23 Nov 2026): bila PORTAL_LOGIN_URL
+    kosong, tombol portal disembunyikan oleh template.
     """
     return render(request, 'sso_ditolak.html', {
-        'portal_url': getattr(settings, 'PORTAL_LOGIN_URL', '') or 'http://localhost:8020/',
+        'portal_url': getattr(settings, 'PORTAL_LOGIN_URL', ''),
         'nama': request.GET.get('nama', ''),
     })
 

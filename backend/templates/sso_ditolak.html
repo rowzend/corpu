@@ -47,12 +47,12 @@
         </p>
         <ul>
             <li>Peserta umum: daftar di aplikasi ASN Corpu lalu tunggu persetujuan.</li>
-            <li>Pegawai Pemda Pesisir Selatan: daftar lewat <strong>Portal 8020</strong> (jalur pegawai).</li>
+            <li>Pegawai Pemda Pesisir Selatan: hubungi admin OPD/BKPSDM untuk pembuatan & aktivasi akun (jalur portal sudah tidak digunakan).</li>
             <li>Sudah daftar tapi masih ditolak? Hubungi admin BKPSDM untuk aktivasi.</li>
         </ul>
         <div class="tombol">
             <a class="btn utama" href="/">Kembali ke ASN Corpu</a>
-            <a class="btn cadangan" href="{{ portal_url }}">Buka Portal</a>
+            {% if portal_url %}<a class="btn cadangan" href="{{ portal_url }}">Buka Portal</a>{% endif %}
         </div>
         <div class="kecil">ASN Corpu — BKPSDM Kab. Pesisir Selatan</div>
     </div>
