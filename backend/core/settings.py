@@ -178,6 +178,26 @@ if OIDC_ENABLED:
     OIDC_CALLBACK_CLASS = 'apps.accounts.sso_views.SsoCallbackView'
     LOGIN_REDIRECT_URL_FAILURE = '/sso-ditolak/'
 
+# --- SSO Pemdi (OAuth2 authorization code + PKCE) — spec asncorpu/sso/sso-asncorpu.md
+# AKTIF hanya bila SSO_CLIENT_ID diisi (saklar terpisah dari OIDC Keycloak di atas).
+# Kosongkan env ini untuk mematikan SSO Pemdi → tombol SSO otomatis jatuh ke
+# /oidc/authenticate/ (bila OIDC_RP_CLIENT_ID diisi) atau halaman login (bila
+# tidak) — rollback tanpa mengubah kode.
+#
+# Empat endpoint yang dilayani Django (nginx location /api/sso/ → backend):
+#   /api/sso/masuk | /api/sso/kembali | /api/sso/keluar | /api/sso/daftar-akun
+# Klaim identitas Pemdi: sub, nip, nama, opd, opd_nama, jenis (non-ASN: nip null).
+# Gerbang tetap TANPA JIT: NIP harus sudah punya baris users aktif (username=NIP).
+PEMDI_SSO_ENABLED = bool(config('SSO_CLIENT_ID', default=''))
+SSO_PEMDI_URL = config('SSO_PEMDI_URL', default='https://pemdi.pesisirselatankab.go.id').rstrip('/')
+SSO_CLIENT_ID = config('SSO_CLIENT_ID', default='')
+SSO_CLIENT_SECRET = config('SSO_CLIENT_SECRET', default='')
+SSO_WEBHOOK_SECRET = config('SSO_WEBHOOK_SECRET', default='')
+# APP_URL = origin publik (redirect_uri harus PERSIS terdaftar di Pemdi).
+SSO_APP_URL = config('APP_URL', default='').rstrip('/')
+SSO_RP_SCOPES = 'openid profil'
+SSO_STATE_TTL = 600  # detik — umur state/PKCE di session
+
 # Password Hashers - Universal format (Argon2 recommended by OWASP)
 # Priority order: Django akan menggunakan hasher pertama untuk NEW passwords
 # Hasher lainnya digunakan untuk VERIFY existing passwords
@@ -405,7 +425,8 @@ SESSION_INACTIVITY_TIMEOUT = 1800  # 30 minutes of inactivity = auto logout
 # Django REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',  # JWT Authentication
+        # JWTAuthentication + cek revocation sub SSO Pemdi (back-channel /api/sso/keluar)
+        'apps.accounts.authentication.PemdiJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],

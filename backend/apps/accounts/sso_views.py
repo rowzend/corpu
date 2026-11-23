@@ -38,10 +38,18 @@ KODE_PREFIX = 'asncorpu:sso_handoff:'
 KODE_TTL = 120  # detik
 
 
-def _buat_kode(user):
-    """Simpan id user di Redis dengan kode acak sekali pakai."""
+def _buat_kode(user, sub=None, via=None):
+    """Simpan data login di Redis dengan kode acak sekali pakai.
+
+    Bentuk lama (int ``user.pk``) dipertahankan untuk alur Keycloak lama —
+    jalur rollback tetap kompatibel. Alur Pemdi menyimpan dict supaya ``sub``
+    ikut terbawa ke klaim JWT (untuk back-channel logout).
+    """
     kode = secrets.token_urlsafe(32)
-    cache.set(f'{KODE_PREFIX}{kode}', user.pk, KODE_TTL)
+    if sub:
+        cache.set(f'{KODE_PREFIX}{kode}', {'user_id': user.pk, 'sub': str(sub), 'via': via or 'sso_pemdi'}, KODE_TTL)
+    else:
+        cache.set(f'{KODE_PREFIX}{kode}', user.pk, KODE_TTL)
     return kode
 
 
@@ -75,7 +83,23 @@ def sso_exchange(request):
         kode = request.POST.get('code', '')
 
     kunci = f'{KODE_PREFIX}{kode}'
-    user_id = cache.get(kunci) if kode else None
+    payload = cache.get(kunci) if kode else None
+    if not payload:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Kode SSO tidak valid atau sudah kedaluwarsa. Silakan masuk ulang.',
+            'code': 'SSO_CODE_INVALID',
+        }, status=400)
+
+    # Bentuk lama: int user.pk (Keycloak). Bentuk baru (Pemdi): dict
+    # {user_id, sub, via} — sub dibawa ke klaim JWT supaya back-channel
+    # logout /api/sso/keluar bisa mencabut token ini.
+    if isinstance(payload, dict):
+        user_id = payload.get('user_id')
+        sub = str(payload.get('sub') or '').strip() or None
+        via = payload.get('via') or 'sso_pemdi'
+    else:
+        user_id, sub, via = payload, None, 'sso_oidc'
     if not user_id:
         return JsonResponse({
             'status': 'error',
@@ -106,12 +130,19 @@ def sso_exchange(request):
         }, status=403)
 
     refresh = RefreshToken.for_user(user)
+    if sub:
+        # Klaim SSO Pemdi: sub untuk revocation back-channel, login_via untuk
+        # menentukan tujuan logout (frontend membaca redirect_url dari endpoint
+        # logout). refresh.access_token menyalin semua klaim ini ke access token.
+        refresh['sub'] = sub
+        refresh['login_via'] = via
+    access = refresh.access_token
     user.last_login = timezone.now()
     user.save(update_fields=['last_login'])
 
     try:
         from core.models import MsLogData
-        MsLogData.log_login(user, request, via='sso_oidc')
+        MsLogData.log_login(user, request, via=via)
     except Exception as exc:  # pragma: no cover - log tidak boleh menggagalkan login
         logger.error('Failed to log SSO login activity: %s', exc)
 
@@ -119,10 +150,11 @@ def sso_exchange(request):
         'status': 'success',
         'message': 'Login successful',
         'data': {
-            'access_token': str(refresh.access_token),
+            'access_token': str(access),
             'refresh_token': str(refresh),
             'token_type': 'Bearer',
             'expires_in': 86400,
+            'login_via': via,
             'user': {
                 'user_id': user.id,
                 'username': user.username,

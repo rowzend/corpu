@@ -213,11 +213,12 @@ export default function SessionChecker({
   }, [isLoginPage]);
 
   const handleExpiredConfirm = () => {
-    // Idle timeout hanya mengakhiri sesi APLIKASI (JWT), bukan sesi Keycloak.
+    // Idle timeout hanya mengakhiri sesi APLIKASI (JWT), bukan sesi SSO.
     // Karena itu jangan buang user ke halaman login berpassword: minta ulang
-    // lewat /oidc/authenticate/ — bila sesi SSO masih hidup, Keycloak langsung
-    // mengembalikan user tanpa mengetik password.
-    window.location.href = '/oidc/authenticate/';
+    // lewat /api/sso/masuk — bila sesi Pemdi masih hidup, IdP langsung
+    // mengembalikan user tanpa mengetik password. (Bila SSO Pemdi & Keycloak
+    // sama-sama mati, endpoint ini mengalihkan ke halaman login.)
+    window.location.href = '/api/sso/masuk';
   };
 
   if (!showExpired) return null;

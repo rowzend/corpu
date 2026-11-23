@@ -20,6 +20,7 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 
 from apps.accounts import sso_views as accounts_sso
+from apps.accounts import sso_pemdi
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -178,6 +179,14 @@ urlpatterns = [
     path('oidc/frontchannel-logout/', views.oidc_frontchannel_logout, name='oidc_frontchannel_logout'),
     # Tukar kode handoff SSO → JWT (dipakai halaman /auth/sso di frontend)
     path('apicorpu/auth/1.0/sso-exchange/', accounts_sso.sso_exchange, name='sso_exchange'),
+
+    # SSO Pemdi — 4 endpoint yang terdaftar di IdP (spec sso-asncorpu.md).
+    # Tanpa trailing slash: harus PERSIS seperti terdaftar di Pemdi.
+    # Dilayani Django lewat nginx `location /api/sso/`.
+    path('api/sso/masuk', sso_pemdi.sso_masuk, name='sso_pemdi_masuk'),
+    path('api/sso/kembali', sso_pemdi.sso_kembali, name='sso_pemdi_kembali'),
+    path('api/sso/keluar', sso_pemdi.sso_keluar, name='sso_pemdi_keluar'),
+    path('api/sso/daftar-akun', sso_pemdi.sso_daftar_akun, name='sso_pemdi_daftar_akun'),
 
     # Redirect all other requests to Next.js frontend
     # This is handled by nginx, but adding fallback for direct Django access

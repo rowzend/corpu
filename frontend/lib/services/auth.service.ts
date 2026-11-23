@@ -69,11 +69,21 @@ export const authService = {
   },
 
   /**
-   * Logout user
+   * Logout user.
+   *
+   * @returns URL tujuan setelah logout. `null` untuk sesi login lokal
+   *   (perilaku lama tidak berubah); terisi URL `/keluar` IdP Pemdi bila sesi
+   *   ini masuk lewat SSO (klaim `login_via` → `redirect_url` dari endpoint
+   *   logout backend). Pemanggil memakainya: `window.location.href = tujuan || '/'`.
    */
-  async logout(): Promise<void> {
+  async logout(): Promise<string | null> {
+    let tujuan: string | null = null;
     try {
-      await api.logout();
+      const res = (await api.logout()) as any;
+      const data = res?.data ?? res;
+      if (data && typeof data.redirect_url === 'string' && data.redirect_url) {
+        tujuan = data.redirect_url;
+      }
     } catch (error) {
       // Continue with logout even if API call fails
       console.error('Logout API call failed:', error);
@@ -90,6 +100,7 @@ export const authService = {
       document.cookie = 'active_group_id=; max-age=0; path=/';
       document.cookie = 'role_type=; max-age=0; path=/';
     }
+    return tujuan;
   },
 
   /**

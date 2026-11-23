@@ -163,7 +163,7 @@ export default function SsoLandingPage() {
               Kembali ke halaman masuk
             </a>
             <a
-              href="/login?error=sso"
+              href="/login?sso=gagal"
               className="w-full rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5"
             >
               Masuk dengan username &amp; password

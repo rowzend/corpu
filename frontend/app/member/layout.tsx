@@ -106,8 +106,9 @@ router.push('/');
     };
 
 const handleLogout = async () => {
-        await authService.logout();
-        window.location.href = '/';
+        // SSO Pemdi: bila sesi masuk lewat SSO, ke /keluar IdP; sesi lokal → '/'.
+        const tujuan = await authService.logout();
+        window.location.href = tujuan || '/';
     };
 
     const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');

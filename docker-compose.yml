@@ -28,17 +28,24 @@ services:
       - EMAIL_USE_SSL=False
       - DEFAULT_FROM_EMAIL=ASN Corpu <no-reply@asncorpu.local>
       - FRONTEND_BASE_URL=http://localhost:3000
-      # SSO OIDC (Keycloak realm pemda) — dok 22 / dok 25 F1.
-      # Hapus/komentari OIDC_RP_CLIENT_ID untuk mematikan SSO (login lokal tetap).
-      - OIDC_RP_CLIENT_ID=asncorpu-local
-      - OIDC_RP_CLIENT_SECRET=asncorpu-local-secret-12345
-      # authorization endpoint = host BROWSER (cookie session Keycloak dibagi dengan portal);
-      # token/userinfo/jwks/logout = host SERVER (host.docker.internal).
-      - OIDC_OP_AUTHORIZATION_ENDPOINT=http://localhost:18080/realms/pemda/protocol/openid-connect/auth
-      - OIDC_OP_TOKEN_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/token
-      - OIDC_OP_USER_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/userinfo
-      - OIDC_OP_JWKS_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/certs
-      - OIDC_OP_END_SESSION_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/logout
+      # SSO Pemdi (OAuth2 + PKCE) — spec doc_dari_ai/opencode/asncorpu/sso/sso-asncorpu.md.
+      # Saklar: kosongkan SSO_CLIENT_ID (via .env/override) untuk mematikan SSO Pemdi
+      # → tombol SSO jatuh ke /oidc/ (bila OIDC lama diisi) atau halaman login.
+      # Secret TIDAK ditulis di file ini — isi di docker-compose.override.yml / .env.
+      - SSO_PEMDI_URL=https://pemdi.pesisirselatankab.go.id
+      - SSO_CLIENT_ID=${SSO_CLIENT_ID:-}
+      - SSO_CLIENT_SECRET=${SSO_CLIENT_SECRET:-}
+      - SSO_WEBHOOK_SECRET=${SSO_WEBHOOK_SECRET:-}
+      # APP_URL = origin yang terdaftar di Pemdi (redirect_uri .../api/sso/kembali).
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      # --- ROLLBACK alur Keycloak 18080 (dok 22/25 F1): uncomment baris di bawah ---
+      # - OIDC_RP_CLIENT_ID=asncorpu-local
+      # - OIDC_RP_CLIENT_SECRET=asncorpu-local-secret-12345
+      # - OIDC_OP_AUTHORIZATION_ENDPOINT=http://localhost:18080/realms/pemda/protocol/openid-connect/auth
+      # - OIDC_OP_TOKEN_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/token
+      # - OIDC_OP_USER_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/userinfo
+      # - OIDC_OP_JWKS_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/certs
+      # - OIDC_OP_END_SESSION_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/logout
       - PORTAL_LOGIN_URL=http://localhost:8020
     extra_hosts:
       - "host.docker.internal:host-gateway"

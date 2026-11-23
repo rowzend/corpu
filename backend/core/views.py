@@ -117,6 +117,17 @@ def jwt_required(view_func):
                         'code': 'TOKEN_REVOKED_USER',
                         'version': '5.0'
                     }, status=401)
+
+                # SSO Pemdi: token dengan sub yang diakhiri dari Pemdi (back-channel
+                # /api/sso/keluar) sebelum token terbit → tolak.
+                from apps.accounts.sso_pemdi import sub_dicabut
+                if sub_dicabut(token.get('sub'), token_issued_at):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Sesi SSO telah diakhiri dari Pemdi. Silakan masuk ulang.',
+                        'code': 'SSO_SESSION_REVOKED',
+                        'version': '5.0'
+                    }, status=401)
                 
                 # Attach user and token to request
                 request.jwt_user = user
@@ -1379,6 +1390,15 @@ def api_jwt_verify_v5(request):
                         'code': 'TOKEN_REVOKED_USER',
                         'version': '5.0'
                     }, status=401)
+                # SSO Pemdi: sub diakhiri dari Pemdi sebelum token terbit → tolak
+                from apps.accounts.sso_pemdi import sub_dicabut
+                if sub_dicabut(token.get('sub'), token_issued_at):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Sesi SSO telah diakhiri dari Pemdi. Silakan masuk ulang.',
+                        'code': 'SSO_SESSION_REVOKED',
+                        'version': '5.0'
+                    }, status=401)
             except Exception as _e:
                 logger.error(f"Blacklist verification error: {_e}")
             
@@ -1479,6 +1499,19 @@ def api_jwt_refresh_v5(request):
                     }, status=401)
             except Exception as _e:
                 logger.error(f"Refresh blacklist check failed: {_e}")
+            # SSO Pemdi: refresh token dengan sub yang diakhiri dari Pemdi sebelum
+            # token terbit → tolak (mencegah penerbitan access token baru).
+            try:
+                from apps.accounts.sso_pemdi import sub_dicabut
+                if sub_dicabut(refresh.get('sub'), token_issued_at):
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Sesi SSO telah diakhiri dari Pemdi. Silakan masuk ulang.',
+                        'code': 'SSO_SESSION_REVOKED',
+                        'version': '5.0'
+                    }, status=401)
+            except Exception as _e:
+                logger.error(f"Refresh SSO revocation check failed: {_e}")
             # Issue new access token
             access_token = str(refresh.access_token)
             return JsonResponse({
@@ -1875,12 +1908,23 @@ def api_logout_v5(request):
         except Exception as e:
             logger.warning(f"Failed to blacklist token: {e}")
         
+        # SSO Pemdi: sesi masuk lewat SSO → frontend diarahkan ke halaman keluar
+        # IdP (/keluar) setelah logout lokal. Login password tidak punya klaim
+        # login_via → redirect_url null (perilaku lama tidak berubah).
+        redirect_url = None
+        try:
+            if str(access_token.get('login_via') or '').startswith('sso'):
+                redirect_url = f"{settings.SSO_PEMDI_URL.rstrip('/')}/keluar"
+        except Exception:  # pragma: no cover
+            redirect_url = None
+
         return JsonResponse({
             'status': 'success',
             'message': 'Logout successful',
             'data': {
                 'username': user.username,
-                'logout_at': timezone.now().isoformat()
+                'logout_at': timezone.now().isoformat(),
+                'redirect_url': redirect_url,
             },
             'version': '5.0'
         }, status=200)

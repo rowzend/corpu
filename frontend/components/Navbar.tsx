@@ -57,8 +57,10 @@ export default function Navbar() {
   const isScrolled = scrollY > 60;
 
   const handleLogout = async () => {
-    await authService.logout();
-    router.push('/');
+    // SSO Pemdi: bila sesi masuk lewat SSO, ke /keluar IdP; sesi lokal → '/'.
+    const tujuan = await authService.logout();
+    if (tujuan) window.location.href = tujuan;
+    else router.push('/');
   };
 
   const menuItems: { label: string; href?: string; subMenus?: { label: string; href: string }[] }[] = [

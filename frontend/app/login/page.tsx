@@ -89,7 +89,7 @@ export default function LoginPage() {
     }, []);
 
     useEffect(() => {
-        if (searchParams.has('redirect') || searchParams.has('error') || searchParams.has('session')) return;
+        if (searchParams.has('redirect') || searchParams.has('error') || searchParams.has('session') || searchParams.has('sso')) return;
         const token = authService.getToken();
         if (!token) return;
         try {
@@ -114,6 +114,18 @@ export default function LoginPage() {
             } catch { window.location.href = '/member/dashboard'; }
         })();
     }, []);
+
+    // Pesan hasil login SSO Pemdi (redirect dari /api/sso/kembali):
+    //   ?sso=gagal            → galat teknis / state tidak cocok / dibatalkan
+    //   ?sso=tidak-terdaftar  → NIP tanpa baris users aktif (tanpa JIT) atau non-ASN
+    useEffect(() => {
+        const sso = searchParams.get('sso');
+        if (sso === 'gagal') {
+            setError('Login SSO gagal atau dibatalkan. Silakan coba lagi, atau masuk dengan akun lokal.');
+        } else if (sso === 'tidak-terdaftar') {
+            setError('Akun Anda belum terdaftar di ASN Corpu. Hubungi admin OPD Anda, atau masuk dengan akun lokal bila sudah punya.');
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         setIsVisible(true);
@@ -482,13 +494,14 @@ export default function LoginPage() {
                                             {isLoginValid && !isLoading && !isButtonRunning && <span className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>}
                                         </button>
 
-                                        {/* SSO OIDC — dok 22 / dok 25 fase F1 */}
+                                        {/* SSO Pemdi — 4 endpoint Django /api/sso/* (spec sso-asncorpu.md).
+                                            Backend mengalihkan ke /oidc/ bila Pemdi mati & Keycloak hidup. */}
                                         <div className="flex items-center gap-2 pt-1">
                                             <span className="flex-1 h-px bg-border" />
                                             <span className="text-[10px] text-muted-foreground">atau</span>
                                             <span className="flex-1 h-px bg-border" />
                                         </div>
-                                        <a href="/oidc/authenticate/"
+                                        <a href="/api/sso/masuk"
                                             onClick={() => {
                                                 // Simpan tujuan publik; dibaca lagi di /auth/sso
                                                 // setelah kode SSO ditukar jadi token.

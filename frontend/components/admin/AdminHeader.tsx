@@ -110,8 +110,10 @@ export default function AdminHeader({ onToggleSidebar, onToggleActivityPanel }: 
 
     const handleLogout = async () => {
         try {
-            await authService.logout();
-            router.push('/');
+            // SSO Pemdi: bila sesi masuk lewat SSO, ke /keluar IdP; sesi lokal → '/'.
+            const tujuan = await authService.logout();
+            if (tujuan) window.location.href = tujuan;
+            else router.push('/');
         } catch (error) {
             router.push('/');
         }
