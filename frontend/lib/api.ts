@@ -402,6 +402,44 @@ class ApiClient {
     return this.handleResponse(response);
   }
 
+  // Self-register (Opsi A — pola SIMPEL)
+  async register(data: { name: string; email: string; password: string; confirm_password: string }) {
+    const url = new URL('register/', this.authURL);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify(data),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async registerStatus(email: string) {
+    const url = new URL('register-status/', this.authURL);
+    url.searchParams.set('email', email);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: this.getHeaders(false),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  // Kirim ulang email verifikasi pendaftaran (dok 23)
+  async resendVerification(email: string) {
+    const url = new URL('resend-verification/', this.authURL);
+
+    const response = await fetch(url.toString(), {
+      method: 'POST',
+      headers: this.getHeaders(false),
+      body: JSON.stringify({ email }),
+    });
+
+    return this.handleResponse(response);
+  }
+
   async refreshToken(refreshToken: string) {
     const url = new URL('refresh/', this.authURL);
 

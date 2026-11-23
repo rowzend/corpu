@@ -182,7 +182,42 @@ class User(AbstractBaseUser):
         default=True,
         help_text='Designates whether this user should be treated as active.'
     )
-    
+
+    # Status pendaftaran self-register (pola SIMPEL, dokumen sso/):
+    # - pending  : menunggu persetujuan admin (user lokal nonaktif, Keycloak disabled)
+    # - approved : disetujui (user lama hasil sync juga default approved)
+    # - rejected : ditolak admin
+    registration_status = models.CharField(
+        'registration status',
+        max_length=20,
+        choices=[
+            ('pending', 'Menunggu Persetujuan'),
+            ('approved', 'Disetujui'),
+            ('rejected', 'Ditolak'),
+        ],
+        default='approved',
+        help_text='Status pendaftaran self-register (pending/approved/rejected)'
+    )
+
+    # Verifikasi email self-register (dok 23 — alur SIMPEL):
+    # - email_verified_at     : terisi = email benar-benar milik pendaftar (gerbang antrean approval)
+    # - email_verify_sent_at  : waktu kirim terakhir; token yang lebih lama dari ini otomatis batal
+    # Baris LAMA (hasil sync/impor) diisi = date_joined oleh migrasi 0013, jadi tidak
+    # pernah dianggap "belum verifikasi".
+    email_verified_at = models.DateTimeField(
+        'email verified at', null=True, blank=True,
+        help_text='Waktu email pendaftar berhasil diverifikasi (dok 23)'
+    )
+    email_verify_sent_at = models.DateTimeField(
+        'email verification sent at', null=True, blank=True,
+        help_text='Waktu email verifikasi terakhir dikirim (dok 23)'
+    )
+
+    @property
+    def sudah_verifikasi_email(self):
+        """True bila email pendaftar sudah terbukti (dok 23)."""
+        return self.email_verified_at is not None
+
     date_joined = models.DateTimeField('date joined', default=timezone.now)
     
     # Foreign key to pegawai (match Laravel)

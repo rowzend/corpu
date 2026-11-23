@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 
 // Session idle timeout - 30 minutes (configurable from server settings)
 const DEFAULT_SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
@@ -9,6 +9,26 @@ const CHECK_INTERVAL = 60 * 1000; // Check every 1 minute
 
 interface SessionCheckerProps {
   timeoutMinutes?: number;
+}
+
+/**
+ * Baca payload JWT dengan aman.
+ *
+ * Payload JWT memakai base64**url** (`-` dan `_`), sedangkan `atob()` hanya
+ * menerima base64 biasa. Kalau token mengandung salah satu karakter itu,
+ * `atob()` melempar error, penjaga idle di bawah dilewati, dan modal
+ * "Sesi Berakhir" muncul tepat setelah login.
+ */
+function bacaPayloadJwt(token: string): { iat?: number; exp?: number } | null {
+  try {
+    const bagian = token.split('.')[1];
+    if (!bagian) return null;
+    const b64 = bagian.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
 }
 
 async function logoutApi(): Promise<void> {
@@ -45,7 +65,6 @@ function clearAuthData() {
 export default function SessionChecker({
   timeoutMinutes = 30,
 }: SessionCheckerProps) {
-  const router = useRouter();
   const pathname = usePathname();
 
   const lastActivityRef = useRef<number>(Date.now());
@@ -92,17 +111,15 @@ export default function SessionChecker({
     // Guard against a stale idle timestamp left over from a previous session:
     // it must never predate the current token's issue time, otherwise the very
     // first page after login instantly triggers the "Sesi Berakhir" modal.
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const issuedAt = payload.iat ? payload.iat * 1000 : Date.now();
-      const stored = localStorage.getItem('lastActivity');
-      if (!stored || parseInt(stored) < issuedAt) {
-        localStorage.setItem('lastActivity', Date.now().toString());
-        lastActivityRef.current = Date.now();
-        console.log('🕒 Idle timestamp reset to current login time');
-      }
-    } catch {
-      // Malformed token/storage: keep going, periodic check will handle it
+    const payload = bacaPayloadJwt(token);
+    // Token tidak terbaca (bukan JWT/base64url rusak) → jangan pakai stempel
+    // idle lama, karena bisa langsung memicu modal palsu.
+    const issuedAt = payload?.iat ? payload.iat * 1000 : Date.now();
+    const stored = localStorage.getItem('lastActivity');
+    if (!stored || parseInt(stored) < issuedAt) {
+      localStorage.setItem('lastActivity', Date.now().toString());
+      lastActivityRef.current = Date.now();
+      console.log('🕒 Idle timestamp reset to current login time');
     }
 
     console.log('🔐 Session checker initialized');
@@ -196,7 +213,11 @@ export default function SessionChecker({
   }, [isLoginPage]);
 
   const handleExpiredConfirm = () => {
-    router.push('/login?session=expired');
+    // Idle timeout hanya mengakhiri sesi APLIKASI (JWT), bukan sesi Keycloak.
+    // Karena itu jangan buang user ke halaman login berpassword: minta ulang
+    // lewat /oidc/authenticate/ — bila sesi SSO masih hidup, Keycloak langsung
+    // mengembalikan user tanpa mengetik password.
+    window.location.href = '/oidc/authenticate/';
   };
 
   if (!showExpired) return null;
@@ -213,8 +234,8 @@ export default function SessionChecker({
           Sesi Berakhir
         </h2>
         <p className="text-muted-foreground mb-6">
-          Sesi Anda telah berakhir karena terlalu lama tidak beraktivitas.
-          Silakan masuk kembali untuk melanjutkan.
+          Sesi aplikasi berakhir karena tidak ada aktivitas. Klik di bawah untuk
+          melanjutkan — Anda tidak perlu mengetik password selama sesi SSO masih aktif.
         </p>
         <button
           onClick={handleExpiredConfirm}

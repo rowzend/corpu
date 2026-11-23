@@ -20,6 +20,26 @@ services:
       - SECURE_SSL_REDIRECT=False
       - USE_X_FORWARDED_HOST=True
       - USE_X_FORWARDED_PORT=True
+      # Verifikasi email pendaftaran (dok 23) — Mailpit di jaringan shared-network,
+      # tanpa port host. Produksi: isi EMAIL_HOST/… lewat .env (SMTP resmi).
+      - EMAIL_HOST=mailpit
+      - EMAIL_PORT=1025
+      - EMAIL_USE_TLS=False
+      - EMAIL_USE_SSL=False
+      - DEFAULT_FROM_EMAIL=ASN Corpu <no-reply@asncorpu.local>
+      - FRONTEND_BASE_URL=http://localhost:3000
+      # SSO OIDC (Keycloak realm pemda) — dok 22 / dok 25 F1.
+      # Hapus/komentari OIDC_RP_CLIENT_ID untuk mematikan SSO (login lokal tetap).
+      - OIDC_RP_CLIENT_ID=asncorpu-local
+      - OIDC_RP_CLIENT_SECRET=asncorpu-local-secret-12345
+      # authorization endpoint = host BROWSER (cookie session Keycloak dibagi dengan portal);
+      # token/userinfo/jwks/logout = host SERVER (host.docker.internal).
+      - OIDC_OP_AUTHORIZATION_ENDPOINT=http://localhost:18080/realms/pemda/protocol/openid-connect/auth
+      - OIDC_OP_TOKEN_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/token
+      - OIDC_OP_USER_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/userinfo
+      - OIDC_OP_JWKS_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/certs
+      - OIDC_OP_END_SESSION_ENDPOINT=http://host.docker.internal:18080/realms/pemda/protocol/openid-connect/logout
+      - PORTAL_LOGIN_URL=http://localhost:8020
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:

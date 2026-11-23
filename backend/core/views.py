@@ -7,6 +7,8 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 import json
@@ -162,6 +164,9 @@ def _fallback_error_from_session(request):
         return None, None
     code = request.session.pop('auth_error_code', None)
     message = request.session.pop('auth_error_message', None)
+    # Seragamkan: jangan pernah bocorkan "tidak ditemukan" (anti user-enumeration)
+    if code in ('USER_NOT_FOUND', 'FALLBACK_DISABLED'):
+        code, message = 'INVALID_CREDENTIALS', 'Username atau password salah'
     return code, message
 
 
@@ -172,8 +177,7 @@ def _auth_error_status(code):
     if code.startswith('ESIMPEG_'):
         # Gangguan infrastruktur / layanan, bukan kesalahan kredensial
         return 503
-    if code in ('USER_NOT_FOUND', 'FALLBACK_DISABLED'):
-        return 404
+    # USER_NOT_FOUND/FALLBACK_DISABLED sudah disanitasi di helper → 401 (identik password-salah)
     return 401
 
 
@@ -289,7 +293,8 @@ def landing_page(request):
             fb_code, fb_message = _fallback_error_from_session(request)
 
             if not user_exists and not fb_code:
-                error_msg = 'Username tidak ditemukan. Silakan hubungi administrator untuk registrasi akun.'
+                # Tidak dibedakan dari password-salah — anti user-enumeration
+                error_msg = 'Username atau password salah!'
                 fail_reason = 'Username not found'
             elif fb_code:
                 error_msg = fb_message or 'Gagal memverifikasi akun. Silakan coba lagi.'
@@ -471,12 +476,13 @@ def api_login_v4(request):
     ).exists()
     
     if not user_exists:
+        # Respons DISAMAKAN dengan password-salah (401) — anti user-enumeration
         return JsonResponse({
             'data': None,
             'success_message': None,
-            'errors': ['Username tidak ditemukan. Silakan hubungi administrator untuk registrasi akun.'],
-            'error_message': 'Username tidak ditemukan. Silakan hubungi administrator untuk registrasi akun.'
-        }, status=404)
+            'errors': ['Username atau password salah'],
+            'error_message': 'Username atau password salah'
+        }, status=401)
     
     # Authenticate user
     user = authenticate(request, username=login_username, password=login_password)
@@ -580,12 +586,13 @@ def api_jwt_login_v4(request):
         ).exists()
         
         if not user_exists:
+            # Respons DISAMAKAN dengan password-salah (401) — anti user-enumeration
             return JsonResponse({
                 'data': None,
                 'success_message': '',
-                'errors': ['Username tidak ditemukan'],
-                'error_message': 'Username tidak ditemukan'
-            }, status=404)
+                'errors': ['Username atau password salah'],
+                'error_message': 'Username atau password salah'
+            }, status=401)
         
         # Authenticate user
         user = authenticate(request, username=login_email, password=login_password)
@@ -658,6 +665,225 @@ def api_jwt_login_v4(request):
             'errors': ['Internal server error'],
             'error_message': 'Internal server error'
         }, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@rate_limit(max_requests=10, window=60, key_type='ip')  # 10 pendaftaran per menit per IP
+def api_register_v1(request):
+    """
+    Self-register (Opsi A — pola SIMPEL, dokumen sso/).
+    POST /apicorpu/auth/1.0/register/
+    Body JSON: {name, email, password, confirm_password}
+
+    Alur:
+      1. User lokal dibuat: is_active=False, registration_status='pending'
+      2. User Keycloak dibuat DISABLED + password di-set (best effort, tidak
+         memblokir) — Keycloak = penyimpan kredensial, app = urusan approval.
+      3. Aktivasi oleh admin (RegistrationActionAPIView → approve → enabled).
+
+    Anti-enumeration: endpoint ini tidak mengekspos apakah email orang lain
+    terdaftar selain pesan duplikat wajib untuk UX register (rate-limited per IP).
+    """
+    if not settings.REGISTER_ENABLED:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Pendaftaran sedang ditutup. Silakan hubungi administrator.',
+            'code': 'REGISTER_DISABLED',
+            'version': '5.0',
+        }, status=403)
+
+    try:
+        body = json.loads(request.body or '{}')
+    except (ValueError, json.JSONDecodeError):
+        return JsonResponse({
+            'status': 'error', 'message': 'Format data tidak valid.',
+            'code': 'INVALID_JSON', 'version': '5.0',
+        }, status=400)
+
+    def _err(message, code, http_status=400):
+        return JsonResponse(
+            {'status': 'error', 'message': message, 'code': code, 'version': '5.0'},
+            status=http_status,
+        )
+
+    name = str(body.get('name') or '').strip()
+    email = str(body.get('email') or '').strip().lower()
+    password = str(body.get('password') or '')
+    confirm = str(body.get('confirm_password') or body.get('confirmPassword') or '')
+
+    if not name or len(name) < 3:
+        return _err('Nama lengkap wajib diisi minimal 3 karakter.', 'INVALID_NAME')
+    if not email:
+        return _err('Email wajib diisi.', 'INVALID_EMAIL')
+    try:
+        validate_email(email)
+    except ValidationError:
+        return _err('Format email tidak valid.', 'INVALID_EMAIL')
+    if len(password) < 8:
+        return _err('Password minimal 8 karakter.', 'INVALID_PASSWORD')
+    if password != confirm:
+        return _err('Konfirmasi password tidak cocok.', 'PASSWORD_MISMATCH')
+
+    # Self-register tidak punya field username → username = email
+    # (login menerima username ATAU email, jadi keduanya sama-sama work).
+    username = email
+    if User.objects.filter(Q(username=username) | Q(email=email)).exists():
+        return _err('Email atau username sudah terdaftar.', 'ALREADY_EXISTS', 409)
+
+    user = User(
+        username=username,
+        name=name,
+        email=email,
+        is_active=False,               # belum bisa login sampai approve
+        registration_status='pending',  # menunggu persetujuan admin
+    )
+    user.set_password(password)
+    user.save()
+
+    # Akun Keycloak dibuat DISABLED di sini (tetap seperti semula).
+    # CATATAN dok 23: rencana awal memindahkannya ke langkah verifikasi email TIDAK
+    # bisa — password plaintext hanya tersedia SAAT register, sedangkan Keycloak
+    # memerlukannya untuk SSO nanti. Jadi dibuat sekarang, di-enable saat approve.
+    try:
+        from apps.accounts.keycloak_service import ensure_keycloak_user
+        kc = ensure_keycloak_user(
+            username=username, password=password,
+            full_name=name, email=email, enabled=False,
+        )
+        logger.info('register %s → keycloak: %s', username, kc)
+    except Exception:  # pragma: no cover - pengaman ekstra
+        logger.exception('register %s → push keycloak gagal (tidak memblokir)', username)
+
+    # Dok 23 (alur SIMPEL): kirim email verifikasi — wajib diklik sebelum antrean approval.
+    from apps.accounts.emails import kirim_verifikasi
+    terkirim = kirim_verifikasi(user)
+
+    logger.info(
+        'self-register baru: %s (%s) — email verifikasi %s',
+        username, name, 'terkirim' if terkirim else 'GAGAL dikirim',
+    )
+    return JsonResponse({
+        'status': 'success',
+        'message': (
+            'Pendaftaran diterima. Periksa email Anda untuk verifikasi — akun '
+            'ditinjau administrator setelah email terverifikasi.'
+        ),
+        'email_sent': terkirim,
+        'registration_status': 'unverified',
+        'version': '5.0',
+    }, status=201)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@rate_limit(max_requests=20, window=60, key_type='ip')
+def api_register_status_v1(request):
+    """
+    Cek status pendaftaran (tab Status di halaman login).
+    GET /apicorpu/auth/1.0/register-status/?email=...
+    → {found, registration_status: not_found|pending|approved|rejected}
+    """
+    email = str(request.GET.get('email') or '').strip().lower()
+    if not email:
+        return JsonResponse({
+            'status': 'error', 'message': 'Email wajib diisi.',
+            'code': 'INVALID_EMAIL', 'version': '5.0',
+        }, status=400)
+
+    user = User.objects.filter(Q(email=email) | Q(username=email)).first()
+    if user is None:
+        data = {'found': False, 'registration_status': 'not_found', 'email_verified': False}
+    else:
+        # Dok 23: keadaan 'unverified' dihitung dari kolom email_verified_at, sehingga
+        # arti registration_status (pending/approved/rejected) tidak berubah.
+        status_pendaftaran = user.registration_status
+        terverifikasi = user.email_verified_at is not None
+        if status_pendaftaran == 'pending' and not terverifikasi:
+            status_pendaftaran = 'unverified'
+        data = {
+            'found': True,
+            'registration_status': status_pendaftaran,
+            'email_verified': terverifikasi,
+            'is_active': user.is_active,
+        }
+    return JsonResponse({'status': 'success', 'data': data, 'version': '5.0'})
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def api_verify_email_v1(request):
+    """
+    Verifikasi email pendaftar (dok 23 — alur SIMPEL).
+    GET /apicorpu/auth/1.0/verify-email/?token=...
+
+    Selalu berakhir dengan redirect ke halaman frontend (tidak merender apa pun)
+    supaya token tidak tertinggal di riwayat/referrer.
+    """
+    from apps.accounts.emails import verifikasi_token, url_hasil_verifikasi
+
+    token = str(request.GET.get('token') or '').strip()
+    user, error = verifikasi_token(token)
+    if error:
+        logger.info('[register] verifikasi email gagal: %s', error)
+        return redirect(url_hasil_verifikasi(error))
+
+    if user.email_verified_at is None:
+        user.email_verified_at = timezone.now()
+        user.save(update_fields=['email_verified_at'])
+        logger.info('[register] email %s terverifikasi (user %s)', user.email, user.pk)
+
+    # Middleware keamanan sudah memasang Referrer-Policy; jangan menimpa dengan header kedua.
+    return redirect(url_hasil_verifikasi('ok'))
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@rate_limit(max_requests=20, window=60, key_type='ip')
+def api_resend_verification_v1(request):
+    """
+    Kirim ulang email verifikasi pendaftaran (dok 23).
+    POST /apicorpu/auth/1.0/resend-verification/  body: {email}
+
+    Anti-enumerasi: respons selalu sama. Maksimal 3 kirim per email dalam 1 jam.
+    """
+    from apps.accounts.emails import kirim_verifikasi
+
+    try:
+        body = json.loads(request.body or '{}')
+    except (ValueError, json.JSONDecodeError):
+        body = {}
+    email = str(body.get('email') or '').strip().lower()
+
+    jawaban = JsonResponse({
+        'status': 'success',
+        'message': (
+            'Jika email terdaftar dan belum terverifikasi, kami telah mengirim ulang '
+            'tautan verifikasi. Periksa kotak masuk (dan folder spam) Anda.'
+        ),
+        'version': '5.0',
+    })
+    if not email:
+        return jawaban
+
+    user = User.objects.filter(Q(email=email) | Q(username=email)).first()
+    if user is None or user.email_verified_at is not None or user.registration_status != 'pending':
+        return jawaban
+
+    # Throttle per email: 3 kirim / jam
+    kunci = 'resend-verify:%s' % user.pk
+    jumlah = cache.get(kunci, 0)
+    if jumlah >= 3:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Terlalu banyak permintaan kirim ulang. Coba lagi dalam 1 jam.',
+            'code': 'RATE_LIMITED',
+            'version': '5.0',
+        }, status=429)
+    cache.set(kunci, jumlah + 1, 3600)
+
+    kirim_verifikasi(user)
+    return jawaban
 
 
 @csrf_exempt
@@ -775,12 +1001,13 @@ def api_login_v5(request):
             }, status=_auth_error_status(fb_code))
 
         # Tidak ada di DB lokal dan fallback tidak memberi detail error
+        # Respons DISAMAKAN dengan password-salah — anti user-enumeration
         return JsonResponse({
             'status': 'error',
-            'message': 'Username tidak ditemukan',
-            'code': 'USER_NOT_FOUND',
+            'message': 'Username atau password salah',
+            'code': 'INVALID_CREDENTIALS',
             'version': '5.0'
-        }, status=404)
+        }, status=401)
 
 
 @csrf_exempt
@@ -1059,12 +1286,13 @@ def api_jwt_login_v5(request):
                 }, status=_auth_error_status(fb_code))
 
             # Tidak ada di DB lokal dan fallback tidak memberi detail error
+            # Respons DISAMAKAN dengan password-salah — anti user-enumeration
             return JsonResponse({
                 'status': 'error',
-                'message': 'Username tidak ditemukan',
-                'code': 'USER_NOT_FOUND',
+                'message': 'Username atau password salah',
+                'code': 'INVALID_CREDENTIALS',
                 'version': '5.0'
-            }, status=404)
+            }, status=401)
             
     except json.JSONDecodeError:
         return JsonResponse({
@@ -2230,3 +2458,40 @@ def api_notifications_read(request, notification_id):
 def api_notifications_read_all(request):
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return Response({'status': 'ok'})
+
+# ============================================================
+# SSO OIDC (Keycloak realm pemda) — dok 22 / dok 25 fase F1
+# ============================================================
+
+def sso_ditolak(request):
+    """Halaman penolakan SSO: akun Keycloak ada, tapi tidak terdaftar/aktif di asncorpu.
+
+    Dok 22 G1: SSO asncorpu TANPA JIT — approval admin adalah gerbangnya.
+    """
+    return render(request, 'sso_ditolak.html', {
+        'portal_url': getattr(settings, 'PORTAL_LOGIN_URL', '') or 'http://localhost:8020/',
+        'nama': request.GET.get('nama', ''),
+    })
+
+
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
+def oidc_frontchannel_logout(request):
+    """Endpoint front-channel logout Keycloak (iframe) — dok 18/22.
+
+    Keycloak memanggil endpoint ini di iframe saat sesi SSO diakhiri; session
+    Django asncorpu ikut dihapus supaya identitas tidak basi.
+    """
+    from django.http import HttpResponse
+    from django.views.decorators.clickjacking import xframe_options_exempt
+
+    def _proses(req):
+        try:
+            logout(req)
+        except Exception:  # pragma: no cover
+            logger.exception('[SSO] gagal menghapus session frontchannel')
+        resp = HttpResponse('', content_type='text/html; charset=utf-8')
+        resp['Cache-Control'] = 'no-store'
+        return resp
+
+    return xframe_options_exempt(_proses)(request)

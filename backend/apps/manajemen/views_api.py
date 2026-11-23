@@ -2,6 +2,8 @@
 Management API Views
 Provides REST API endpoints for user, role, and permission management
 """
+import logging
+
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -38,6 +40,8 @@ from .serializers import (
     AppSettingsSerializer
 )
 from apps.manajemen.helpers import check_permission
+
+logger = logging.getLogger(__name__)
 
 
 def require_permission(module, control, function):
@@ -187,6 +191,140 @@ class UserDeleteAPIView(generics.DestroyAPIView):
         return Response({
             'success': True,
             'message': f'User {username} deleted successfully'
+        })
+
+
+# ============================================
+# SELF-REGISTER APPROVAL (Opsi A — pola SIMPEL)
+# ============================================
+
+class RegistrationListAPIView(APIView):
+    """
+    GET /apicorpu/1.0/management/registrations/?status=pending&page=1&per_page=20
+    Daftar user hasil self-register (default: menunggu persetujuan).
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_user', 'view')]
+
+    def get(self, request):
+        reg_status = request.query_params.get('status', 'pending')
+        if reg_status not in ('pending', 'approved', 'rejected'):
+            reg_status = 'pending'
+        try:
+            page = max(1, int(request.query_params.get('page', 1)))
+        except (TypeError, ValueError):
+            page = 1
+        try:
+            per_page = min(100, max(1, int(request.query_params.get('per_page', 20))))
+        except (TypeError, ValueError):
+            per_page = 20
+
+        qs = User.objects.filter(registration_status=reg_status).order_by('-date_joined')
+        total = qs.count()
+        items = qs[(page - 1) * per_page: page * per_page]
+        data = [{
+            'id': u.id,
+            'name': u.name,
+            'username': u.username,
+            'email': u.email,
+            'registration_status': u.registration_status,
+            'is_active': u.is_active,
+            'date_joined': u.date_joined.isoformat() if u.date_joined else None,
+        } for u in items]
+        return Response({
+            'status': 'success',
+            'data': data,
+            'pagination': {
+                'page': page,
+                'per_page': per_page,
+                'total': total,
+                'total_pages': (total + per_page - 1) // per_page,
+            },
+        })
+
+
+class RegistrationActionAPIView(APIView):
+    """
+    POST /apicorpu/1.0/management/registrations/{id}/action/   body: {action: approve|reject}
+    - approve → registration_status=approved, is_active=True, group Personil,
+                user Keycloak di-ENABLE (penyimpan kredensial).
+    - reject  → registration_status=rejected (Keycloak tetap disabled dari saat register).
+    """
+    permission_classes = [IsAuthenticated, require_permission('pengaturan', 'manajemen_user', 'edit')]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({
+                'status': 'error', 'message': 'User tidak ditemukan.',
+                'code': 'NOT_FOUND',
+            }, status=404)
+
+        if user.registration_status not in ('pending', 'rejected'):
+            return Response({
+                'status': 'error',
+                'message': 'Hanya pendaftaran pending/rejected yang bisa diproses.',
+                'code': 'INVALID_STATE',
+            }, status=400)
+
+        action = str(request.data.get('action') or '').lower()
+        if action not in ('approve', 'reject'):
+            return Response({
+                'status': 'error', 'message': 'Action harus "approve" atau "reject".',
+                'code': 'INVALID_ACTION',
+            }, status=400)
+
+        # Dok 23: email WAJIB terverifikasi sebelum disetujui (tidak bisa dilompati
+        # lewat API admin). Tolak tetap boleh tanpa verifikasi.
+        if action == 'approve' and user.email_verified_at is None:
+            return Response({
+                'status': 'error',
+                'message': (
+                    'Email pendaftar belum diverifikasi. Minta pendaftar mengklik tautan '
+                    'verifikasi yang dikirim ke emailnya, lalu proses lagi.'
+                ),
+                'code': 'EMAIL_NOT_VERIFIED',
+            }, status=400)
+
+        kc_result = 'skipped'
+        if action == 'approve':
+            user.registration_status = 'approved'
+            user.is_active = True
+            user.save(update_fields=['registration_status', 'is_active', 'updated_at'])
+            # Akses dasar member — pola backends.py untuk user baru
+            group, _ = Group.objects.get_or_create(name='Personil')
+            user.groups.add(group)
+            try:
+                from apps.accounts.keycloak_service import set_keycloak_enabled
+                kc_result = set_keycloak_enabled(user.username, True)
+            except Exception:
+                logger.exception('approve registrasi %s: push enable ke Keycloak gagal', user.username)
+                kc_result = 'error:exception'
+            logger.info('registrasi %s DISETUJUI (keycloak=%s)', user.username, kc_result)
+            return Response({
+                'status': 'success',
+                'message': 'Pendaftaran disetujui. User dapat login sekarang.',
+                'data': {
+                    'id': user.id,
+                    'registration_status': 'approved',
+                    'is_active': True,
+                    'keycloak': kc_result,
+                },
+            })
+
+        # reject — user lokal nonaktif; user Keycloak sudah disabled sejak register
+        user.registration_status = 'rejected'
+        user.is_active = False
+        user.save(update_fields=['registration_status', 'is_active', 'updated_at'])
+        logger.info('registrasi %s DITOLAK', user.username)
+        return Response({
+            'status': 'success',
+            'message': 'Pendaftaran ditolak.',
+            'data': {
+                'id': user.id,
+                'registration_status': 'rejected',
+                'is_active': False,
+            },
         })
 
 

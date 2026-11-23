@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login SSO Ditolak — ASN Corpu</title>
+    <style>
+        :root { color-scheme: dark light; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #0b1020; color: #e6e9f2; padding: 24px;
+        }
+        .card {
+            width: 100%; max-width: 460px; background: #151b30; border: 1px solid #253055;
+            border-radius: 18px; padding: 28px 26px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,.45);
+        }
+        .icon {
+            width: 60px; height: 60px; margin: 0 auto 14px; border-radius: 50%;
+            background: rgba(245,158,11,.14); display: flex; align-items: center;
+            justify-content: center; font-size: 28px;
+        }
+        h1 { font-size: 19px; margin: 0 0 8px; }
+        p { font-size: 13.5px; line-height: 1.65; color: #aab3cc; margin: 0 0 12px; text-align: left; }
+        ul { text-align: left; color: #aab3cc; font-size: 13px; line-height: 1.7; padding-left: 20px; margin: 0 0 16px; }
+        .tombol { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        a.btn {
+            flex: 1 1 140px; text-decoration: none; text-align: center; padding: 11px 16px;
+            border-radius: 11px; font-size: 13.5px; font-weight: 600;
+        }
+        a.utama { background: #0f766e; color: #fff; }
+        a.utama:hover { background: #0d9488; }
+        a.cadangan { border: 1px solid #2f3c66; color: #cbd5e1; }
+        a.cadangan:hover { background: #1c2440; }
+        .kecil { font-size: 11.5px; color: #6b7694; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">🔒</div>
+        <h1>Login SSO Ditolak</h1>
+        <p>
+            Akun SSO Anda <strong>belum terdaftar atau belum aktif</strong> di <strong>ASN Corpu</strong>.
+            Aplikasi ini tidak membuat akun otomatis — pendaftaran harus lewat persetujuan admin.
+        </p>
+        <ul>
+            <li>Peserta umum: daftar di aplikasi ASN Corpu lalu tunggu persetujuan.</li>
+            <li>Pegawai Pemda Pesisir Selatan: daftar lewat <strong>Portal 8020</strong> (jalur pegawai).</li>
+            <li>Sudah daftar tapi masih ditolak? Hubungi admin BKPSDM untuk aktivasi.</li>
+        </ul>
+        <div class="tombol">
+            <a class="btn utama" href="/">Kembali ke ASN Corpu</a>
+            <a class="btn cadangan" href="{{ portal_url }}">Buka Portal</a>
+        </div>
+        <div class="kecil">ASN Corpu — BKPSDM Kab. Pesisir Selatan</div>
+    </div>
+</body>
+</html>

@@ -6,11 +6,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { authService } from '@/lib/services/auth.service';
 import { getPublicSettings, getBrands, type BrandItem } from '@/lib/api/profilePublic';
 import { api } from '@/lib/api';
-import { showInfo } from '@/lib/sweetalert';
 import SudoPrompt from '@/components/SudoPrompt';
 import RoleSelectorModal from '@/components/RoleSelectorModal';
 
 type TabType = 'login' | 'register' | 'status';
+
+/**
+ * Tujuan kembali setelah login: hanya path internal milik halaman publik.
+ * Rute /member dan /admin sengaja tidak diikutkan — keduanya butuh cookie
+ * role_type yang ditentukan dari role user, bukan dari parameter URL.
+ */
+function tujuanKembali(raw: string | null): string {
+    const nilai = (raw || '').trim();
+    if (!nilai.startsWith('/') || nilai.startsWith('//')) return '';
+    if (nilai.startsWith('/member') || nilai.startsWith('/admin')) return '';
+    return nilai;
+}
 
 export default function LoginPage() {
     const router = useRouter();
@@ -41,6 +52,18 @@ export default function LoginPage() {
     const [showRegConfirm, setShowRegConfirm] = useState(false);
     const [registerError, setRegisterError] = useState('');
     const [registerSuccess, setRegisterSuccess] = useState(false);
+    const [isRegistering, setIsRegistering] = useState(false);
+    // Dok 23 (alur SIMPEL): daftar 2 langkah + verifikasi email
+    const [registerStep, setRegisterStep] = useState<1 | 2>(1);
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendMessage, setResendMessage] = useState('');
+    const [resendError, setResendError] = useState('');
+
+    // Cek status pendaftaran (tab Status)
+    const [statusEmail, setStatusEmail] = useState('');
+    const [statusLoading, setStatusLoading] = useState(false);
+    const [statusError, setStatusError] = useState('');
+    const [statusResult, setStatusResult] = useState<{ found: boolean; registration_status: string; email_verified?: boolean } | null>(null);
 
     const [isVisible, setIsVisible] = useState(false);
     const [showSudoPrompt, setShowSudoPrompt] = useState(false);
@@ -110,6 +133,11 @@ export default function LoginPage() {
             setActiveTab(tab);
             setError('');
             setRegisterError('');
+            setStatusError('');
+            setStatusResult(null);
+            setRegisterStep(1);
+            setResendMessage('');
+            setResendError('');
             setTimeout(() => setIsAnimating(false), 50);
         }, 300);
     };
@@ -130,6 +158,11 @@ export default function LoginPage() {
         setError(''); setIsLoading(true);
         try {
             await authService.login(loginData);
+            // Kembali ke halaman publik yang tadi dibuka (mis. /courses setelah
+            // menekan "Lihat tanpa login" dari portal). Rute member/admin tetap
+            // memakai alur role di bawah karena butuh cookie role_type.
+            const kembali = tujuanKembali(searchParams.get('redirect'));
+            if (kembali) { window.location.href = kembali; return; }
             const user = authService.getCurrentUser();
             try {
                 const permRes = await api.get<{ success: boolean; data: { modules: string[]; user: { groups: Array<{ id: number; name: string; redirect_url?: string }> } } }>('/management/permissions/user/');
@@ -145,13 +178,77 @@ export default function LoginPage() {
         finally { setIsLoading(false); }
     };
 
+    const handleResendVerification = async (email?: string) => {
+        const target = (email || registerData.email).trim();
+        setResendError('');
+        setResendMessage('');
+        if (!target) { setResendError('Email wajib diisi.'); return; }
+        setResendLoading(true);
+        try {
+            await api.resendVerification(target);
+            setResendMessage('Tautan verifikasi sudah dikirim ulang. Periksa kotak masuk (dan folder spam) Anda.');
+        } catch (err) {
+            setResendError(err instanceof Error ? err.message : 'Gagal mengirim ulang email verifikasi.');
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
     const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        showInfo('Fitur pendaftaran akan segera hadir!', 'Coming Soon');
+        setRegisterError('');
+        // Langkah 1 (dok 23): nama + email dulu — belum mengirim apa pun ke server.
+        if (registerStep === 1) {
+            if (!registerData.name.trim() || !registerData.email.trim()) {
+                setRegisterError('Nama lengkap dan email wajib diisi.');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(registerData.email.trim())) {
+                setRegisterError('Format email tidak valid.');
+                return;
+            }
+            setRegisterStep(2);
+            return;
+        }
+        if (!isRegisterValid) {
+            setRegisterError('Lengkapi semua field dan pastikan password cocok.');
+            return;
+        }
+        setIsRegistering(true);
+        try {
+            await api.register({
+                name: registerData.name.trim(),
+                email: registerData.email.trim(),
+                password: registerData.password,
+                confirm_password: registerData.confirmPassword,
+            });
+            setRegisterSuccess(true);
+        } catch (err) {
+            setRegisterError(err instanceof Error ? err.message : 'Pendaftaran gagal. Silakan coba lagi.');
+        } finally {
+            setIsRegistering(false);
+        }
+    };
+
+    const handleCheckStatus = async () => {
+        const email = statusEmail.trim();
+        if (!email) { setStatusError('Email wajib diisi.'); return; }
+        setStatusError('');
+        setStatusResult(null);
+        setStatusLoading(true);
+        try {
+            const res = await api.registerStatus(email) as { data?: { found: boolean; registration_status: string } };
+            setStatusResult(res?.data || null);
+        } catch (err) {
+            setStatusError(err instanceof Error ? err.message : 'Gagal mengecek status. Silakan coba lagi.');
+        } finally {
+            setStatusLoading(false);
+        }
     };
 
     const isLoginValid = loginData.username.trim() && loginData.password.trim();
-    const isRegisterValid = registerData.name.trim() && registerData.email.trim() && registerData.password && registerData.confirmPassword && registerData.password === registerData.confirmPassword;
+    const isStep1Valid = Boolean(registerData.name.trim() && registerData.email.trim());
+    const isRegisterValid = Boolean(registerData.name.trim() && registerData.email.trim() && registerData.password && registerData.password.length >= 8 && registerData.confirmPassword && registerData.password === registerData.confirmPassword);
 
     const brandImageUrl = (path: string | null): string | null => {
         if (!path) return null;
@@ -384,6 +481,27 @@ export default function LoginPage() {
                                             </span>
                                             {isLoginValid && !isLoading && !isButtonRunning && <span className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>}
                                         </button>
+
+                                        {/* SSO OIDC — dok 22 / dok 25 fase F1 */}
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <span className="flex-1 h-px bg-border" />
+                                            <span className="text-[10px] text-muted-foreground">atau</span>
+                                            <span className="flex-1 h-px bg-border" />
+                                        </div>
+                                        <a href="/oidc/authenticate/"
+                                            onClick={() => {
+                                                // Simpan tujuan publik; dibaca lagi di /auth/sso
+                                                // setelah kode SSO ditukar jadi token.
+                                                const n = tujuanKembali(searchParams.get('redirect'));
+                                                try {
+                                                    if (n) sessionStorage.setItem('sso_next', n);
+                                                    else sessionStorage.removeItem('sso_next');
+                                                } catch { /* storage diblokir: abaikan */ }
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 font-semibold py-2.5 rounded-xl border border-input text-sm hover:bg-muted/50 transition-colors">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 11H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                                            Masuk dengan SSO
+                                        </a>
                                     </form>
                                 </div>
                             </div>
@@ -402,9 +520,17 @@ export default function LoginPage() {
                                             <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
                                                 <svg className="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                             </div>
-                                            <h3 className="text-base font-semibold text-foreground mb-1">Pendaftaran Berhasil!</h3>
-                                            <p className="text-xs text-muted-foreground mb-4">Akun Anda sedang diverifikasi. Cek email untuk status pendaftaran.</p>
-                                            <button onClick={() => { setRegisterSuccess(false); setRegisterData({ name: '', email: '', password: '', confirmPassword: '' }); handleTabSwitch('login'); }}
+                                            <h3 className="text-base font-semibold text-foreground mb-1">Periksa Email Anda</h3>
+                                            <p className="text-xs text-muted-foreground mb-3">
+                                                Pendaftaran diterima. Kami mengirim tautan verifikasi ke <b>{registerData.email}</b>. Buka email tersebut lalu klik <b>Verifikasi Email</b> — setelah itu akun Anda masuk antrean persetujuan administrator.
+                                            </p>
+                                            {resendMessage && <p className="text-xs text-green-600 mb-2">{resendMessage}</p>}
+                                            {resendError && <p className="text-xs text-destructive mb-2">{resendError}</p>}
+                                            <button type="button" onClick={() => handleResendVerification()} disabled={resendLoading}
+                                                className="w-full px-4 py-2 mb-2 border border-input rounded-xl font-semibold text-xs hover:bg-muted/50 transition-colors disabled:opacity-60">
+                                                {resendLoading ? 'Mengirim...' : 'Kirim ulang email verifikasi'}
+                                            </button>
+                                            <button onClick={() => { setRegisterSuccess(false); setRegisterStep(1); setResendMessage(''); setResendError(''); setRegisterData({ name: '', email: '', password: '', confirmPassword: '' }); handleTabSwitch('login'); }}
                                                 className="px-5 py-2 bg-primary text-primary-foreground rounded-xl font-semibold text-xs hover:bg-primary/90 transition-colors">
                                                 Kembali ke Masuk
                                             </button>
@@ -419,6 +545,13 @@ export default function LoginPage() {
                                                     </div>
                                                 </div>
                                             )}
+                                            {/* Indikator langkah (dok 23 — alur SIMPEL) */}
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[11px] font-semibold ${registerStep === 1 ? 'text-primary' : 'text-muted-foreground'}`}>1. Data Diri</span>
+                                                <span className="flex-1 h-px bg-border" />
+                                                <span className={`text-[11px] font-semibold ${registerStep === 2 ? 'text-primary' : 'text-muted-foreground'}`}>2. Password</span>
+                                            </div>
+                                            {registerStep === 1 && (<>
                                             <div className="group">
                                                 <label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-1">
                                                     <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
@@ -436,7 +569,10 @@ export default function LoginPage() {
                                                 <input type="email" value={registerData.email} onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
                                                     className="w-full px-3.5 py-2.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-background text-foreground text-sm outline-none placeholder:text-muted-foreground"
                                                     placeholder="Email aktif Anda" required />
+                                                <p className="text-[10px] text-muted-foreground mt-1">Tautan verifikasi akan dikirim ke email ini.</p>
                                             </div>
+                                            </>)}
+                                            {registerStep === 2 && (<>
                                             <div className="group">
                                                 <label className="flex items-center gap-1.5 text-xs font-medium text-foreground mb-1">
                                                     <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -465,9 +601,23 @@ export default function LoginPage() {
                                                     </button>
                                                 </div>
                                                 {registerData.confirmPassword && registerData.password !== registerData.confirmPassword && <p className="text-xs text-destructive mt-1">Password tidak cocok</p>}
+                                                {registerData.password && registerData.password.length < 8 && <p className="text-xs text-destructive mt-1">Password minimal 8 karakter</p>}
                                             </div>
-                                            <button type="submit" className={`group relative w-full font-semibold py-2.5 rounded-xl transition-all duration-300 shadow-lg overflow-hidden text-sm mt-1 ${isRegisterValid ? 'bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-xl hover:shadow-primary/20 cursor-pointer active:scale-[0.98]' : 'bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60'}`}>
-                                                <span className="relative z-10 flex items-center justify-center">Daftar Sekarang<svg className="w-4 h-4 ml-1.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></span>
+                                            </>)}
+                                            {registerStep === 2 && (
+                                                <button type="button" onClick={() => { setRegisterError(''); setRegisterStep(1); }}
+                                                    className="w-full font-semibold py-2 rounded-xl border border-input text-xs hover:bg-muted/50 transition-colors">
+                                                    Kembali ke data diri
+                                                </button>
+                                            )}
+                                            <button type="submit" disabled={isRegistering || (registerStep === 1 ? !isStep1Valid : !isRegisterValid)} className={`group relative w-full font-semibold py-2.5 rounded-xl transition-all duration-300 shadow-lg overflow-hidden text-sm mt-1 ${(registerStep === 1 ? isStep1Valid : isRegisterValid) && !isRegistering ? 'bg-primary hover:bg-primary/90 text-primary-foreground hover:shadow-xl hover:shadow-primary/20 cursor-pointer active:scale-[0.98]' : 'bg-muted/50 text-muted-foreground cursor-not-allowed opacity-60'}`}>
+                                                <span className="relative z-10 flex items-center justify-center">
+                                                    {isRegistering ? (
+                                                        <><svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Mendaftar...</>
+                                                    ) : (
+                                                        <>{registerStep === 1 ? 'Lanjutkan' : 'Daftar Sekarang'}<svg className="w-4 h-4 ml-1.5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></>
+                                                    )}
+                                                </span>
                                                 {isRegisterValid && <span className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary to-primary/90 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>}
                                             </button>
                                             <p className="text-[10px] text-muted-foreground text-center mt-1">Dengan mendaftar, Anda menyetujui syarat & ketentuan yang berlaku.</p>
@@ -488,16 +638,58 @@ export default function LoginPage() {
                                         <h3 className="text-sm font-semibold text-foreground mb-0.5">Cek Status</h3>
                                         <p className="text-[11px] text-muted-foreground mb-4">Masukkan email untuk melihat status pendaftaran</p>
                                         <div className="group mb-3">
-                                            <input type="email" className="w-full px-3.5 py-2.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-background text-foreground text-sm outline-none placeholder:text-muted-foreground"
-                                                placeholder="Masukkan email Anda" />
+                                            <input type="email" value={statusEmail} onChange={(e) => { setStatusEmail(e.target.value); setStatusError(''); }}
+                                                className="w-full px-3.5 py-2.5 border border-input rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 bg-background text-foreground text-sm outline-none placeholder:text-muted-foreground"
+                                                placeholder="Masukkan email Anda" disabled={statusLoading} />
                                         </div>
-                                        <button type="button" onClick={() => showInfo('Fitur cek status pendaftaran akan segera hadir!', 'Coming Soon')} className="w-full font-semibold py-2.5 rounded-xl bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground transition-all cursor-pointer text-sm mb-2">
+                                        {statusError && (
+                                            <div className="mb-3 bg-destructive/10 border border-destructive/20 text-destructive px-3 py-2 rounded-lg animate-shake text-xs text-left">
+                                                {statusError}
+                                            </div>
+                                        )}
+                                        {statusResult && (
+                                            <div className={`mb-3 px-3 py-2.5 rounded-xl text-xs text-left border ${
+                                                !statusResult.found ? 'bg-muted/50 border-border text-muted-foreground' :
+                                                statusResult.registration_status === 'approved' ? 'bg-green-500/10 border-green-500/20 text-green-600' :
+                                                statusResult.registration_status === 'rejected' ? 'bg-destructive/10 border-destructive/20 text-destructive' :
+                                                'bg-amber-500/10 border-amber-500/20 text-amber-600'
+                                            }`}>
+                                                <div className="flex items-center">
+                                                    {!statusResult.found ? (
+                                                        <>Email belum terdaftar. Silakan mendaftar terlebih dahulu.</>
+                                                    ) : statusResult.registration_status === 'unverified' ? (
+                                                        <><span className="mr-1.5">📧</span>Email belum diverifikasi — buka tautan verifikasi di kotak masuk Anda.</>
+                                                    ) : statusResult.registration_status === 'approved' ? (
+                                                        <><span className="mr-1.5">✅</span>Pendaftaran disetujui — akun aktif, silakan masuk.</>
+                                                    ) : statusResult.registration_status === 'rejected' ? (
+                                                        <><span className="mr-1.5">❌</span>Pendaftaran ditolak. Hubungi administrator untuk informasi.</>
+                                                    ) : (
+                                                        <><span className="mr-1.5">⏳</span>Menunggu persetujuan administrator.</>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {statusResult && statusResult.registration_status === 'unverified' && (
+                                            <>
+                                                {resendMessage && <p className="text-xs text-green-600 mb-2">{resendMessage}</p>}
+                                                {resendError && <p className="text-xs text-destructive mb-2">{resendError}</p>}
+                                                <button type="button" onClick={() => handleResendVerification(statusEmail)} disabled={resendLoading}
+                                                    className="w-full font-semibold py-2 rounded-xl border border-input text-xs hover:bg-muted/50 transition-colors mb-2 disabled:opacity-60">
+                                                    {resendLoading ? 'Mengirim...' : 'Kirim ulang email verifikasi'}
+                                                </button>
+                                            </>
+                                        )}
+                                        <button type="button" onClick={handleCheckStatus} disabled={statusLoading}
+                                            className="w-full font-semibold py-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all cursor-pointer text-sm mb-2 disabled:opacity-60 disabled:cursor-not-allowed">
                                             <span className="flex items-center justify-center">
-                                                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                                Cek Status
+                                                {statusLoading ? (
+                                                    <><svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Mengecek...</>
+                                                ) : (
+                                                    <><svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>Cek Status</>
+                                                )}
                                             </span>
                                         </button>
-                                        <p className="text-[10px] text-muted-foreground">Fitur ini akan segera tersedia.</p>
+                                        <p className="text-[10px] text-muted-foreground">Email yang digunakan saat mendaftar.</p>
                                     </div>
                                 </div>
                             </div>

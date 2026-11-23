@@ -108,6 +108,76 @@ ESIMPEG_FALLBACK_ENABLED = config('ESIMPEG_FALLBACK_ENABLED', default=True, cast
 ESIMPEG_API_URL = config('ESIMPEG_API_URL', default='http://localhost:8005')
 ESIMPEG_API_TIMEOUT = config('ESIMPEG_API_TIMEOUT', default=10, cast=int)
 
+# Keycloak (SSO realm pemda) — untuk self-register Opsi A:
+# saat register user dibuat DISABLED di Keycloak, di-enable lagi saat admin approve.
+# KEYCLOAK_ADMIN_URL kosong = push ke Keycloak MATI (pendaftaran lokal tetap jalan).
+KEYCLOAK_ADMIN_URL = config('KEYCLOAK_ADMIN_URL', default='')
+KEYCLOAK_ADMIN_USERNAME = config('KEYCLOAK_ADMIN_USERNAME', default='admin')
+KEYCLOAK_ADMIN_PASSWORD = config('KEYCLOAK_ADMIN_PASSWORD', default='admin')
+KEYCLOAK_REALM = config('KEYCLOAK_REALM', default='pemda')
+
+# Saklar fitur self-register (False = form ditutup, endpoint balas REGISTER_DISABLED)
+REGISTER_ENABLED = config('REGISTER_ENABLED', default=True, cast=bool)
+
+# --- Verifikasi email pendaftaran (dok 23 — alur SIMPEL) ---------------------
+# Tanpa EMAIL_HOST → backend console (email tercetak di log container, aman untuk
+# pengembangan). Di lokal pakai Mailpit (container `mailpit`, jaringan shared-network).
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=1025, cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)
+DEFAULT_FROM_EMAIL = config(
+    'DEFAULT_FROM_EMAIL', default='ASN Corpu <no-reply@asncorpu.local>'
+)
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default=(
+        'django.core.mail.backends.smtp.EmailBackend'
+        if EMAIL_HOST else 'django.core.mail.backends.console.EmailBackend'
+    ),
+)
+
+# Basis URL frontend untuk redirect link verifikasi email (bukan request.Host,
+# supaya tidak bisa dibelokkan lewat Host header).
+FRONTEND_BASE_URL = config('FRONTEND_BASE_URL', default='http://localhost:3000').rstrip('/')
+# Masa berlaku token verifikasi email (detik) — default 3 hari.
+EMAIL_VERIFY_TOKEN_TTL = config('EMAIL_VERIFY_TOKEN_TTL', default=3 * 24 * 3600, cast=int)
+
+# --- SSO OIDC (Keycloak realm pemda) — dok 22 / dok 25 fase F1 --------------
+# AKTIF hanya bila OIDC_RP_CLIENT_ID diisi. Kosongkan env OIDC_* untuk kembali
+# ke login lokal saja (saklar darurat, tanpa mengubah kode).
+#
+# TANPA JIT (dok 22 G1): user HARUS sudah terdaftar di tabel asncorpu & aktif.
+# Pencarian user memakai `username` ATAU `email` (dok 25 C1) karena:
+#   - pegawai hasil push portal  → username = NIP
+#   - pendaftar umum / asncorpu  → username = email
+OIDC_ENABLED = bool(config('OIDC_RP_CLIENT_ID', default=''))
+if OIDC_ENABLED:
+    AUTHENTICATION_BACKENDS = [
+        'apps.accounts.backends_oidc.AsncorpuOIDCAuthenticationBackend',
+    ] + list(AUTHENTICATION_BACKENDS)
+
+    OIDC_RP_CLIENT_ID = config('OIDC_RP_CLIENT_ID')
+    OIDC_RP_CLIENT_SECRET = config('OIDC_RP_CLIENT_SECRET', default='')
+    OIDC_OP_AUTHORIZATION_ENDPOINT = config('OIDC_OP_AUTHORIZATION_ENDPOINT')
+    OIDC_OP_TOKEN_ENDPOINT = config('OIDC_OP_TOKEN_ENDPOINT')
+    OIDC_OP_USER_ENDPOINT = config('OIDC_OP_USER_ENDPOINT')
+    OIDC_OP_JWKS_ENDPOINT = config('OIDC_OP_JWKS_ENDPOINT')
+    OIDC_OP_END_SESSION_ENDPOINT = config('OIDC_OP_END_SESSION_ENDPOINT', default='')
+    OIDC_USERNAME_FIELD = 'preferred_username'
+    OIDC_RP_SIGN_ALGO = 'RS256'
+    OIDC_STORE_ID_TOKEN = True
+    OIDC_USE_PKCE = True
+    OIDC_RP_SCOPES = 'openid email profile'
+    OIDC_CREATE_USER = False            # tanpa JIT — approval = gerbang
+    # Callback kustom: sesudah Django login, sesi diserahkan ke frontend Next.js
+    # (kode sekali pakai → JWT). Lihat apps/accounts/sso_views.py.
+    OIDC_CALLBACK_CLASS = 'apps.accounts.sso_views.SsoCallbackView'
+    LOGIN_REDIRECT_URL_FAILURE = '/sso-ditolak/'
+
 # Password Hashers - Universal format (Argon2 recommended by OWASP)
 # Priority order: Django akan menggunakan hasher pertama untuk NEW passwords
 # Hasher lainnya digunakan untuk VERIFY existing passwords
@@ -125,6 +195,12 @@ PASSWORD_HASHERS = [
 LOGIN_URL = '/'  # Landing page adalah halaman login
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = 'http://localhost:3000/'  # Redirect ke Next.js landing page setelah logout (via Nginx)
+
+# SSO OIDC (dok 25 F1): sesudah login lewat SSO, mendarat di dashboard FRONTEND
+# (Next.js `/member/dashboard`), bukan `/dashboard/` milik Django.
+# Harus di sini — di bawah LOGIN_REDIRECT_URL global, supaya tidak tertimpa.
+if OIDC_ENABLED:
+    LOGIN_REDIRECT_URL = '/member/dashboard'
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # CORS - Must be at the top

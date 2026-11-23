@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from django.views.generic import RedirectView
+
+from apps.accounts import sso_views as accounts_sso
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -127,6 +129,13 @@ urlpatterns = [
     path('apicorpu/auth/1.0/revoke-all-tokens', views.api_revoke_all_tokens_v5, name='api_revoke_all_tokens_v5'),
     path('apicorpu/auth/1.0/revoke-by-username', views.api_revoke_by_username_v5, name='api_revoke_by_username_v5'),
     
+    # Self-register (Opsi A — pola SIMPEL) + cek status pendaftaran
+    path('apicorpu/auth/1.0/register/', views.api_register_v1, name='api_corpu_register'),
+    path('apicorpu/auth/1.0/register-status/', views.api_register_status_v1, name='api_corpu_register_status'),
+    # Verifikasi email pendaftaran (dok 23 — alur SIMPEL)
+    path('apicorpu/auth/1.0/verify-email/', views.api_verify_email_v1, name='api_corpu_verify_email'),
+    path('apicorpu/auth/1.0/resend-verification/', views.api_resend_verification_v1, name='api_corpu_resend_verification'),
+    
     # Session status (for frontend session monitoring)
     path('session/status', views.session_status, name='session_status'),
     
@@ -162,10 +171,27 @@ urlpatterns = [
     path('apicorpu/5.0/webhooks/unregister/<str:app_name>', views.webhook_unregister_v5, name='webhook_unregister_v5_legacy'),
     path('apicorpu/5.0/webhooks/sync-password-manual', views.webhook_sync_password_manual_v5, name='webhook_sync_password_manual_v5_legacy'),
     
+    # SSO OIDC (Keycloak realm pemda) — dok 22 / dok 25 fase F1.
+    # Didaftarkan HANYA bila OIDC_ENABLED agar saklar darurat tetap bekerja
+    # (kosongkan OIDC_RP_CLIENT_ID → rute OIDC hilang, login lokal tetap).
+    path('sso-ditolak/', views.sso_ditolak, name='sso_ditolak'),
+    path('oidc/frontchannel-logout/', views.oidc_frontchannel_logout, name='oidc_frontchannel_logout'),
+    # Tukar kode handoff SSO → JWT (dipakai halaman /auth/sso di frontend)
+    path('apicorpu/auth/1.0/sso-exchange/', accounts_sso.sso_exchange, name='sso_exchange'),
+
     # Redirect all other requests to Next.js frontend
     # This is handled by nginx, but adding fallback for direct Django access
     path('', RedirectView.as_view(url='http://localhost:3000/', permanent=False), name='redirect_to_frontend'),
 ]
+
+# SSO OIDC — rute /oidc/authenticate/, /oidc/callback/, /oidc/logout/
+if getattr(settings, 'OIDC_ENABLED', False):
+    urlpatterns += [
+        # Callback diganti lewat OIDC_CALLBACK_CLASS di settings (lihat
+        # apps/accounts/sso_views.py): sesudah Django login, browser diarahkan
+        # ke /auth/sso pada frontend dengan kode handoff sekali pakai.
+        path('oidc/', include('mozilla_django_oidc.urls')),
+    ]
 
 # MinIO proxy - serve files from MinIO via Django proxy view
 from apps.manajemen.proxy_views import minio_proxy

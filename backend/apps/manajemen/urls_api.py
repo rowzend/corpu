@@ -13,6 +13,10 @@ urlpatterns = [
     path('users/<int:pk>/', views_api.UserDetailAPIView.as_view(), name='user_detail'),
     path('users/<int:pk>/update/', views_api.UserUpdateAPIView.as_view(), name='user_update'),
     path('users/<int:pk>/delete/', views_api.UserDeleteAPIView.as_view(), name='user_delete'),
+
+    # Self-register approval (Opsi A — pola SIMPEL)
+    path('registrations/', views_api.RegistrationListAPIView.as_view(), name='registration_list'),
+    path('registrations/<int:pk>/action/', views_api.RegistrationActionAPIView.as_view(), name='registration_action'),
     
     # Role Management
     path('roles/', views_api.RoleListAPIView.as_view(), name='role_list'),

@@ -263,7 +263,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                             <Button
                                                 variant="outline"
                                                 className="w-full border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
-                                                onClick={() => router.push('/register')}
+                                                onClick={() => router.push('/login?tab=register')}
                                             >
                                                 {ta('no_account')}
                                             </Button>
@@ -492,7 +492,7 @@ export default function CourseDetailPage({ basePath }: { basePath?: string }) {
                                     <Button
                                         variant="outline"
                                         className="rounded-xl px-8"
-                                        onClick={() => router.push('/register')}
+                                        onClick={() => router.push('/login?tab=register')}
                                     >
                                         {ta('register')}
                                     </Button>
