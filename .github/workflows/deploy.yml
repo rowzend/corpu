@@ -17,8 +17,11 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/rowzend/corpu/asncorpu-backend
-  FRONTEND_IMAGE: ghcr.io/rowzend/corpu/asncorpu-frontend
+  # Namespace milik repo ini (GITHUB_TOKEN hanya bisa push ke paket sendiri).
+  # Versi Sep 2026 terbukti sukses; namespace rowzend/corpu hanya bisa di-push
+  # oleh CI repo rowzend/corpu (paket milik akun rowzend).
+  BACKEND_IMAGE: ghcr.io/profnipu/asncorpu-backend
+  FRONTEND_IMAGE: ghcr.io/profnipu/asncorpu-frontend
 
 jobs:
   build-backend:
