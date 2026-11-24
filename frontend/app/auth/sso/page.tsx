@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { authService } from '@/lib/services/auth.service';
+import { getPublicSettings } from '@/lib/api/profilePublic';
 import SudoPrompt from '@/components/SudoPrompt';
 import RoleSelectorModal from '@/components/RoleSelectorModal';
 
@@ -49,6 +50,16 @@ export default function SsoLandingPage() {
   const [userGroups, setUserGroups] = useState<GroupInfo[]>([]);
   const [showSudoPrompt, setShowSudoPrompt] = useState(false);
   const [showRoleSelector, setShowRoleSelector] = useState(false);
+  // Branding (logo + nama aplikasi) supaya halaman ini tidak tampil kosong.
+  const [settings, setSettings] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let aktif = true;
+    getPublicSettings()
+      .then((s) => { if (aktif) setSettings(s); })
+      .catch(() => { /* branding opsional — jangan gagalkan login */ });
+    return () => { aktif = false; };
+  }, []);
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('code');
@@ -84,6 +95,12 @@ export default function SsoLandingPage() {
         if (data.refresh_token) {
           document.cookie = `refresh_token=${data.refresh_token}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
         }
+
+        // Kode handoff sudah ditukar: hilangkan ?code=… dari address bar supaya
+        // URL tidak menyisakan kode sekali-pakai di riwayat/Referer.
+        try {
+          window.history.replaceState(null, '', '/auth/sso');
+        } catch { /* abaikan */ }
 
         // Kembali ke halaman publik yang tadi dibuka (mis. /courses dari tombol
         // "Lihat tanpa login" di portal), kalau ada. Rute /member & /admin tetap
@@ -172,38 +189,91 @@ export default function SsoLandingPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
-      {!showSudoPrompt && !showRoleSelector && (
-      <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
-        <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-900/40 flex items-center justify-center">
-          {gagal ? (
-            <span className="text-2xl text-red-600">!</span>
-          ) : (
-            <span className="block h-6 w-6 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
-          )}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/70 flex flex-col items-center px-4 py-8">
+      {/* Dekorasi latar — sama dengan panel branding halaman /login. */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 w-[500px] h-[500px] rounded-full bg-white/5 blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full bg-white/5 blur-2xl" />
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.35) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
+      </div>
+
+      {/* Branding di atas — tetap terlihat walau modal pilihan mode akses muncul. */}
+      <div className="relative z-10 flex flex-col items-center text-center pt-2">
+        {/* Logo + nama aplikasi dari pengaturan publik (best-effort). */}
+        <div className="mb-5 inline-flex">
+          <div className="relative">
+            <div className="absolute inset-0 bg-white/20 rounded-3xl blur-2xl" />
+            {settings.logo ? (
+              <img src={settings.logo} alt="Logo" className="h-16 w-auto relative z-10 drop-shadow-2xl" />
+            ) : (
+              <div className="relative z-10 w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30 shadow-xl">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+            )}
+          </div>
         </div>
-        <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
-          Login SSO PEMDA
+
+        <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-lg">
+          {settings.app_name || 'ASN CORPU'}
         </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{pesan || gagal}</p>
-        {gagal && (
-          <div className="mt-6 flex flex-col gap-2">
-            <a
-              href="/login"
-              className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5"
-            >
-              Kembali ke halaman masuk
-            </a>
-            <a
-              href="/login?sso=gagal"
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium py-2.5"
-            >
-              Masuk dengan username &amp; password
-            </a>
+        <p className="mt-1 text-sm text-white/80">
+          Masuk dengan akun Pemerintahan Digital Pesisir Selatan (Pemdi)
+        </p>
+      </div>
+
+      <div className="relative z-10 flex flex-1 w-full max-w-md items-center justify-center py-6">
+        {!showSudoPrompt && !showRoleSelector && (
+          <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-white/15 border border-white/25 flex items-center justify-center">
+              {gagal ? (
+                <span className="text-2xl text-red-100">!</span>
+              ) : (
+                <span className="block h-7 w-7 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              )}
+            </div>
+            <p className="text-sm font-medium text-white">
+              {gagal ? 'Gagal memproses SSO' : 'Menyelesaikan masuk lewat SSO…'}
+            </p>
+            <p className="mt-1 text-xs text-white/75">{pesan || gagal}</p>
+
+            {gagal ? (
+              <div className="mt-6 flex flex-col gap-2">
+                <a
+                  href="/login"
+                  className="w-full rounded-xl bg-white text-primary hover:bg-white/90 text-sm font-semibold py-2.5 transition-colors"
+                >
+                  Coba masuk lagi
+                </a>
+                <a
+                  href="/login?sso=gagal"
+                  className="w-full rounded-xl border border-white/30 text-white hover:bg-white/10 text-sm font-medium py-2.5 transition-colors"
+                >
+                  Masuk dengan username &amp; password
+                </a>
+              </div>
+            ) : (
+              <p className="mt-5 text-[11px] text-white/60">
+                Jangan tutup halaman ini — Anda akan diarahkan otomatis.
+              </p>
+            )}
           </div>
         )}
       </div>
-      )}
+
+      {/* Footer tipis supaya halaman tetap terlihat utuh saat modal tampil. */}
+      <p className="relative z-10 pb-2 text-[11px] text-white/55 text-center">
+        © Pemerintah Kabupaten Pesisir Selatan · Layanan SSO Pemdi
+      </p>
 
       {/* Pilihan mode akses — komponen yang sama dengan login password. */}
       {showSudoPrompt && sudoUser && (
