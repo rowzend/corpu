@@ -18,6 +18,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { authService } from '@/lib/services/auth.service';
+import SudoPrompt from '@/components/SudoPrompt';
+import RoleSelectorModal from '@/components/RoleSelectorModal';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/apicorpu/1.0';
@@ -42,6 +44,11 @@ export default function SsoLandingPage() {
   const router = useRouter();
   const [pesan, setPesan] = useState('Menghubungkan sesi SSO…');
   const [gagal, setGagal] = useState<string | null>(null);
+  // Pemilihan mode akses — perilaku SAMA dengan login password (login/page.tsx).
+  const [sudoUser, setSudoUser] = useState<Record<string, unknown> | null>(null);
+  const [userGroups, setUserGroups] = useState<GroupInfo[]>([]);
+  const [showSudoPrompt, setShowSudoPrompt] = useState(false);
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('code');
@@ -95,8 +102,17 @@ export default function SsoLandingPage() {
           return;
         }
 
-        // Tentukan tujuan: satu role admin → halaman adminnya; selain itu member.
+        // Tentukan tujuan — aturannya SAMA dengan login password di
+        // login/page.tsx supaya pengalaman SSO tidak berbeda:
+        //   tanpa role admin              → member dashboard
+        //   satu role admin, tanpa member → halaman admin itu
+        //   ada admin DAN member          → "Choose Access Mode" (SudoPrompt)
+        //   beberapa admin tanpa member   → RoleSelectorModal
+        // Dulu jalur ini jatuh ke member dashboard tanpa bertanya, sehingga user
+        // ber-role admin + member (mis. NIP 199411192019031001) tidak pernah
+        // melihat pilihan mode akses seperti pada login lokal.
         let tujuan = '/member/dashboard';
+        let tampilkanPilihan = false;
         try {
           const perm = await api.get<{
             success: boolean;
@@ -119,13 +135,28 @@ export default function SsoLandingPage() {
             const url = adminGroups[0].redirect_url || '/admin/dashboard';
             authService.setActiveRole(adminGroups[0].id ?? null, url);
             tujuan = url;
+          } else if (memberGroups.length > 0) {
+            // Admin + member: tanya dulu, jangan langsung ke salah satu dashboard.
+            if (batal) return;
+            tampilkanPilihan = true;
+            setPesan('');
+            setSudoUser(user);
+            setUserGroups(groups);
+            setShowSudoPrompt(true);
+          } else {
+            // Beberapa role admin tanpa member: pilih role spesifik dulu.
+            if (batal) return;
+            tampilkanPilihan = true;
+            setPesan('');
+            setSudoUser(user);
+            setUserGroups(adminGroups);
+            setShowRoleSelector(true);
           }
-          // Beberapa role admin + member: biarkan pemilihan role di dashboard.
         } catch {
           // Gagal baca permission bukan alasan menggagalkan login.
         }
 
-        if (batal) return;
+        if (batal || tampilkanPilihan) return;
         setPesan('Berhasil. Mengalihkan…');
         window.location.href = tujuan;
       } catch (err) {
@@ -142,6 +173,7 @@ export default function SsoLandingPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
+      {!showSudoPrompt && !showRoleSelector && (
       <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 text-center">
         <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-900/40 flex items-center justify-center">
           {gagal ? (
@@ -171,6 +203,23 @@ export default function SsoLandingPage() {
           </div>
         )}
       </div>
+      )}
+
+      {/* Pilihan mode akses — komponen yang sama dengan login password. */}
+      {showSudoPrompt && sudoUser && (
+        <SudoPrompt
+          user={sudoUser}
+          groups={userGroups}
+          onChooseRole={(groups) => {
+            setShowSudoPrompt(false);
+            setUserGroups(groups);
+            setShowRoleSelector(true);
+          }}
+        />
+      )}
+      {showRoleSelector && userGroups.length > 0 && (
+        <RoleSelectorModal groups={userGroups} />
+      )}
     </div>
   );
 }
