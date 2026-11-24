@@ -15,7 +15,6 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { authService } from '@/lib/services/auth.service';
 import { getPublicSettings } from '@/lib/api/profilePublic';
@@ -42,7 +41,6 @@ type ExchangeResponse = {
 type GroupInfo = { id: number; name: string; redirect_url?: string };
 
 export default function SsoLandingPage() {
-  const router = useRouter();
   const [pesan, setPesan] = useState('Menghubungkan sesi SSO…');
   const [gagal, setGagal] = useState<string | null>(null);
   // Pemilihan mode akses — perilaku SAMA dengan login password (login/page.tsx).
@@ -62,14 +60,85 @@ export default function SsoLandingPage() {
   }, []);
 
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get('code');
-    if (!code) {
-      setGagal('Kode SSO tidak ditemukan. Silakan masuk ulang.');
-      setPesan('');
-      return;
-    }
-
     let batal = false;
+
+    // Aturan tujuan SAMA dengan login password (login/page.tsx):
+    //   tanpa role admin              → member dashboard
+    //   satu role admin, tanpa member → halaman admin itu
+    //   ada admin DAN member          → "Choose Access Mode" (SudoPrompt)
+    //   beberapa admin tanpa member   → RoleSelectorModal
+    const pilihTujuan = async (user: Record<string, unknown>) => {
+      try {
+        const perm = await api.get<{
+          success: boolean;
+          data: { user: { groups: Array<GroupInfo | string> } };
+        }>('/management/permissions/user/');
+        const groups = (perm?.data?.user?.groups || []).map((g) =>
+          typeof g === 'string'
+            ? { id: 0, name: g, redirect_url: '/admin/dashboard' }
+            : g,
+        );
+        const adminGroups = groups.filter((g) =>
+          (g.redirect_url || '/admin/dashboard').startsWith('/admin/'),
+        );
+        const memberGroups = groups.filter((g) =>
+          (g.redirect_url || '/admin/dashboard').startsWith('/member/'),
+        );
+        if (batal) return;
+
+        if (adminGroups.length === 0) {
+          authService.setActiveRole(null, '/member/dashboard');
+          setPesan('Berhasil. Mengalihkan…');
+          window.location.href = '/member/dashboard';
+          return;
+        }
+        if (adminGroups.length === 1 && memberGroups.length === 0) {
+          const url = adminGroups[0].redirect_url || '/admin/dashboard';
+          authService.setActiveRole(adminGroups[0].id ?? null, url);
+          setPesan('Berhasil. Mengalihkan…');
+          window.location.href = url;
+          return;
+        }
+        // Perlu pilihan: admin + member, atau beberapa role admin.
+        setPesan('');
+        setSudoUser(user);
+        if (memberGroups.length > 0) {
+          setUserGroups(groups);
+          setShowSudoPrompt(true);
+        } else {
+          setUserGroups(adminGroups);
+          setShowRoleSelector(true);
+        }
+      } catch {
+        // Gagal baca permission bukan alasan menggagalkan login.
+        window.location.href = '/member/dashboard';
+      }
+    };
+
+    const code = new URLSearchParams(window.location.search).get('code');
+
+    // Tanpa kode — mis. halaman di-refresh sesudah kode ditukar. Jangan tampilkan
+    // galat: lanjutkan dengan sesi yang ada, atau kembalikan ke /login.
+    if (!code) {
+      const token = authService.getToken();
+      const userSesi = authService.getCurrentUser() as Record<string, unknown> | null;
+      if (!token || !userSesi) {
+        window.location.replace('/login');
+        return () => { batal = true; };
+      }
+      const roleCookie = document.cookie.match(/(?:^|;\s*)role_type=([^;]*)/)?.[1] || '';
+      if (roleCookie === 'member') {
+        window.location.replace('/member/dashboard');
+        return () => { batal = true; };
+      }
+      if (roleCookie === 'admin') {
+        window.location.replace('/admin/dashboard');
+        return () => { batal = true; };
+      }
+      setPesan('Memeriksa sesi…');
+      void pilihTujuan(userSesi);
+      return () => { batal = true; };
+    }
 
     (async () => {
       try {
@@ -119,65 +188,20 @@ export default function SsoLandingPage() {
           return;
         }
 
-        // Tentukan tujuan — aturannya SAMA dengan login password di
-        // login/page.tsx supaya pengalaman SSO tidak berbeda:
-        //   tanpa role admin              → member dashboard
-        //   satu role admin, tanpa member → halaman admin itu
-        //   ada admin DAN member          → "Choose Access Mode" (SudoPrompt)
-        //   beberapa admin tanpa member   → RoleSelectorModal
-        // Dulu jalur ini jatuh ke member dashboard tanpa bertanya, sehingga user
-        // ber-role admin + member (mis. NIP 199411192019031001) tidak pernah
-        // melihat pilihan mode akses seperti pada login lokal.
-        let tujuan = '/member/dashboard';
-        let tampilkanPilihan = false;
-        try {
-          const perm = await api.get<{
-            success: boolean;
-            data: { user: { groups: Array<GroupInfo | string> } };
-          }>('/management/permissions/user/');
-          const groups = (perm?.data?.user?.groups || []).map((g) =>
-            typeof g === 'string'
-              ? { id: 0, name: g, redirect_url: '/admin/dashboard' }
-              : g,
-          );
-          const adminGroups = groups.filter((g) =>
-            (g.redirect_url || '/admin/dashboard').startsWith('/admin/'),
-          );
-          const memberGroups = groups.filter((g) =>
-            (g.redirect_url || '/admin/dashboard').startsWith('/member/'),
-          );
-          if (adminGroups.length === 0) {
-            authService.setActiveRole(null, '/member/dashboard');
-          } else if (adminGroups.length === 1 && memberGroups.length === 0) {
-            const url = adminGroups[0].redirect_url || '/admin/dashboard';
-            authService.setActiveRole(adminGroups[0].id ?? null, url);
-            tujuan = url;
-          } else if (memberGroups.length > 0) {
-            // Admin + member: tanya dulu, jangan langsung ke salah satu dashboard.
-            if (batal) return;
-            tampilkanPilihan = true;
-            setPesan('');
-            setSudoUser(user);
-            setUserGroups(groups);
-            setShowSudoPrompt(true);
-          } else {
-            // Beberapa role admin tanpa member: pilih role spesifik dulu.
-            if (batal) return;
-            tampilkanPilihan = true;
-            setPesan('');
-            setSudoUser(user);
-            setUserGroups(adminGroups);
-            setShowRoleSelector(true);
-          }
-        } catch {
-          // Gagal baca permission bukan alasan menggagalkan login.
-        }
-
-        if (batal || tampilkanPilihan) return;
-        setPesan('Berhasil. Mengalihkan…');
-        window.location.href = tujuan;
+        await pilihTujuan(user);
       } catch (err) {
         if (batal) return;
+        // Kode kedaluwarsa/ sudah dipakai (mis. halaman dibuka ulang dari cache)
+        // tetapi sesi masih ada → jangan tampilkan galat, lanjutkan seperti refresh.
+        const token = authService.getToken();
+        const userSesi = authService.getCurrentUser() as Record<string, unknown> | null;
+        if (token && userSesi) {
+          try {
+            window.history.replaceState(null, '', '/auth/sso');
+          } catch { /* abaikan */ }
+          await pilihTujuan(userSesi);
+          return;
+        }
         setGagal(err instanceof Error ? err.message : 'Gagal memproses SSO.');
         setPesan('');
       }
@@ -186,7 +210,7 @@ export default function SsoLandingPage() {
     return () => {
       batal = true;
     };
-  }, [router]);
+  }, []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-primary via-primary/90 to-primary/70 flex flex-col items-center px-4 py-8">
