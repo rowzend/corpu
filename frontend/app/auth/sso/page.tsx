@@ -206,7 +206,7 @@ export default function SsoLandingPage() {
       </div>
 
       {/* Branding di atas — tetap terlihat walau modal pilihan mode akses muncul. */}
-      <div className="relative z-10 flex flex-col items-center text-center pt-2">
+      <div className="relative z-[105] pointer-events-none flex flex-col items-center text-center pt-2">
         {/* Logo + nama aplikasi dari pengaturan publik (best-effort). */}
         <div className="mb-5 inline-flex">
           <div className="relative">
@@ -271,7 +271,7 @@ export default function SsoLandingPage() {
       </div>
 
       {/* Footer tipis supaya halaman tetap terlihat utuh saat modal tampil. */}
-      <p className="relative z-10 pb-2 text-[11px] text-white/55 text-center">
+      <p className="relative z-[105] pointer-events-none pb-2 text-[11px] text-white/55 text-center">
         © Pemerintah Kabupaten Pesisir Selatan · Layanan SSO Pemdi
       </p>
 
